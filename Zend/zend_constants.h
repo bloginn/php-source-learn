@@ -24,19 +24,19 @@
 
 #include "zend_globals.h"
 
-#define CONST_CS				(1<<0)				/* Case Sensitive */
-#define CONST_PERSISTENT		(1<<1)				/* Persistent */
-#define CONST_CT_SUBST			(1<<2)				/* Allow compile-time substitution */
+#define CONST_CS				(1<<0)				/* Case Sensitive 大小写敏感 */
+#define CONST_PERSISTENT		(1<<1)				/* Persistent 持久的 */
+#define CONST_CT_SUBST			(1<<2)				/* Allow compile-time substitution 允许编译时替换 */
 
 #define	PHP_USER_CONSTANT INT_MAX	/* a constant defined in user space */
 
 typedef struct _zend_constant {
-	zval value;
-	int flags;
-	char *name;
-	uint name_len;
-	int module_number;
-} zend_constant;
+	zval value; /* zval结构，PHP内部变量的存储结构 */
+	int flags;  /* 常量的标记如 CONST_CS,CONST_PERSISTENT,CONST_CT_SUBST;见27~29行 */
+	char *name; /* 常量名称 */
+	uint name_len; /* 常量名称长度 */
+	int module_number; /* 模块号 */
+} zend_constant; /* 常量结构体定义 */
 
 #define REGISTER_NULL_CONSTANT(name, flags)  zend_register_null_constant((name), sizeof(name), (flags), module_number TSRMLS_CC)
 #define REGISTER_BOOL_CONSTANT(name, bval, flags)  zend_register_bool_constant((name), sizeof(name), (bval), (flags), module_number TSRMLS_CC)

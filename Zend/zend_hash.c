@@ -196,7 +196,7 @@ ZEND_API int _zend_hash_init(HashTable *ht, uint nSize, dtor_func_t pDestructor,
 {
 	uint i = 3;
 
-	SET_INCONSISTENT(HT_OK);
+	SET_INCONSISTENT(HT_OK); /* ZEND_DEBUG时表示 ht->inconsistent = 0;否则无操作 */
 
 	if (nSize >= 0x80000000) {
 		/* prevent overflow */

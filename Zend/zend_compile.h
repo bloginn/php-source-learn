@@ -232,14 +232,14 @@ typedef struct _zend_property_info {
 } zend_property_info;
 
 
-typedef struct _zend_arg_info {
-	const char *name;
-	zend_uint name_len;
-	const char *class_name;
-	zend_uint class_name_len;
+typedef struct _zend_arg_info { /* 存储函数参数的结构体 */
+	const char *name; /* 参数的名称 */
+	zend_uint name_len; /* 参数名称的长度 */
+	const char *class_name; /* 类名 */
+	zend_uint class_name_len; /* 类名长度 */
 	zend_uchar type_hint;
-	zend_uchar pass_by_reference;
-	zend_bool allow_null;
+	zend_uchar pass_by_reference; /*　是否引用传递 */
+	zend_bool allow_null; /* 是否允许为NULL　*/
 	zend_bool is_variadic;
 } zend_arg_info;
 
@@ -344,16 +344,16 @@ typedef union _zend_function {
 
 	struct {
 		zend_uchar type;  /* never used */
-		const char *function_name;
-		zend_class_entry *scope;
-		zend_uint fn_flags;
-		union _zend_function *prototype;
-		zend_uint num_args;
-		zend_uint required_num_args;
-		zend_arg_info *arg_info;
+		const char *function_name; /* 函数名称 */
+		zend_class_entry *scope; /* 函数所在的类作用域 */
+		zend_uint fn_flags; /* 作为方法时的访问类型等，如ZEND_ACC_STATIC等 */
+		union _zend_function *prototype; /* 函数原型 */
+		zend_uint num_args; /* 参数数目 */
+		zend_uint required_num_args; /* 需要的参数数目 */
+		zend_arg_info *arg_info; /* 参数信息指针 */
 	} common;
 
-	zend_op_array op_array;
+	zend_op_array op_array; /* 函数中的操作 */
 	zend_internal_function internal_function;
 } zend_function;
 

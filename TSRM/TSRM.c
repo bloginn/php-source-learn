@@ -16,35 +16,35 @@
 
 #include <stdio.h>
 
-#if HAVE_STDARG_H
+#if HAVE_STDARG_H /* 在main/php_config.h文件中定义 */
 #include <stdarg.h>
 #endif
 
 typedef struct _tsrm_tls_entry tsrm_tls_entry;
 
 struct _tsrm_tls_entry {
-	void **storage;
-	int count;
-	THREAD_T thread_id;
-	tsrm_tls_entry *next;
+	void **storage; /* 指针数组 */
+	int count; /* 全局变量数 */
+	THREAD_T thread_id; /* 线程id */
+	tsrm_tls_entry *next; /* 下一个线程的地址 */
 };
 
 
 typedef struct {
-	size_t size;
-	ts_allocate_ctor ctor;
-	ts_allocate_dtor dtor;
-	int done;
+	size_t size; /* size_t等价unsigned int */
+	ts_allocate_ctor ctor; /* 构造方法指针 */
+	ts_allocate_dtor dtor; /* 析构方法指针 */
+	int done; /* 0或1，*/
 } tsrm_resource_type;
 
 
 /* The memory manager table */
 static tsrm_tls_entry	**tsrm_tls_table=NULL;
-static int				tsrm_tls_table_size;
-static ts_rsrc_id		id_count;
+static int				tsrm_tls_table_size; /* 线程数量记录值 */
+static ts_rsrc_id		id_count; /* ts_rsrc_id等价int id_count是一个全局静态变量,通过自增产生资源ID*/
 
 /* The resource sizes table */
-static tsrm_resource_type	*resource_types_table=NULL;
+static tsrm_resource_type	*resource_types_table=NULL; /* tsrm_resource_table可以看做是一个哈希表 */
 static int					resource_types_table_size;
 
 
@@ -116,13 +116,13 @@ static int32 tls_key;
 # warning tsrm_set_interpreter_context is probably broken on this platform
 #endif
 
-/* Startup TSRM (call once for the entire process) */
+/* Startup TSRM (call once for the entire process) 用于sapi调用，TSRM启动函数，整个生命周期只执行一遍，大部分调用参数 tsrm_startup(1, 1, 0, NULL); */
 TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debug_level, char *debug_filename)
-{
+{				/* tsrm_startup(预期线程数,预期资源数,日志级别,日志文件) */
 #if defined(GNUPTH)
 	pth_init();
 #elif defined(PTHREADS)
-	pthread_key_create( &tls_key, 0 );
+	pthread_key_create( &tls_key, 0 ); /* 用来创建线程私有数据。该函数从 TSD 池中分配一项，将其地址值赋给 key 供以后访问使用。第 2 个参数是一个销毁函数，它是可选的，可以为 NULL，为 NULL 时，则系统调用默认的销毁函数进行相关的数据注销*/
 #elif defined(TSRM_ST)
 	st_init();
 	st_key_create(&tls_key, 0);
@@ -132,18 +132,18 @@ TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debu
 	tls_key = tls_allocate();
 #endif
 
-	tsrm_error_file = stderr;
-	tsrm_error_set(debug_level, debug_filename);
+	tsrm_error_file = stderr; /* stderr:标准错误输出设备,对应终端的屏幕,将错误输出文件置为屏幕 */
+	tsrm_error_set(debug_level, debug_filename); /* 大部分调用tsrm_startup函数的debug_level为0，表示不打日志，除了php5isapi */
 	tsrm_tls_table_size = expected_threads;
 
-	tsrm_tls_table = (tsrm_tls_entry **) calloc(tsrm_tls_table_size, sizeof(tsrm_tls_entry *));
+	tsrm_tls_table = (tsrm_tls_entry **) calloc(tsrm_tls_table_size, sizeof(tsrm_tls_entry *)); /* 申请线程所需内存空间 */
 	if (!tsrm_tls_table) {
 		TSRM_ERROR((TSRM_ERROR_LEVEL_ERROR, "Unable to allocate TLS table"));
 		return 0;
 	}
 	id_count=0;
 
-	resource_types_table_size = expected_resources;
+	resource_types_table_size = expected_resources; /* 申请资源所需内存空间 */
 	resource_types_table = (tsrm_resource_type *) calloc(resource_types_table_size, sizeof(tsrm_resource_type));
 	if (!resource_types_table) {
 		TSRM_ERROR((TSRM_ERROR_LEVEL_ERROR, "Unable to allocate resource types table"));
@@ -152,7 +152,7 @@ TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debu
 		return 0;
 	}
 
-	tsmm_mutex = tsrm_mutex_alloc();
+	tsmm_mutex = tsrm_mutex_alloc(); /* 分配互斥锁将本线程锁定 */
 
 	tsrm_new_thread_begin_handler = tsrm_new_thread_end_handler = NULL;
 
@@ -161,14 +161,14 @@ TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debu
 }
 
 
-/* Shutdown TSRM (call once for the entire process) */
+/* Shutdown TSRM (call once for the entire process) TSRM关闭函数，整个生命周期只执行一遍 用于sapi调用，主要用于释放内存，结束线程 */
 TSRM_API void tsrm_shutdown(void)
 {
 	int i;
 
 	if (tsrm_tls_table) {
 		for (i=0; i<tsrm_tls_table_size; i++) {
-			tsrm_tls_entry *p = tsrm_tls_table[i], *next_p;
+			tsrm_tls_entry *p = tsrm_tls_table[i], *next_p; /* 定义p指针并指向第i个线程资源，和下一个指针next_p */
 
 			while (p) {
 				int j;
@@ -211,7 +211,7 @@ TSRM_API void tsrm_shutdown(void)
 }
 
 
-/* allocates a new thread-safe-resource id */
+/* allocates a new thread-safe-resource id 分配一个新的线程安全资源id */
 TSRM_API ts_rsrc_id ts_allocate_id(ts_rsrc_id *rsrc_id, size_t size, ts_allocate_ctor ctor, ts_allocate_dtor dtor)
 {
 	int i;
@@ -221,7 +221,7 @@ TSRM_API ts_rsrc_id ts_allocate_id(ts_rsrc_id *rsrc_id, size_t size, ts_allocate
 	tsrm_mutex_lock(tsmm_mutex);
 
 	/* obtain a resource id */
-	*rsrc_id = TSRM_SHUFFLE_RSRC_ID(id_count++);
+	*rsrc_id = TSRM_SHUFFLE_RSRC_ID(id_count++); /* 等价于((id_count++)+1) */
 	TSRM_ERROR((TSRM_ERROR_LEVEL_CORE, "Obtained resource id %d", *rsrc_id));
 
 	/* store the new resource type in the resource sizes table */
@@ -235,7 +235,7 @@ TSRM_API ts_rsrc_id ts_allocate_id(ts_rsrc_id *rsrc_id, size_t size, ts_allocate
 		}
 		resource_types_table_size = id_count;
 	}
-	resource_types_table[TSRM_UNSHUFFLE_RSRC_ID(*rsrc_id)].size = size;
+	resource_types_table[TSRM_UNSHUFFLE_RSRC_ID(*rsrc_id)].size = size; /* TSRM_UNSHUFFLE_RSRC_ID(*rsrc_id)等价于((*rsrc_id)-1) */
 	resource_types_table[TSRM_UNSHUFFLE_RSRC_ID(*rsrc_id)].ctor = ctor;
 	resource_types_table[TSRM_UNSHUFFLE_RSRC_ID(*rsrc_id)].dtor = dtor;
 	resource_types_table[TSRM_UNSHUFFLE_RSRC_ID(*rsrc_id)].done = 0;
@@ -266,7 +266,7 @@ TSRM_API ts_rsrc_id ts_allocate_id(ts_rsrc_id *rsrc_id, size_t size, ts_allocate
 	return *rsrc_id;
 }
 
-
+/* 获取一个新的资源 */
 static void allocate_new_resource(tsrm_tls_entry **thread_resources_ptr, THREAD_T thread_id)
 {
 	int i;
@@ -438,7 +438,7 @@ void *tsrm_new_interpreter_context(void)
 }
 
 
-/* frees all resources allocated for the current thread */
+/* frees all resources allocated for the current thread 释放当前线程获得的所有资源，与下面的函数很相似 */
 void ts_free_thread(void)
 {
 	tsrm_tls_entry *thread_resources;
@@ -480,21 +480,21 @@ void ts_free_thread(void)
 }
 
 
-/* frees all resources allocated for all threads except current */
+/* frees all resources allocated for all threads except current 释放所有线程获得的所有资源，除了当前线程 */
 void ts_free_worker_threads(void)
 {
 	tsrm_tls_entry *thread_resources;
 	int i;
-	THREAD_T thread_id = tsrm_thread_id();
+	THREAD_T thread_id = tsrm_thread_id(); /* 获取当前的线程id */
 	int hash_value;
 	tsrm_tls_entry *last=NULL;
 
 	tsrm_mutex_lock(tsmm_mutex);
-	hash_value = THREAD_HASH_OF(thread_id, tsrm_tls_table_size);
+	hash_value = THREAD_HASH_OF(thread_id, tsrm_tls_table_size); /* 等价取余thread_id%tsrm_tls_table_size */
 	thread_resources = tsrm_tls_table[hash_value];
 
 	while (thread_resources) {
-		if (thread_resources->thread_id != thread_id) {
+		if (thread_resources->thread_id != thread_id) { /* 如果线程id不等于当前线程id则释放 */
 			for (i=0; i<thread_resources->count; i++) {
 				if (resource_types_table[i].dtor) {
 					resource_types_table[i].dtor(thread_resources->storage[i], &thread_resources->storage);
@@ -515,7 +515,7 @@ void ts_free_worker_threads(void)
 			} else {
 				thread_resources = tsrm_tls_table[hash_value];
 			}
-		} else {
+		} else { /* 如果线程id等于当前线程id */
 			if (thread_resources->next) {
 				last = thread_resources;
 			}
@@ -526,11 +526,11 @@ void ts_free_worker_threads(void)
 }
 
 
-/* deallocates all occurrences of a given id */
-void ts_free_id(ts_rsrc_id id)
+/* deallocates all occurrences of a given id 释放所有的当前资源id */
+void ts_free_id(ts_rsrc_id id) /* ts_rsrc_id为int */
 {
 	int i;
-	int j = TSRM_UNSHUFFLE_RSRC_ID(id);
+	int j = TSRM_UNSHUFFLE_RSRC_ID(id); /* 等价((id)-1) */
 
 	tsrm_mutex_lock(tsmm_mutex);
 
@@ -563,34 +563,34 @@ void ts_free_id(ts_rsrc_id id)
 
 
 /*
- * Utility Functions
+ * Utility Functions 公用函数
  */
 
-/* Obtain the current thread id */
+/* Obtain the current thread id 获得当前线程id */
 TSRM_API THREAD_T tsrm_thread_id(void)
 {
-#ifdef TSRM_WIN32
+#ifdef TSRM_WIN32 /* 如果是Windows系统中编译则定义这个宏，见TSRM.h第16行 */
 	return GetCurrentThreadId();
-#elif defined(GNUPTH)
+#elif defined(GNUPTH) /* 在tsrm.m4文件中通过AC_DEFINE宏定义 */
 	return pth_self();
-#elif defined(PTHREADS)
+#elif defined(PTHREADS) /* 在tsrm.m4文件中通过AC_DEFINE宏定义 */
 	return pthread_self();
-#elif defined(NSAPI)
+#elif defined(NSAPI) /* 在sapi/nsapi/nsapi.c文件中定义,只有以NSAPI形式运行PHP是定义 */
 	return systhread_current();
 #elif defined(PI3WEB)
 	return PIThread_getCurrent();
-#elif defined(TSRM_ST)
+#elif defined(TSRM_ST) /* 在tsrm.m4文件中通过AC_DEFINE宏定义 */
 	return st_thread_self();
-#elif defined(BETHREADS)
+#elif defined(BETHREADS) /* 在tsrm.m4文件中通过AC_DEFINE宏定义 */
 	return find_thread(NULL);
 #endif
 }
 
 
-/* Allocate a mutex */
+/* Allocate a mutex 分配一个互斥锁 */
 TSRM_API MUTEX_T tsrm_mutex_alloc(void)
 {
-	MUTEX_T mutexp;
+	MUTEX_T mutexp; /* MUTEX_T宏定义在TSRM.H中 例如define MUTEX_T pthread_mutex_t *等 */
 #ifdef TSRM_WIN32
 	mutexp = malloc(sizeof(CRITICAL_SECTION));
 	InitializeCriticalSection(mutexp);
@@ -618,7 +618,7 @@ TSRM_API MUTEX_T tsrm_mutex_alloc(void)
 }
 
 
-/* Free a mutex */
+/* Free a mutex 互斥锁销毁 成功返回0 */
 TSRM_API void tsrm_mutex_free(MUTEX_T mutexp)
 {
 	if (mutexp) {
@@ -648,8 +648,8 @@ TSRM_API void tsrm_mutex_free(MUTEX_T mutexp)
 
 
 /*
-  Lock a mutex.
-  A return value of 0 indicates success
+  Lock a mutex. 互斥锁加锁
+  A return value of 0 indicates success 成功返回0
 */
 TSRM_API int tsrm_mutex_lock(MUTEX_T mutexp)
 {
@@ -663,7 +663,7 @@ TSRM_API int tsrm_mutex_lock(MUTEX_T mutexp)
 	}
 	return -1;
 #elif defined(PTHREADS)
-	return pthread_mutex_lock(mutexp);
+	return pthread_mutex_lock(mutexp); /* 线程调用该函数让互斥锁上锁，如果该互斥锁已被另一个线程锁定和拥有，则调用该线程将阻塞，直到该互斥锁变为可用为止 */
 #elif defined(NSAPI)
 	crit_enter(mutexp);
 	return 0;
@@ -680,8 +680,8 @@ TSRM_API int tsrm_mutex_lock(MUTEX_T mutexp)
 
 
 /*
-  Unlock a mutex.
-  A return value of 0 indicates success
+  Unlock a mutex. 互斥锁解锁
+  A return value of 0 indicates success 成功返回0
 */
 TSRM_API int tsrm_mutex_unlock(MUTEX_T mutexp)
 {
@@ -711,24 +711,24 @@ TSRM_API int tsrm_mutex_unlock(MUTEX_T mutexp)
 }
 
 /*
-  Changes the signal mask of the calling thread
+  Changes the signal mask of the calling thread 更改调用线程的信号掩码
 */
 #ifdef HAVE_SIGPROCMASK
 TSRM_API int tsrm_sigmask(int how, const sigset_t *set, sigset_t *oldset)
 {
-	TSRM_ERROR((TSRM_ERROR_LEVEL_INFO, "Changed sigmask in thread: %ld", tsrm_thread_id()));
+	TSRM_ERROR((TSRM_ERROR_LEVEL_INFO, "Changed sigmask in thread: %ld", tsrm_thread_id()));/*打印更改的线程id日志*/
 	/* TODO: add support for other APIs */
 #ifdef PTHREADS
-	return pthread_sigmask(how, set, oldset);
+	return pthread_sigmask(how, set, oldset); /* 用作在主调线程里控制信号掩码 */
 #else
-	return sigprocmask(how, set, oldset);
+	return sigprocmask(how, set, oldset); /* 用于改变进程的当前阻塞信号集,也可以用来检测当前进程的信号掩码 */
 #endif
 }
 #endif
 
 
 TSRM_API void *tsrm_set_new_thread_begin_handler(tsrm_thread_begin_func_t new_thread_begin_handler)
-{
+{ /*设置线程初始句柄，没太明白，后期补充*/
 	void *retval = (void *) tsrm_new_thread_begin_handler;
 
 	tsrm_new_thread_begin_handler = new_thread_begin_handler;
@@ -737,7 +737,7 @@ TSRM_API void *tsrm_set_new_thread_begin_handler(tsrm_thread_begin_func_t new_th
 
 
 TSRM_API void *tsrm_set_new_thread_end_handler(tsrm_thread_end_func_t new_thread_end_handler)
-{
+{ /*设置线程结束句柄，没太明白，后期补充*/
 	void *retval = (void *) tsrm_new_thread_end_handler;
 
 	tsrm_new_thread_end_handler = new_thread_end_handler;
@@ -752,15 +752,15 @@ TSRM_API void *tsrm_set_new_thread_end_handler(tsrm_thread_end_func_t new_thread
 
 #if TSRM_DEBUG
 int tsrm_error(int level, const char *format, ...)
-{
+{/* 例如 tsrm_error(1,"%d %f %s", 123, 2.3, "abc")会输出TSRM: 123 2.3 abc到屏幕上 */
 	if (level<=tsrm_error_level) {
-		va_list args;
+		va_list args; /* va_list 是在C语言中解决变参问题的一组宏，所在头文件：<stdarg.h> */
 		int size;
 
 		fprintf(tsrm_error_file, "TSRM:  ");
 		va_start(args, format);
-		size = vfprintf(tsrm_error_file, format, args);
-		va_end(args);
+		size = vfprintf(tsrm_error_file, format, args); /* vfprintf()会根据参数format字符串来转换并格式化数据，然后将结果输出到参数stream指定的文件中 */
+		va_end(args);/* 关于vfprintf函数的具体用法，百度百科中很详细 */
 		fprintf(tsrm_error_file, "\n");
 		fflush(tsrm_error_file);
 		return size;
@@ -771,22 +771,22 @@ int tsrm_error(int level, const char *format, ...)
 #endif
 
 
-void tsrm_error_set(int level, char *debug_filename)
+void tsrm_error_set(int level, char *debug_filename) /* 该函数为设置错误级别和错误输出文件，只有tsrm_startup()函数调用 */
 {
-	tsrm_error_level = level;
+	tsrm_error_level = level; /* 设置错误级别，一共3个级别，在TSRM.h文件128-130行定义 */
 
 #if TSRM_DEBUG
 	if (tsrm_error_file!=stderr) { /* close files opened earlier */
-		fclose(tsrm_error_file);
+		fclose(tsrm_error_file); /* 如果错误输出文件不是终端屏幕，先关闭之前打开的文件 */
 	}
 
 	if (debug_filename) {
-		tsrm_error_file = fopen(debug_filename, "w");
+		tsrm_error_file = fopen(debug_filename, "w"); /* 如果文件存在，以可写的形式打开该文件 */
 		if (!tsrm_error_file) {
-			tsrm_error_file = stderr;
+			tsrm_error_file = stderr; /* 如果文件打开失败，将错误输出文件改成终端屏幕 */
 		}
 	} else {
-		tsrm_error_file = stderr;
+		tsrm_error_file = stderr; /* 如果文件不存在，将错误输出文件改成终端屏幕 */
 	}
 #endif
 }

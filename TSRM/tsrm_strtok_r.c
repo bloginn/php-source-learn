@@ -2,7 +2,7 @@
 
 #include "tsrm_config_common.h"
 #include "tsrm_strtok_r.h"
-
+/* static 表示该函数只限本文件访问 inline内联函数 请求编译器在此函数的被调用处将此函数实现插入，而不是像普通函数那样生成调用代码*/
 static inline int in_character_class(char ch, const char *delim)
 {
 	while (*delim) {

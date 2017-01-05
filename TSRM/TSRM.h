@@ -90,17 +90,17 @@ typedef struct {
 # define MUTEX_T beos_ben * 
 #endif
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
+#ifdef HAVE_SIGNAL_H /*在main/php_config.h中定义了 HAVE_SIGNAL_H 1*/
+#include <signal.h> /*signal.h系统标准函数，在centos系统/usr/include/里面可以找到*/
 #endif
 
-typedef void (*ts_allocate_ctor)(void *, void ***);
+typedef void (*ts_allocate_ctor)(void *, void ***); /*allocate表示分配的意思*/
 typedef void (*ts_allocate_dtor)(void *, void ***);
 
-#define THREAD_HASH_OF(thr,ts)  (unsigned long)thr%(unsigned long)ts
+#define THREAD_HASH_OF(thr,ts)  (unsigned long)thr%(unsigned long)ts /*用于hash值组成规则，只有TSRM.c文件中三处用到，hash_value = THREAD_HASH_OF(thread_id, tsrm_tls_table_size);*/
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { /*170行还有对应的}定义，表示这段代码可以是符合C语言的编译和连接规约的任何语言，如Fortran、assembler等*/
 #endif
 
 /* startup/shutdown */

@@ -476,7 +476,7 @@ struct _zend_trait_alias {
 typedef struct _zend_trait_alias zend_trait_alias;
 
 struct _zend_class_entry {
-	char type;
+	char type; /* 用户定义的类和模块或者内置的类 ZEND_INTERNAL_CLASS或ZEND_USER_CLASS */
 	const char *name;
 	zend_uint name_length;
 	struct _zend_class_entry *parent;
