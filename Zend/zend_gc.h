@@ -97,21 +97,21 @@ typedef struct _zval_gc_info {
 } zval_gc_info;
 
 typedef struct _zend_gc_globals {
-	zend_bool         gc_enabled;
-	zend_bool         gc_active;
+	zend_bool         gc_enabled;/* 是否开启垃圾收集机制 */
+	zend_bool         gc_active;/* 是否正在进行 */
 
-	gc_root_buffer   *buf;				/* preallocated arrays of buffers   */
-	gc_root_buffer    roots;			/* list of possible roots of cycles */
-	gc_root_buffer   *unused;			/* list of unused buffers           */
-	gc_root_buffer   *first_unused;		/* pointer to first unused buffer   */
-	gc_root_buffer   *last_unused;		/* pointer to last unused buffer    */
+	gc_root_buffer   *buf;/* 预分配的缓冲区数组，默认为10000（preallocated arrays of buffers */
+	gc_root_buffer    roots;/* 列表的根结点（list of possible roots of cycles） */
+	gc_root_buffer   *unused;/* 没有使用过的缓冲区列表(list of unused buffers) */
+	gc_root_buffer   *first_unused;/* 指向第一个没有使用过的缓冲区结点（pointer to first unused buffer */
+	gc_root_buffer   *last_unused;/* 指向最后一个没有使用过的缓冲区结点，此处为标记结束用(pointer to last unused buffer) */
 
-	zval_gc_info     *zval_to_free;		/* temporary list of zvals to free */
-	zval_gc_info     *free_list;
-	zval_gc_info     *next_to_free;
+	zval_gc_info     *zval_to_free;/* 将要释放的zval变量的临时列表（temporaryt list of zvals to free） */
+	zval_gc_info     *free_list;/* 临时变量，需要释放的列表开头 */
+	zval_gc_info     *next_to_free;/* 临时变量，下一个将要释放的变量位置*/
 
-	zend_uint gc_runs;
-	zend_uint collected;
+	zend_uint gc_runs;/* gc运行的次数统计 */
+	zend_uint collected;/* gc中垃圾的个数 */
 
 #if GC_BENCH
 	zend_uint root_buf_length;

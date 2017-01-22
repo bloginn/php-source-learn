@@ -2376,20 +2376,20 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 /* }}} */
 
 void zend_do_label(znode *label TSRMLS_DC) /* {{{ */
-{
+{/* 该函数在语法解析的时候遇到T_STRING ':' 的形式调用的，这种形式是PHP支持的目标位置功能，可以通过goto调整到指定lable */
 	zend_label dest;
 
 	if (!CG(context).labels) {
 		ALLOC_HASHTABLE(CG(context).labels);
 		zend_hash_init(CG(context).labels, 4, NULL, NULL, 0);
-	}
+	}/* 可以看到label是保存在compile_globals.context.lables中的 */
 
 	dest.brk_cont = CG(context).current_brk_cont;
 	dest.opline_num = get_next_op_number(CG(active_op_array));
 
 	if (zend_hash_add(CG(context).labels, Z_STRVAL(label->u.constant), Z_STRLEN(label->u.constant) + 1, (void**)&dest, sizeof(zend_label), NULL) == FAILURE) {
 		zend_error_noreturn(E_COMPILE_ERROR, "Label '%s' already defined", Z_STRVAL(label->u.constant));
-	}
+	}/* 实际调用zend_hash.c中的_zend_hash_add_or_update函数，只不过flag参数为HASH_ADD，如果lables存在于hash表中，则返回FAILURE错误 */
 
 	/* Done with label now */
 	zval_dtor(&label->u.constant);
@@ -7064,23 +7064,23 @@ void zend_do_build_namespace_name(znode *result, znode *prefix, znode *name TSRM
 /* }}} */
 
 void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC) /* {{{ */
-{
+{/* with_bracket表示命名空间是否为带括号形式 */
 	char *lcname;
 
 	/* handle mixed syntax declaration or nested namespaces */
 	if (!CG(has_bracketed_namespaces)) {
 		if (CG(current_namespace)) {
-			/* previous namespace declarations were unbracketed */
+			/* previous namespace declarations were unbracketed 避免同时存在带括号和不带括号的命名空间形式 bracketed括号的意思 */
 			if (with_bracket) {
 				zend_error_noreturn(E_COMPILE_ERROR, "Cannot mix bracketed namespace declarations with unbracketed namespace declarations");
 			}
 		}
 	} else {
-		/* previous namespace declarations were bracketed */
+		/* previous namespace declarations were bracketed 避免同时存在带括号和不带括号的命名空间形式 */
 		if (!with_bracket) {
 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot mix bracketed namespace declarations with unbracketed namespace declarations");
 		} else if (CG(current_namespace) || CG(in_namespace)) {
-			zend_error_noreturn(E_COMPILE_ERROR, "Namespace declarations cannot be nested");
+			zend_error_noreturn(E_COMPILE_ERROR, "Namespace declarations cannot be nested"); /* 避免命名空间嵌套的形式 */
 		}
 	}
 
@@ -7097,9 +7097,9 @@ void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC
 		}
 	}
 
-	CG(in_namespace) = 1;
+	CG(in_namespace) = 1; /* 将开始锁定代码在命名空间内 */
 	if (with_bracket) {
-		CG(has_bracketed_namespaces) = 1;
+		CG(has_bracketed_namespaces) = 1; /* 如果带括号的形式将开始锁定代码为已被命名空间括号了 */
 	}
 
 	if (name) {
@@ -7109,7 +7109,7 @@ void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC
 		    ((Z_STRLEN(name->u.constant) == sizeof("parent")-1) &&
 	          !memcmp(lcname, "parent", sizeof("parent")-1))) {
 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as namespace name", Z_STRVAL(name->u.constant));
-		}
+		}/* 避免命名空间名称使用self和parent的任何大小写组合形式 */
 		efree(lcname);
 
 		if (CG(current_namespace)) {
@@ -7117,7 +7117,7 @@ void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC
 		} else {
 			ALLOC_ZVAL(CG(current_namespace));
 		}
-		*CG(current_namespace) = name->u.constant;
+		*CG(current_namespace) = name->u.constant; /* 将命名空间名称设置到compile_globals.current_namespace中 */
 	} else {
 		if (CG(current_namespace)) {
 			zval_dtor(CG(current_namespace));

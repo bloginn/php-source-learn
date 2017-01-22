@@ -261,7 +261,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 	while (p != NULL) {
 		if (p->arKey == arKey ||
 			((p->h == h) && (p->nKeyLength == nKeyLength) && !memcmp(p->arKey, arKey, nKeyLength))) {
-				if (flag & HASH_ADD) {
+				if (flag & HASH_ADD) {/* 如果是添加值且该值存在则返回失败 */
 					return FAILURE;
 				}
 				ZEND_ASSERT(p->pData != pData);

@@ -22,11 +22,11 @@
 #ifndef ZEND_H
 #define ZEND_H
 
-#define ZEND_VERSION "2.6.0"
+#define ZEND_VERSION "2.6.0" /* 定义ZEND引擎版本号，php -v查看到的Zend Engine v2.6.0就是在这里定义的，查看sapi/cli/php_cli.c文件中的do_cli函数 */
 
-#define ZEND_ENGINE_2
+#define ZEND_ENGINE_2 /* 定义ZEND引擎为ZEND2版本，主要用于某些扩展中 */
 
-#ifdef __cplusplus
+#ifdef __cplusplus	/* c++编译器预定义的宏，关于该宏的介绍 http://hujw0710.blog.163.com/blog/static/8797282200852841732308/  */
 #define BEGIN_EXTERN_C() extern "C" {
 #define END_EXTERN_C() }
 #else
@@ -88,7 +88,7 @@
 # ifndef RTLD_GLOBAL
 #  define RTLD_GLOBAL 0
 # endif
-
+/* dlopen()函数以指定模式打开指定的动态链接库文件,DL_LOAD主要用于PHP扩展加载,用法在Zend/zend_extensions.c中zend_load_extension函数中 */
 # if defined(RTLD_GROUP) && defined(RTLD_WORLD) && defined(RTLD_PARENT)
 #  define DL_LOAD(libname)			dlopen(libname, RTLD_LAZY | RTLD_GLOBAL | RTLD_GROUP | RTLD_WORLD | RTLD_PARENT)
 # elif defined(RTLD_DEEPBIND)
@@ -98,11 +98,11 @@
 # endif
 # define DL_UNLOAD					dlclose
 # if defined(DLSYM_NEEDS_UNDERSCORE)
-#  define DL_FETCH_SYMBOL(h,s)		dlsym((h), "_" s)
+#  define DL_FETCH_SYMBOL(h,s)		dlsym((h), "_" s) /* dlsym根据动态链接库操作句柄与符号，返回符号对应的地址。使用这个函数不但可以获取函数地址，也可以获取变量地址。 */
 # else
-#  define DL_FETCH_SYMBOL			dlsym
+#  define DL_FETCH_SYMBOL			dlsym 	/* dlopen和dlsym的实例:http://blog.csdn.net/ostar_liang/article/details/14422423 */
 # endif
-# define DL_ERROR					dlerror
+# define DL_ERROR					dlerror 	/* 当动态链接库操作函数执行失败时，dlerror可以返回出错信息，返回值为NULL时表示操作函数执行成功 */
 # define DL_HANDLE					void *
 # define ZEND_EXTENSIONS_SUPPORT	1
 #elif defined(ZEND_WIN32)
@@ -113,7 +113,7 @@
 # define ZEND_EXTENSIONS_SUPPORT	1
 #else
 # define DL_HANDLE					void *
-# define ZEND_EXTENSIONS_SUPPORT	0
+# define ZEND_EXTENSIONS_SUPPORT	0 	/* ZEND_EXTENSIONS_SUPPORT是否支持扩展 */
 #endif
 
 #if HAVE_ALLOCA_H && !defined(_ALLOCA_H)
@@ -182,7 +182,7 @@ char *alloca ();
 #if defined(__GNUC__) && ZEND_GCC_VERSION >= 3004 && defined(__i386__)
 # define ZEND_FASTCALL __attribute__((fastcall))
 #elif defined(_MSC_VER) && defined(_M_IX86)
-# define ZEND_FASTCALL __fastcall
+# define ZEND_FASTCALL __fastcall /* fastcall是一种函数调用约定，简单来说就是把前两个或更多的参数用寄存器来传值，以加快小函数的调用速度 */
 #else
 # define ZEND_FASTCALL
 #endif

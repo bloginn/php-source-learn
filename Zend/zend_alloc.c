@@ -662,7 +662,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC) ZEND_ATTRIBUTE_ALLOC_SIZE(3);
 
-static inline unsigned int zend_mm_high_bit(size_t _size)
+static inline unsigned int zend_mm_high_bit(size_t _size) /* 计算size中最高位的1的比特位是多少 zend_mm_high_bit(512)计算的值为9 */
 {
 #if defined(__GNUC__) && (defined(__native_client__) || defined(i386))
 	unsigned int n;
