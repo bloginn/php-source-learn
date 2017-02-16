@@ -216,13 +216,13 @@ typedef struct _zend_mm_segment {
 } zend_mm_segment;
 
 typedef struct _zend_mm_mem_handlers {
-	const char *name;
-	zend_mm_storage* (*init)(void *params);
-	void (*dtor)(zend_mm_storage *storage);
-	void (*compact)(zend_mm_storage *storage);
-	zend_mm_segment* (*_alloc)(zend_mm_storage *storage, size_t size);
-	zend_mm_segment* (*_realloc)(zend_mm_storage *storage, zend_mm_segment *ptr, size_t size);
-	void (*_free)(zend_mm_storage *storage, zend_mm_segment *ptr);
+	const char *name;/* 内存分配方式的名称 */
+	zend_mm_storage* (*init)(void *params);/* 初始化函数指针 */
+	void (*dtor)(zend_mm_storage *storage);/* 析构函数指针 */
+	void (*compact)(zend_mm_storage *storage);/* 内存压缩函数指针 */
+	zend_mm_segment* (*_alloc)(zend_mm_storage *storage, size_t size);/* 分配内存函数指针 */
+	zend_mm_segment* (*_realloc)(zend_mm_storage *storage, zend_mm_segment *ptr, size_t size);/* 重新分配内存函数指针 */
+	void (*_free)(zend_mm_storage *storage, zend_mm_segment *ptr);/* 释放内存函数指针 */
 } zend_mm_mem_handlers;
 
 struct _zend_mm_storage {

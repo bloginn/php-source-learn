@@ -38,10 +38,10 @@
 # define GLOBAL_CONSTANTS_TABLE		global_constants_table
 # define GLOBAL_AUTO_GLOBALS_TABLE	global_auto_globals_table
 #else
-# define GLOBAL_FUNCTION_TABLE		CG(function_table)
-# define GLOBAL_CLASS_TABLE			CG(class_table)
-# define GLOBAL_AUTO_GLOBALS_TABLE	CG(auto_globals)
-# define GLOBAL_CONSTANTS_TABLE		EG(zend_constants)
+# define GLOBAL_FUNCTION_TABLE		CG(function_table) /* 等价compiler_globals.function_table */
+# define GLOBAL_CLASS_TABLE			CG(class_table) /* 等价compiler_globals.class_table */
+# define GLOBAL_AUTO_GLOBALS_TABLE	CG(auto_globals) /* 等价compiler_globals.auto_globals */
+# define GLOBAL_CONSTANTS_TABLE		EG(zend_constants) /* 等价compiler_globals.zend_constants */
 #endif
 
 /* true multithread-shared globals */
@@ -64,10 +64,10 @@ static void (*zend_message_dispatcher_p)(long message, const void *data TSRMLS_D
 static int (*zend_get_configuration_directive_p)(const char *name, uint name_length, zval *contents);
 
 static ZEND_INI_MH(OnUpdateErrorReporting) /* {{{ */
-{
-	if (!new_value) {
+{ /* ZEND_INI_MH(OnUpdateErrorReporting)等价int OnUpdateErrorReporting(zend_ini_entry *entry, char *new_value, uint new_value_length, void *mh_arg1, void *mh_arg2, void *mh_arg3, int stage TSRMLS_DC) */
+	if (!new_value) { /* E_ALL是所以错误级别的和二进制为111111111111111,请看Zend/zend_errors.h文件,E_ALL & ~E_NOTICE表示排除E_NOTICE */
 		EG(error_reporting) = E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED;
-	} else {
+	} else { /* EG(error_reporting)等价于executor_globals.error_reporting */
 		EG(error_reporting) = atoi(new_value);
 	}
 	return SUCCESS;
@@ -86,7 +86,7 @@ static ZEND_INI_MH(OnUpdateGCEnabled) /* {{{ */
 }
 /* }}} */
 
-static ZEND_INI_MH(OnUpdateScriptEncoding) /* {{{ */
+static ZEND_INI_MH(OnUpdateScriptEncoding) /* {{{ */ /* 设置脚本编码 */
 {
 	if (!CG(multibyte)) {
 		return FAILURE;
@@ -99,8 +99,8 @@ static ZEND_INI_MH(OnUpdateScriptEncoding) /* {{{ */
 /* }}} */
 
 
-ZEND_INI_BEGIN()
-	ZEND_INI_ENTRY("error_reporting",				NULL,		ZEND_INI_ALL,		OnUpdateErrorReporting)
+ZEND_INI_BEGIN() /* ZEND_INI_BEGIN()等价static const zend_ini_entry ini_entries[] = { */
+	ZEND_INI_ENTRY("error_reporting",				NULL,		ZEND_INI_ALL,		OnUpdateErrorReporting) /* ZEND_INI_ENTRY宏在Zend/zend_ini.h中定义的 */
 	STD_ZEND_INI_BOOLEAN("zend.enable_gc",				"1",	ZEND_INI_ALL,		OnUpdateGCEnabled,      gc_enabled,     zend_gc_globals,        gc_globals)
  	STD_ZEND_INI_BOOLEAN("zend.multibyte", "0", ZEND_INI_PERDIR, OnUpdateBool, multibyte,      zend_compiler_globals, compiler_globals)
  	ZEND_INI_ENTRY("zend.script_encoding",			NULL,		ZEND_INI_ALL,		OnUpdateScriptEncoding)
@@ -141,9 +141,9 @@ static void print_hash(zend_write_func_t write_func, HashTable *ht, int indent, 
 	int i;
 
 	for (i = 0; i < indent; i++) {
-		ZEND_PUTS_EX(" ");
+		ZEND_PUTS_EX(" "); /* 等价write_func((" "), strlen((" "))) */
 	}
-	ZEND_PUTS_EX("(\n");
+	ZEND_PUTS_EX("(\n"); /* 等价write_func(("(\n"), strlen(("(\n"))) */
 	indent += PRINT_ZVAL_INDENT;
 	zend_hash_internal_pointer_reset_ex(ht, &iterator);
 	while (zend_hash_get_current_data_ex(ht, (void **) &tmp, &iterator) == SUCCESS) {
@@ -1059,8 +1059,8 @@ ZEND_API void zend_error(int type, const char *format, ...) /* {{{ */
 			case E_PARSE:
 			case E_COMPILE_ERROR:
 			case E_USER_ERROR:
-				if (zend_is_executing(TSRMLS_C)) {
-					error_lineno = zend_get_executed_lineno(TSRMLS_C);
+				if (zend_is_executing(TSRMLS_C)) {/* 获取opcode是否在执行中 */
+					error_lineno = zend_get_executed_lineno(TSRMLS_C);、/* 获取当前执行的行数 */
 				}
 				zend_exception_error(EG(exception), E_WARNING TSRMLS_CC);
 				EG(exception) = NULL;

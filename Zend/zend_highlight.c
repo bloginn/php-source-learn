@@ -26,41 +26,41 @@
 #include "zend_ptr_stack.h"
 #include "zend_globals.h"
 
-ZEND_API void zend_html_putc(char c)
-{
+ZEND_API void zend_html_putc(char c) /* 仅在本文件的zend_html_puts函数中调用 */
+{ /* 该函数是为了转换特殊的HTML字符，然后打印，例如空格转成HTML的&nbsp; */
 	switch (c) {
 		case '\n':
-			ZEND_PUTS("<br />");
+			ZEND_PUTS("<br />"); /* 等价write_func(("<br />"), strlen(("<br />"))) */
 			break;
 		case '<':
-			ZEND_PUTS("&lt;");
+			ZEND_PUTS("&lt;"); /* 等价write_func(("&lt;"), strlen(("&lt;"))) */
 			break;
 		case '>':
-			ZEND_PUTS("&gt;");
+			ZEND_PUTS("&gt;"); /* 等价write_func(("&gt;"), strlen(("&gt;"))) */
 			break;
 		case '&':
-			ZEND_PUTS("&amp;");
+			ZEND_PUTS("&amp;"); /* 等价write_func(("&amp;"), strlen(("&amp;"))) */
 			break;
 		case ' ':
-			ZEND_PUTS("&nbsp;");
+			ZEND_PUTS("&nbsp;"); /* 等价write_func(("&nbsp;"), strlen(("&nbsp;"))) */
 			break;
 		case '\t':
-			ZEND_PUTS("&nbsp;&nbsp;&nbsp;&nbsp;");
+			ZEND_PUTS("&nbsp;&nbsp;&nbsp;&nbsp;"); /* 等价write_func(("&nbsp;&nbsp;&nbsp;&nbsp;"), strlen(("&nbsp;&nbsp;&nbsp;&nbsp;"))) */
 			break;
 		default:
-			ZEND_PUTC(c);
+			ZEND_PUTC(c); /* 等价write_func((c), strlen((c))) */
 			break;
 	}
 }
 
 
-ZEND_API void zend_html_puts(const char *s, uint len TSRMLS_DC)
+ZEND_API void zend_html_puts(const char *s, uint len TSRMLS_DC) /* 将字符串转义成HTML文本 */
 {
 	const unsigned char *ptr = (const unsigned char*)s, *end = ptr + len;
 	unsigned char *filtered = NULL;
 	size_t filtered_len;
 
-	if (LANG_SCNG(output_filter)) {
+	if (LANG_SCNG(output_filter)) { /* LANG_SCNG(output_filter)等价language_scanner_globals.output_filter，输出过滤器 */
 		LANG_SCNG(output_filter)(&filtered, &filtered_len, ptr, len TSRMLS_CC);
 		ptr = filtered;
 		end = filtered + filtered_len;
@@ -93,7 +93,7 @@ ZEND_API void zend_highlight(zend_syntax_highlighter_ini *syntax_highlighter_ini
 	zend_printf("<span style=\"color: %s\">\n", last_color);
 	/* highlight stuff coming back from zendlex() */
 	token.type = 0;
-	while ((token_type=lex_scan(&token TSRMLS_CC))) {
+	while ((token_type=lex_scan(&token TSRMLS_CC))) { /* 调用词法解析器解析代码 */
 		switch (token_type) {
 			case T_INLINE_HTML:
 				next_color = syntax_highlighter_ini->highlight_html;
@@ -164,7 +164,7 @@ ZEND_API void zend_highlight(zend_syntax_highlighter_ini *syntax_highlighter_ini
 	zend_printf("</code>");
 }
 
-ZEND_API void zend_strip(TSRMLS_D)
+ZEND_API void zend_strip(TSRMLS_D) /* strip剥除的意思，很明显，该函数是去除PHP代码无效内容 */
 {
 	zval token;
 	int token_type;
@@ -173,18 +173,18 @@ ZEND_API void zend_strip(TSRMLS_D)
 	token.type = 0;
 	while ((token_type=lex_scan(&token TSRMLS_CC))) {
 		switch (token_type) {
-			case T_WHITESPACE:
+			case T_WHITESPACE: /* 去除多余空格，即连续空格只保留一个 */
 				if (!prev_space) {
 					zend_write(" ", sizeof(" ") - 1);
 					prev_space = 1;
 				}
 						/* lack of break; is intentional */
-			case T_COMMENT:
-			case T_DOC_COMMENT:
+			case T_COMMENT: /* 去除注释 */
+			case T_DOC_COMMENT: /* 去除注释 */
 				token.type = 0;
 				continue;
 			
-			case T_END_HEREDOC:
+			case T_END_HEREDOC: /* 去除heredoc end */
 				zend_write((char*)LANG_SCNG(yy_text), LANG_SCNG(yy_leng));
 				/* read the following character, either newline or ; */
 				if (lex_scan(&token TSRMLS_CC) != T_WHITESPACE) {
@@ -211,7 +211,7 @@ ZEND_API void zend_strip(TSRMLS_D)
 					break;
 
 				default:
-					STR_FREE(token.value.str.val);
+					STR_FREE(token.value.str.val); /* 等价于 if (token.value.str.val) { str_efree(token.value.str.val); }*/
 					break;
 			}
 		}

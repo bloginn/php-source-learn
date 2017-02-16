@@ -1550,7 +1550,7 @@ int zend_std_object_get_class_name(const zval *object, const char **class_name, 
 }
 /* }}} */
 
-ZEND_API int zend_std_cast_object_tostring(zval *readobj, zval *writeobj, int type TSRMLS_DC) /* {{{ */
+ZEND_API int zend_std_cast_object_tostring(zval *readobj, zval *writeobj, int type TSRMLS_DC)/* 将对象类型转换成其他类型(type) */ /* {{{ */
 {
 	zval *retval;
 	zend_class_entry *ce;
@@ -1569,7 +1569,7 @@ ZEND_API int zend_std_cast_object_tostring(zval *readobj, zval *writeobj, int ty
 					return FAILURE;
 				}
 				if (EXPECTED(Z_TYPE_P(retval) == IS_STRING)) {
-					INIT_PZVAL(writeobj);
+					INIT_PZVAL(writeobj);/* 等价于writeobj->refcount__gc=1;writeobj->is_ref__gc=0; */
 					if (readobj == writeobj) {
 						zval_dtor(readobj);
 					}
@@ -1580,7 +1580,7 @@ ZEND_API int zend_std_cast_object_tostring(zval *readobj, zval *writeobj, int ty
 					return SUCCESS;
 				} else {
 					zval_ptr_dtor(&retval);
-					INIT_PZVAL(writeobj);
+					INIT_PZVAL(writeobj);/* 等价于writeobj->refcount__gc=1;writeobj->is_ref__gc=0; */
 					if (readobj == writeobj) {
 						zval_dtor(readobj);
 					}
@@ -1591,13 +1591,13 @@ ZEND_API int zend_std_cast_object_tostring(zval *readobj, zval *writeobj, int ty
 			}
 			return FAILURE;
 		case IS_BOOL:
-			INIT_PZVAL(writeobj);
+			INIT_PZVAL(writeobj);/* 等价于writeobj->refcount__gc=1;writeobj->is_ref__gc=0; */
 			ZVAL_BOOL(writeobj, 1);
 			return SUCCESS;
 		case IS_LONG:
 			ce = Z_OBJCE_P(readobj);
-			zend_error(E_NOTICE, "Object of class %s could not be converted to int", ce->name);
-			INIT_PZVAL(writeobj);
+			zend_error(E_NOTICE, "Object of class %s could not be converted to int", ce->name); /* 常见类似PHP语句 (int)($object); 报错*/
+			INIT_PZVAL(writeobj);/* 等价于writeobj->refcount__gc=1;writeobj->is_ref__gc=0; */
 			if (readobj == writeobj) {
 				zval_dtor(readobj);
 			}
@@ -1606,14 +1606,14 @@ ZEND_API int zend_std_cast_object_tostring(zval *readobj, zval *writeobj, int ty
 		case IS_DOUBLE:
 			ce = Z_OBJCE_P(readobj);
 			zend_error(E_NOTICE, "Object of class %s could not be converted to double", ce->name);
-			INIT_PZVAL(writeobj);
+			INIT_PZVAL(writeobj);/* 等价于writeobj->refcount__gc=1;writeobj->is_ref__gc=0; */
 			if (readobj == writeobj) {
 				zval_dtor(readobj);
 			}
 			ZVAL_DOUBLE(writeobj, 1);
 			return SUCCESS;
 		default:
-			INIT_PZVAL(writeobj);
+			INIT_PZVAL(writeobj);/* 等价于writeobj->refcount__gc=1;writeobj->is_ref__gc=0; */
 			Z_TYPE_P(writeobj) = IS_NULL;
 			break;
 	}

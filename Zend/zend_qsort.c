@@ -23,9 +23,9 @@
 
 #include <limits.h>
 
-#define QSORT_STACK_SIZE (sizeof(size_t) * CHAR_BIT)
+#define QSORT_STACK_SIZE (sizeof(size_t) * CHAR_BIT) /* 等于64 size_t是标准C库中定义的，应为unsigned int，在64位系统中为 long unsigned int;CHAR_BIT表示char的位数，一般为8，该常量在limits.h中 */
 
-static void _zend_qsort_swap(void *a, void *b, size_t siz)
+static void _zend_qsort_swap(void *a, void *b, size_t siz) /* 比较难以理解，后期研究 */
 {
 	register char  *tmp_a_char;
 	register char  *tmp_b_char;
@@ -54,7 +54,7 @@ static void _zend_qsort_swap(void *a, void *b, size_t siz)
 	}
 }
 
-ZEND_API void zend_qsort_r(void *base, size_t nmemb, size_t siz, compare_r_func_t compare, void *arg TSRMLS_DC)
+ZEND_API void zend_qsort_r(void *base, size_t nmemb, size_t siz, compare_r_func_t compare, void *arg TSRMLS_DC) /* 比较难以理解，后期研究 */
 {
 	void           *begin_stack[QSORT_STACK_SIZE];
 	void           *end_stack[QSORT_STACK_SIZE];

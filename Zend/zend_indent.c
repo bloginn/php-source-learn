@@ -43,11 +43,11 @@ static void handle_whitespace(int *emit_whitespace)
 			}
 		}
 	}
-	memset(emit_whitespace, 0, sizeof(int)*256);
+	memset(emit_whitespace, 0, sizeof(int)*256);/* memset(void *s,int ch,size_t n)是计算机中C/C++语言函数。将s所指向的某一块内存中的前n个 字节的内容全部设置为ch指定的ASCII值， 第一个值为指定的内存地址，块的大小由第三个参数指定，这个函数通常为新申请的内存做初始化工作， 其返回值为指向s的指针。该函数对数组操作时只能用于数组的置0或-1，其他值无效。 */
 }
 
 
-ZEND_API void zend_indent()
+ZEND_API void zend_indent() /* 该函数无处使用，不再研究 */
 {
 	zval token;
 	int token_type;

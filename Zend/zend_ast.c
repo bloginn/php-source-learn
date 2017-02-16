@@ -19,11 +19,11 @@
 
 /* $Id$ */
 
-#include "zend_ast.h"
+#include "zend_ast.h" /* ast=abstract syntax tree 抽象语法树*/
 #include "zend_API.h"
 #include "zend_operators.h"
 
-ZEND_API zend_ast *zend_ast_create_constant(zval *zv)
+ZEND_API zend_ast *zend_ast_create_constant(zval *zv) /* 语法解析器调用，主要创建常量 */
 {
 	zend_ast *ast = emalloc(sizeof(zend_ast) + sizeof(zval));
 	ast->kind = ZEND_CONST;
@@ -33,16 +33,16 @@ ZEND_API zend_ast *zend_ast_create_constant(zval *zv)
 	return ast;
 }
 
-ZEND_API zend_ast* zend_ast_create_unary(uint kind, zend_ast *op0)
+ZEND_API zend_ast* zend_ast_create_unary(uint kind, zend_ast *op0) /* 语法解析器调用，主要用于!~-+四个符号接常量时调用 */
 {
 	zend_ast *ast = emalloc(sizeof(zend_ast));
-	ast->kind = kind;
+	ast->kind = kind; /* kind主要有ZEND_BOOL_NOT,ZEND_BW_NOT,ZEND_UNARY_PLUS,ZEND_UNARY_MINUS */
 	ast->children = 1;
 	(&ast->u.child)[0] = op0;
 	return ast;
 }
 
-ZEND_API zend_ast* zend_ast_create_binary(uint kind, zend_ast *op0, zend_ast *op1)
+ZEND_API zend_ast* zend_ast_create_binary(uint kind, zend_ast *op0, zend_ast *op1) /* 语法解析器调用，主要用于两个常量的逻辑运算调用 */
 {
 	zend_ast *ast = emalloc(sizeof(zend_ast) + sizeof(zend_ast*));
 	ast->kind = kind;
@@ -52,7 +52,7 @@ ZEND_API zend_ast* zend_ast_create_binary(uint kind, zend_ast *op0, zend_ast *op
 	return ast;
 }
 
-ZEND_API zend_ast* zend_ast_create_ternary(uint kind, zend_ast *op0, zend_ast *op1, zend_ast *op2)
+ZEND_API zend_ast* zend_ast_create_ternary(uint kind, zend_ast *op0, zend_ast *op1, zend_ast *op2) /* 语法解析器调用，主要用于三元运算符调用 */
 {
 	zend_ast *ast = emalloc(sizeof(zend_ast) + sizeof(zend_ast*) * 2);
 	ast->kind = kind;
@@ -63,7 +63,7 @@ ZEND_API zend_ast* zend_ast_create_ternary(uint kind, zend_ast *op0, zend_ast *o
 	return ast;
 }
 
-ZEND_API zend_ast* zend_ast_create_dynamic(uint kind)
+ZEND_API zend_ast* zend_ast_create_dynamic(uint kind) /* 语法解析器调用，主要用于数组双箭头=>的调用 */
 {
 	zend_ast *ast = emalloc(sizeof(zend_ast) + sizeof(zend_ast*) * 3); /* use 4 children as deafult */
 	ast->kind = kind;
@@ -71,7 +71,7 @@ ZEND_API zend_ast* zend_ast_create_dynamic(uint kind)
 	return ast;
 }
 
-ZEND_API void zend_ast_dynamic_add(zend_ast **ast, zend_ast *op)
+ZEND_API void zend_ast_dynamic_add(zend_ast **ast, zend_ast *op) /* 语法解析器调用，配合zend_ast_create_dynamic使用，添加数组的值 */ 
 {
 	if ((*ast)->children >= 4 && (*ast)->children == ((*ast)->children & -(*ast)->children)) {
 		*ast = erealloc(*ast, sizeof(zend_ast) + sizeof(zend_ast*) * ((*ast)->children * 2 + 1));
@@ -84,7 +84,7 @@ ZEND_API void zend_ast_dynamic_shrink(zend_ast **ast)
 	*ast = erealloc(*ast, sizeof(zend_ast) + sizeof(zend_ast*) * ((*ast)->children - 1));
 }
 
-ZEND_API int zend_ast_is_ct_constant(zend_ast *ast)
+ZEND_API int zend_ast_is_ct_constant(zend_ast *ast) /* zend_compile.c的zend_do_constant_expression函数调用 */
 {
 	int i;
 
@@ -102,17 +102,17 @@ ZEND_API int zend_ast_is_ct_constant(zend_ast *ast)
 	}
 }
 
-ZEND_API void zend_ast_evaluate(zval *result, zend_ast *ast, zend_class_entry *scope TSRMLS_DC)
+ZEND_API void zend_ast_evaluate(zval *result, zend_ast *ast, zend_class_entry *scope TSRMLS_DC) /* zend_compile.c的zend_do_constant_expression函数和zend_execute_API.c中调用，主要用于逻辑求值 */ 
 {
 	zval op1, op2;
 
 	switch (ast->kind) {
-		case ZEND_ADD:
-			zend_ast_evaluate(&op1, (&ast->u.child)[0], scope TSRMLS_CC);
-			zend_ast_evaluate(&op2, (&ast->u.child)[1], scope TSRMLS_CC);
-			add_function(result, &op1, &op2 TSRMLS_CC);
-			zval_dtor(&op1);
-			zval_dtor(&op2);
+		case ZEND_ADD: /* 以加法运算为例:当语法解析器遇到加法运算时调用zend_ast_create_binary将+符号两边的数值分别存在child[0]和child[1]中 */
+			zend_ast_evaluate(&op1, (&ast->u.child)[0], scope TSRMLS_CC); /* 将child[0]赋值给op1 */
+			zend_ast_evaluate(&op2, (&ast->u.child)[1], scope TSRMLS_CC); /* 将child[1]赋值给op2 */
+			add_function(result, &op1, &op2 TSRMLS_CC); /* 然后调用zend_operators.c中的add_function将op1,op2相加赋值给result */
+			zval_dtor(&op1); /* 然后调用析构函数zval_dtor处理op1的值 */
+			zval_dtor(&op2); /* 然后调用析构函数zval_dtor处理op2的值 */
 			break;
 		case ZEND_SUB:
 			zend_ast_evaluate(&op1, (&ast->u.child)[0], scope TSRMLS_CC);
@@ -347,7 +347,7 @@ ZEND_API void zend_ast_evaluate(zval *result, zend_ast *ast, zend_class_entry *s
 	}
 }
 
-ZEND_API zend_ast *zend_ast_copy(zend_ast *ast)
+ZEND_API zend_ast *zend_ast_copy(zend_ast *ast) /* 复制ast数据 */
 {
 	if (ast == NULL) {
 		return NULL;
@@ -368,7 +368,7 @@ ZEND_API zend_ast *zend_ast_copy(zend_ast *ast)
 	return zend_ast_create_dynamic(ast->kind);
 }
 
-ZEND_API void zend_ast_destroy(zend_ast *ast)
+ZEND_API void zend_ast_destroy(zend_ast *ast) /* 释放ast数据 */
 {
 	int i;
 

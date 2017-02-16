@@ -388,7 +388,7 @@ ZEND_API const char *get_active_function_name(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API const char *zend_get_executed_filename(TSRMLS_D) /* {{{ */
+ZEND_API const char *zend_get_executed_filename(TSRMLS_D)/* 获取当前被执行的文件名称的绝对路径 */ /* {{{ */
 {
 	if (EG(active_op_array)) {
 		return EG(active_op_array)->filename;
@@ -398,11 +398,11 @@ ZEND_API const char *zend_get_executed_filename(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API uint zend_get_executed_lineno(TSRMLS_D) /* {{{ */
+ZEND_API uint zend_get_executed_lineno(TSRMLS_D)/* 获取当前被执行的文件行数 */ /* {{{ */
 {
-	if(EG(exception) && EG(opline_ptr) && active_opline->opcode == ZEND_HANDLE_EXCEPTION &&
+	if(EG(exception) && EG(opline_ptr) && active_opline->opcode == ZEND_HANDLE_EXCEPTION && /* //zend_execute.h:#define active_opline (*EG(opline_ptr)) */
 		active_opline->lineno == 0 && EG(opline_before_exception)) {
-		return EG(opline_before_exception)->lineno;
+		return EG(opline_before_exception)->lineno;/* 等价(executor_globals.opline_before_exception)->lineno */
 	}
 	if (EG(opline_ptr)) {
 		return active_opline->lineno;
@@ -412,7 +412,7 @@ ZEND_API uint zend_get_executed_lineno(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API zend_bool zend_is_executing(TSRMLS_D) /* {{{ */
+ZEND_API zend_bool zend_is_executing(TSRMLS_D)/* 获取opcode是否正在执行中 */ /* {{{ */
 {
 	return EG(in_execution);
 }

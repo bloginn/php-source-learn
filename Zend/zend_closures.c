@@ -45,7 +45,7 @@ typedef struct _zend_closure {
 ZEND_API zend_class_entry *zend_ce_closure;
 static zend_object_handlers closure_handlers;
 
-ZEND_METHOD(Closure, __invoke) /* {{{ */
+ZEND_METHOD(Closure, __invoke) /* {{{ */ /* 等价 void zim_Closure___invoke(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	zend_function *func = EG(current_execute_data)->function_state.function;
 	zval ***arguments;
@@ -72,7 +72,7 @@ ZEND_METHOD(Closure, __invoke) /* {{{ */
 
 /* {{{ proto Closure Closure::bind(Closure $old, object $to [, mixed $scope = "static" ] )
    Create a closure from another one and bind to another object and scope */
-ZEND_METHOD(Closure, bind)
+ZEND_METHOD(Closure, bind)	/* 等价 void zim_Closure_bind(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	zval *newthis, *zclosure, *scope_arg = NULL;
 	zend_closure *closure;

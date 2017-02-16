@@ -1014,7 +1014,7 @@ static int do_cli(int argc, char **argv TSRMLS_DC) /* {{{ */
 				zend_syntax_highlighter_ini syntax_highlighter_ini;
 
 				if (open_file_for_scanning(&file_handle TSRMLS_CC)==SUCCESS) {
-					php_get_highlight_struct(&syntax_highlighter_ini);
+					php_get_highlight_struct(&syntax_highlighter_ini); /* php_get_highlight_struct函数在PHP标准函数ext/standard/basic_functions.c文件中*/
 					zend_highlight(&syntax_highlighter_ini TSRMLS_CC);
 				}
 				goto out;

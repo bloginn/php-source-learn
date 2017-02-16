@@ -25,7 +25,7 @@
 ZEND_API void zend_init_fpu(TSRMLS_D) /* {{{ */
 {
 #if XPFPA_HAVE_CW
-	XPFPA_DECLARE
+	XPFPA_DECLARE /* 等价unsigned int _xpfpa_fpu_oldcw, _xpfpa_fpu_cw; */
 	
 	if (!EG(saved_fpu_cw_ptr)) {
 		EG(saved_fpu_cw_ptr) = (void*)&EG(saved_fpu_cw);

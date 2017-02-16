@@ -43,9 +43,9 @@ void zend_interned_strings_init(TSRMLS_D)
 	size_t size = 1024 * 1024;
 
 #if ZEND_DEBUG_INTERNED_STRINGS
-	CG(interned_strings_start) = valloc(size);
+	CG(interned_strings_start) = valloc(size); /* 在GNU系统中，malloc或realloc返回的内存块地址都是8的倍数（如果是64位系统，则为16的倍数）。如果你需要更大的粒度，请使用memalign或valloc。这些函数在头文件“stdlib.h”中声明 */
 #else
-	CG(interned_strings_start) = malloc(size);
+	CG(interned_strings_start) = malloc(size); /* CG(interned_strings_start)等价全局变量compiler_globals.interned_strings_start */
 #endif
 
 	CG(interned_strings_top) = CG(interned_strings_start);
@@ -58,7 +58,7 @@ void zend_interned_strings_init(TSRMLS_D)
 	CG(interned_strings).arBuckets = (Bucket **) pecalloc(CG(interned_strings).nTableSize, sizeof(Bucket *), CG(interned_strings).persistent);
 
 #if ZEND_DEBUG_INTERNED_STRINGS
-	mprotect(CG(interned_strings_start), CG(interned_strings_end) - CG(interned_strings_start), PROT_READ);
+	mprotect(CG(interned_strings_start), CG(interned_strings_end) - CG(interned_strings_start), PROT_READ); /* mprotect()函数可以用来修改这段指定内存区域的保护属性为可读 */
 #endif
 
     /* interned empty string */
@@ -88,11 +88,11 @@ static const char *zend_new_interned_string_int(const char *arKey, int nKeyLengt
 	uint nIndex;
 	Bucket *p;
 
-	if (IS_INTERNED(arKey)) {
+	if (IS_INTERNED(arKey)) { /* IS_INTERNED在zend_string.h中38行定义，表示arKey是非在interned_strings_start和interned_strings_end之间 */
 		return arKey;
 	}
 
-	h = zend_inline_hash_func(arKey, nKeyLength);
+	h = zend_inline_hash_func(arKey, nKeyLength); /* 使用times33算法将字符串转换成整数 */
 	nIndex = h & CG(interned_strings).nTableMask;
 	p = CG(interned_strings).arBuckets[nIndex];
 	while (p != NULL) {
@@ -117,7 +117,7 @@ static const char *zend_new_interned_string_int(const char *arKey, int nKeyLengt
 	CG(interned_strings_top) += ZEND_MM_ALIGNED_SIZE(sizeof(Bucket) + nKeyLength);
 
 #if ZEND_DEBUG_INTERNED_STRINGS
-	mprotect(CG(interned_strings_start), CG(interned_strings_end) - CG(interned_strings_start), PROT_READ | PROT_WRITE);
+	mprotect(CG(interned_strings_start), CG(interned_strings_end) - CG(interned_strings_start), PROT_READ | PROT_WRITE); /* mprotect()函数可以用来修改这段指定内存区域的保护属性为可读可写 */
 #endif
 	
 	p->arKey = (char*)(p+1);

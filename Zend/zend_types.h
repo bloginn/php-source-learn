@@ -22,11 +22,11 @@
 #ifndef ZEND_TYPES_H
 #define ZEND_TYPES_H
 
-typedef unsigned char zend_bool;
-typedef unsigned char zend_uchar;
-typedef unsigned int zend_uint;
-typedef unsigned long zend_ulong;
-typedef unsigned short zend_ushort;
+typedef unsigned char zend_bool; /* 无符号布尔类型 */
+typedef unsigned char zend_uchar; /* 无符号字符类型 */
+typedef unsigned int zend_uint; /* 无符号整数类型 */
+typedef unsigned long zend_ulong; /* 无符号长整数类型 */
+typedef unsigned short zend_ushort; /* 无符号短整数类型 */
 
 #define HAVE_ZEND_LONG64
 #ifdef ZEND_WIN32

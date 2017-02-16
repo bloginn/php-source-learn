@@ -41,27 +41,27 @@
 #include "ext/bcmath/libbcmath/src/bcmath.h"
 #endif
 
-#define LONG_SIGN_MASK (1L << (8*sizeof(long)-1))
+#define LONG_SIGN_MASK (1L << (8*sizeof(long)-1)) /* 1L表示将1强制转换成long型，LONG_SIGN_MASK在64位操作系统中为-9223372036854775808 */
 
 BEGIN_EXTERN_C()
-ZEND_API int add_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int sub_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int mul_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int pow_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int div_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int mod_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int boolean_xor_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int boolean_not_function(zval *result, zval *op1 TSRMLS_DC);
-ZEND_API int bitwise_not_function(zval *result, zval *op1 TSRMLS_DC);
-ZEND_API int bitwise_or_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int bitwise_and_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int bitwise_xor_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int shift_left_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int shift_right_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int concat_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
+ZEND_API int add_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值相加的处理函数 */
+ZEND_API int sub_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值相减的处理函数 */
+ZEND_API int mul_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值相乘的处理函数 */
+ZEND_API int pow_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值次方的处理函数 */
+ZEND_API int div_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值相除的处理函数 */
+ZEND_API int mod_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值求余的处理函数 */
+ZEND_API int boolean_xor_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个布尔值异或的处理函数 */
+ZEND_API int boolean_not_function(zval *result, zval *op1 TSRMLS_DC);/* 布尔值取非的处理函数 */
+ZEND_API int bitwise_not_function(zval *result, zval *op1 TSRMLS_DC);/* 取反的处理函数 */
+ZEND_API int bitwise_or_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值逻辑或的处理函数 */
+ZEND_API int bitwise_and_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值逻辑且的处理函数 */
+ZEND_API int bitwise_xor_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值异或的处理函数 */
+ZEND_API int shift_left_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 按位左移处理函数 */
+ZEND_API int shift_right_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 按位右移处理函数 */
+ZEND_API int concat_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 两个值合并的处理函数 */
 
-ZEND_API int is_equal_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
-ZEND_API int is_identical_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
+ZEND_API int is_equal_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 比较两个值是否相等 */ 
+ZEND_API int is_identical_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);/* 比较两个值是否完全相同，相同返回1，identical完全相同的意思 */
 ZEND_API int is_not_identical_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
 ZEND_API int is_not_equal_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
 ZEND_API int is_smaller_function(zval *result, zval *op1, zval *op2 TSRMLS_DC);
@@ -74,7 +74,7 @@ END_EXTERN_C()
 #if ZEND_DVAL_TO_LVAL_CAST_OK
 # define zend_dval_to_lval(d) ((long) (d))
 #elif SIZEOF_LONG == 4
-static zend_always_inline long zend_dval_to_lval(double d)
+static zend_always_inline long zend_dval_to_lval(double d) /* #define zend_always_inline inline */
 {
 	if (d > LONG_MAX || d < LONG_MIN) {
 		double	two_pow_32 = pow(2., 32.),
@@ -111,8 +111,8 @@ static zend_always_inline long zend_dval_to_lval(double d)
 #endif
 /* }}} */
 
-#define ZEND_IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
-#define ZEND_IS_XDIGIT(c) (((c) >= 'A' && (c) <= 'F') || ((c) >= 'a' && (c) <= 'f'))
+#define ZEND_IS_DIGIT(c) ((c) >= '0' && (c) <= '9') /* digit数字的意思 */
+#define ZEND_IS_XDIGIT(c) (((c) >= 'A' && (c) <= 'F') || ((c) >= 'a' && (c) <= 'f')) /* XDIGIT表示十六进制数字使用的字符即 [a-fA-F] */
 
 /**
  * Checks whether the string "str" with length "length" is numeric. The value
@@ -130,7 +130,7 @@ static zend_always_inline long zend_dval_to_lval(double d)
  * if the integer is larger than LONG_MAX and -1 if it's smaller than LONG_MIN.
  */
 static inline zend_uchar is_numeric_string_ex(const char *str, int length, long *lval, double *dval, int allow_errors, int *oflow_info)
-{
+{/* 判断str的前length长度段是否为数值字符串，例如"123abc"前3个为数值，如果不为数值返回0，如果为数值，返回是LONG还是DOUBLE */
 	const char *ptr;
 	int base = 10, digits = 0, dp_or_e = 0;
 	double local_dval = 0.0;
@@ -303,7 +303,7 @@ zend_memnstr(const char *haystack, const char *needle, int needle_len, char *end
 	return NULL;
 }
 
-static inline const void *zend_memrchr(const void *s, int c, size_t n)
+static inline const void *zend_memrchr(const void *s, int c, size_t n)/* 从s指定内存区域的前n个字节中查找最后一个字符c,并返回该字符的指针 */
 {
 	register const unsigned char *e;
 

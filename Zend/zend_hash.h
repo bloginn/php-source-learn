@@ -266,8 +266,8 @@ ZEND_API void _zend_hash_splice(HashTable *ht, uint nDataSize, copy_ctor_func_t 
  *                  -- Ralf S. Engelschall <rse@engelschall.com>
  */
 
-static inline ulong zend_inline_hash_func(const char *arKey, uint nKeyLength)
-{
+static inline ulong zend_inline_hash_func(const char *arKey, uint nKeyLength) /* 使用times33算法将字符串转换成整数 */
+{ /* PHP在哈希算法上有所优化，使用了(hash<<5)+hash，效率有所提高。至于hash的初始值为什么为一个大素数5381，要数学上来解释了，不是很理解。 */
 	register ulong hash = 5381;
 
 	/* variant with the hash unrolled eight times */

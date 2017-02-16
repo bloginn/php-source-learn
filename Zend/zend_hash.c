@@ -198,25 +198,25 @@ ZEND_API int _zend_hash_init(HashTable *ht, uint nSize, dtor_func_t pDestructor,
 
 	SET_INCONSISTENT(HT_OK); /* ZEND_DEBUG时表示 ht->inconsistent = 0;否则无操作 */
 
-	if (nSize >= 0x80000000) {
+	if (nSize >= 0x80000000) {/* hash表的大小最多为0x80000000 */
 		/* prevent overflow */
 		ht->nTableSize = 0x80000000;
 	} else {
-		while ((1U << i) < nSize) {
+		while ((1U << i) < nSize) { /* hash表的大小最小为8,且大于nSize的下一个2的n次方值 */
 			i++;
 		}
 		ht->nTableSize = 1 << i;
 	}
 
 	ht->nTableMask = 0;	/* 0 means that ht->arBuckets is uninitialized */
-	ht->pDestructor = pDestructor;
+	ht->pDestructor = pDestructor;/* 设置析构函数 */
 	ht->arBuckets = (Bucket**)&uninitialized_bucket;
 	ht->pListHead = NULL;
 	ht->pListTail = NULL;
 	ht->nNumOfElements = 0;
 	ht->nNextFreeElement = 0;
 	ht->pInternalPointer = NULL;
-	ht->persistent = persistent;
+	ht->persistent = persistent;/* 是否持久化 */
 	ht->nApplyCount = 0;
 	ht->bApplyProtection = 1;
 	return SUCCESS;
@@ -545,7 +545,7 @@ ZEND_API void zend_hash_destroy(HashTable *ht)
 		q = p;
 		p = p->pListNext;
 		if (ht->pDestructor) {
-			ht->pDestructor(q->pData);
+			ht->pDestructor(q->pData);/* 如果有析构函数,则调用 */
 		}
 		if (q->pData != &q->pDataPtr) {
 			pefree(q->pData, ht->persistent);
@@ -629,7 +629,7 @@ ZEND_API void zend_hash_graceful_reverse_destroy(HashTable *ht)
  * ZEND_HASH_APPLY_REMOVE - delete the element, combineable with the former
  */
 
-ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)
+ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)/* 通过遍历ht的hash的值回调apply_func(p->pData)函数 */
 {
 	Bucket *p;
 
@@ -641,8 +641,8 @@ ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)
 		int result = apply_func(p->pData TSRMLS_CC);
 
 		Bucket *p_next = p->pListNext;
-		if (result & ZEND_HASH_APPLY_REMOVE) {
-			zend_hash_bucket_delete(ht, p);
+		if (result & ZEND_HASH_APPLY_REMOVE) {/* ZEND_HASH_APPLY_REMOVE等于1 */
+			zend_hash_bucket_delete(ht, p);/* 删除p */
 		}
 		p = p_next;
 
@@ -654,7 +654,7 @@ ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)
 }
 
 
-ZEND_API void zend_hash_apply_with_argument(HashTable *ht, apply_func_arg_t apply_func, void *argument TSRMLS_DC)
+ZEND_API void zend_hash_apply_with_argument(HashTable *ht, apply_func_arg_t apply_func, void *argument TSRMLS_DC)/* 通过遍历ht的hash的值回调apply_func(p->pData, argument)函数 */
 {
 	Bucket *p;
 
@@ -666,8 +666,8 @@ ZEND_API void zend_hash_apply_with_argument(HashTable *ht, apply_func_arg_t appl
 		int result = apply_func(p->pData, argument TSRMLS_CC);
 		
 		Bucket *p_next = p->pListNext;
-		if (result & ZEND_HASH_APPLY_REMOVE) {
-			zend_hash_bucket_delete(ht, p);
+		if (result & ZEND_HASH_APPLY_REMOVE) {/* ZEND_HASH_APPLY_REMOVE等于1 */
+			zend_hash_bucket_delete(ht, p);/* 删除p */
 		}
 		p = p_next;
 

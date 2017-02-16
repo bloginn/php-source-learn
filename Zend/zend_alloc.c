@@ -38,11 +38,11 @@
 #endif
 
 #ifndef ZEND_MM_HEAP_PROTECTION
-# define ZEND_MM_HEAP_PROTECTION ZEND_DEBUG
+# define ZEND_MM_HEAP_PROTECTION ZEND_DEBUG /* 内存管理堆保护 */
 #endif
 
 #ifndef ZEND_MM_SAFE_UNLINKING
-# define ZEND_MM_SAFE_UNLINKING 1
+# define ZEND_MM_SAFE_UNLINKING 1 /* 内存管理安全断开 */
 #endif
 
 #ifndef ZEND_MM_COOKIES
@@ -50,17 +50,17 @@
 #endif
 
 #ifdef _WIN64
-# define PTR_FMT "0x%0.16I64x"
+# define PTR_FMT "0x%0.16I64x" /* 用于sprintf的format格式 */
 /*
 #elif sizeof(long) == 8
 # define PTR_FMT "0x%0.16lx"
 */
 #else
-# define PTR_FMT "0x%0.8lx"
+# define PTR_FMT "0x%0.8lx" /* 用于sprintf的format格式 */
 #endif
 
 #if ZEND_DEBUG
-void zend_debug_alloc_output(char *format, ...)
+void zend_debug_alloc_output(char *format, ...)/* 调试打印信息，标准错误形式打印到屏幕 */
 {
 	char output_buf[256];
 	va_list args;
@@ -70,7 +70,7 @@ void zend_debug_alloc_output(char *format, ...)
 	va_end(args);
 
 #ifdef ZEND_WIN32
-	OutputDebugString(output_buf);
+	OutputDebugString(output_buf);/* wind32系统编辑器的调试打印 */
 #else
 	fprintf(stderr, "%s", output_buf);
 #endif
@@ -81,7 +81,7 @@ void zend_debug_alloc_output(char *format, ...)
 static void zend_mm_panic(const char *message) __attribute__ ((noreturn));
 #endif
 
-static void zend_mm_panic(const char *message)
+static void zend_mm_panic(const char *message)/* 信息标准错误形式打印到屏幕，并且结束进程 */
 {
 	fprintf(stderr, "%s\n", message);
 /* See http://support.microsoft.com/kb/190351 */
@@ -89,7 +89,7 @@ static void zend_mm_panic(const char *message)
 	fflush(stderr);
 #endif
 #if ZEND_DEBUG && defined(HAVE_KILL) && defined(HAVE_GETPID)
-	kill(getpid(), SIGSEGV);
+	kill(getpid(), SIGSEGV);/* 获取进程ID，杀掉进程 */
 #endif
 	exit(1);
 }
@@ -121,8 +121,8 @@ static void zend_mm_panic(const char *message)
 #  endif
 # endif
 # include <sys/mman.h>
-# ifndef MAP_ANON
-#  ifdef MAP_ANONYMOUS
+# ifndef MAP_ANON /* anon佚名，佚名不是没有姓名的人，而是作者没有署名，或是由于时间久远等原因作者的真实姓名查无根据，或者根本就无法知道作者是谁 */
+#  ifdef MAP_ANONYMOUS /* anonymous匿名，是一种不具名或使用化名的行为，相对于具真实身份的行为。匿名目的是不想表露自己身份，或者因为多种原因身份/特征不明。 */
 #   define MAP_ANON MAP_ANONYMOUS
 #  endif
 # endif
@@ -134,29 +134,29 @@ static void zend_mm_panic(const char *message)
 # endif
 #endif
 
-static zend_mm_storage* zend_mm_mem_dummy_init(void *params)
+static zend_mm_storage* zend_mm_mem_dummy_init(void *params)/* 分配虚拟内存，dummy虚拟 */
 {
 	return malloc(sizeof(zend_mm_storage));
 }
 
-static void zend_mm_mem_dummy_dtor(zend_mm_storage *storage)
+static void zend_mm_mem_dummy_dtor(zend_mm_storage *storage)/* 释放虚拟内存 */
 {
 	free(storage);
 }
 
-static void zend_mm_mem_dummy_compact(zend_mm_storage *storage)
+static void zend_mm_mem_dummy_compact(zend_mm_storage *storage)/* 内存压缩函数，空操作 */
 {
 }
 
 #if defined(HAVE_MEM_MMAP_ANON) || defined(HAVE_MEM_MMAP_ZERO)
 
-static zend_mm_segment* zend_mm_mem_mmap_realloc(zend_mm_storage *storage, zend_mm_segment* segment, size_t size)
+static zend_mm_segment* zend_mm_mem_mmap_realloc(zend_mm_storage *storage, zend_mm_segment* segment, size_t size)/* 重新调整内存段大小,re重新的意思 */
 {
 	zend_mm_segment *ret;
-#ifdef HAVE_MREMAP
+#ifdef HAVE_MREMAP /* 164endif*/
 #if defined(__NetBSD__)
 	/* NetBSD 5 supports mremap but takes an extra newp argument */
-	ret = (zend_mm_segment*)mremap(segment, segment->size, segment, size, MREMAP_MAYMOVE);
+	ret = (zend_mm_segment*)mremap(segment, segment->size, segment, size, MREMAP_MAYMOVE);/* mremap()扩大（或缩小）现有的内存映射，潜在的移动它在同一时间（由flags参数和可用的虚拟地址空间控制） */
 #else
 	ret = (zend_mm_segment*)mremap(segment, segment->size, size, MREMAP_MAYMOVE);
 #endif
@@ -173,18 +173,18 @@ static zend_mm_segment* zend_mm_mem_mmap_realloc(zend_mm_storage *storage, zend_
 	return ret;
 }
 
-static void zend_mm_mem_mmap_free(zend_mm_storage *storage, zend_mm_segment* segment)
+static void zend_mm_mem_mmap_free(zend_mm_storage *storage, zend_mm_segment* segment)/* 释放内存段 */
 {
-	munmap((void*)segment, segment->size);
+	munmap((void*)segment, segment->size);/* 用来取消参数(void*)segment所指的映射内存起始地址，参数segment->size则是欲取消的内存大小 */
 }
 
 #endif
 
 #ifdef HAVE_MEM_MMAP_ANON
 
-static zend_mm_segment* zend_mm_mem_mmap_anon_alloc(zend_mm_storage *storage, size_t size)
+static zend_mm_segment* zend_mm_mem_mmap_anon_alloc(zend_mm_storage *storage, size_t size)/* 分配佚名内存 */
 {
-	zend_mm_segment *ret = (zend_mm_segment*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+	zend_mm_segment *ret = (zend_mm_segment*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);/* mmap()一个文件或者其它对象映射进内存,NULL表示由系统决定映射区的起始地址 */
 	if (ret == MAP_FAILED) {
 		ret = NULL;
 	}
@@ -203,7 +203,7 @@ static zend_mm_storage* zend_mm_mem_mmap_zero_init(void *params)
 {
 	if (zend_mm_dev_zero_fd == -1) {
 		zend_mm_dev_zero_fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
-	}
+	}/* BSD就是通过mmap把/dev/zero映射到虚地址空间实现共享内存的。可以使用mmap将/dev/zero映射到一个虚拟的内存空间，这个操作的效果等同于使用一段匿名的内存（没有和任何文件相关）*/
 	if (zend_mm_dev_zero_fd >= 0) {
 		return malloc(sizeof(zend_mm_storage));
 	} else {
@@ -232,9 +232,9 @@ static zend_mm_segment* zend_mm_mem_mmap_zero_alloc(zend_mm_storage *storage, si
 
 #ifdef HAVE_MEM_WIN32
 
-static zend_mm_storage* zend_mm_mem_win32_init(void *params)
+static zend_mm_storage* zend_mm_mem_win32_init(void *params)/* wind32系统分配内存段的堆栈 */
 {
-	HANDLE heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);
+	HANDLE heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);/* HeapCreate，指的是进程中创建辅助堆栈, HEAP_NO_SERIALIZE：对堆的访问是非独占的，如果一个线程没有完成对堆的操作，其它线程也可以进程堆操作，这个开关是非常危险的，应尽量避免使用 */
 	zend_mm_storage* storage;
 
 	if (heap == NULL) {
@@ -249,7 +249,7 @@ static zend_mm_storage* zend_mm_mem_win32_init(void *params)
 	return storage;
 }
 
-static void zend_mm_mem_win32_dtor(zend_mm_storage *storage)
+static void zend_mm_mem_win32_dtor(zend_mm_storage *storage)/* wind32系统释放内存段的堆栈 */
 {
 	HeapDestroy((HANDLE)storage->data);
 	free(storage);
@@ -261,17 +261,17 @@ static void zend_mm_mem_win32_compact(zend_mm_storage *storage)
     storage->data = (void*)HeapCreate(HEAP_NO_SERIALIZE, 0, 0);
 }
 
-static zend_mm_segment* zend_mm_mem_win32_alloc(zend_mm_storage *storage, size_t size)
+static zend_mm_segment* zend_mm_mem_win32_alloc(zend_mm_storage *storage, size_t size)/* wind32系统分配内存段的方式 */
 {
-	return (zend_mm_segment*) HeapAlloc((HANDLE)storage->data, HEAP_NO_SERIALIZE, size);
+	return (zend_mm_segment*) HeapAlloc((HANDLE)storage->data, HEAP_NO_SERIALIZE, size);/* 在指定的堆上分配内存，并且分配后的内存不可移动 */
 }
 
-static void zend_mm_mem_win32_free(zend_mm_storage *storage, zend_mm_segment* segment)
+static void zend_mm_mem_win32_free(zend_mm_storage *storage, zend_mm_segment* segment)/* wind32系统释放内存段的方式 */
 {
 	HeapFree((HANDLE)storage->data, HEAP_NO_SERIALIZE, segment);
 }
 
-static zend_mm_segment* zend_mm_mem_win32_realloc(zend_mm_storage *storage, zend_mm_segment* segment, size_t size)
+static zend_mm_segment* zend_mm_mem_win32_realloc(zend_mm_storage *storage, zend_mm_segment* segment, size_t size)/* wind32系统重新分配内存段的方式 */
 {
 	return (zend_mm_segment*) HeapReAlloc((HANDLE)storage->data, HEAP_NO_SERIALIZE, segment, size);
 }
@@ -282,17 +282,17 @@ static zend_mm_segment* zend_mm_mem_win32_realloc(zend_mm_storage *storage, zend
 
 #ifdef HAVE_MEM_MALLOC
 
-static zend_mm_segment* zend_mm_mem_malloc_alloc(zend_mm_storage *storage, size_t size)
+static zend_mm_segment* zend_mm_mem_malloc_alloc(zend_mm_storage *storage, size_t size)/* malloc方式分配内存 */
 {
 	return (zend_mm_segment*)malloc(size);
 }
 
-static zend_mm_segment* zend_mm_mem_malloc_realloc(zend_mm_storage *storage, zend_mm_segment *ptr, size_t size)
+static zend_mm_segment* zend_mm_mem_malloc_realloc(zend_mm_storage *storage, zend_mm_segment *ptr, size_t size)/* malloc方式重新分配内存 */
 {
 	return (zend_mm_segment*)realloc(ptr, size);
 }
 
-static void zend_mm_mem_malloc_free(zend_mm_storage *storage, zend_mm_segment *ptr)
+static void zend_mm_mem_malloc_free(zend_mm_storage *storage, zend_mm_segment *ptr)/* malloc方式释放内存 */
 {
 	free(ptr);
 }
@@ -301,9 +301,9 @@ static void zend_mm_mem_malloc_free(zend_mm_storage *storage, zend_mm_segment *p
 
 #endif
 
-static const zend_mm_mem_handlers mem_handlers[] = {
-#ifdef HAVE_MEM_WIN32
-	ZEND_MM_MEM_WIN32_DSC,
+static const zend_mm_mem_handlers mem_handlers[] = {/* PHP在存储层共有4种内存分配方案: malloc，win32，mmap_anon，mmap_zero */
+#ifdef HAVE_MEM_WIN32								/* 默认使用malloc分配内存，如果设置了ZEND_WIN32宏，则为windows版本，调用HeapAlloc分配内存 */
+	ZEND_MM_MEM_WIN32_DSC,							/* 剩下两种内存方案为匿名内存映射，并且PHP的内存方案可以通过设置环境变量来修改 */
 #endif
 #ifdef HAVE_MEM_MALLOC
 	ZEND_MM_MEM_MALLOC_DSC,
@@ -326,11 +326,11 @@ static const zend_mm_mem_handlers mem_handlers[] = {
 /* Heap Manager */
 /****************/
 
-#define MEM_BLOCK_VALID  0x7312F8DC
-#define	MEM_BLOCK_FREED  0x99954317
-#define	MEM_BLOCK_CACHED 0xFB8277DC
-#define	MEM_BLOCK_GUARD  0x2A8FCC84
-#define	MEM_BLOCK_LEAK   0x6C5E8F2D
+#define MEM_BLOCK_VALID  0x7312F8DC /* valid 有效的 */
+#define	MEM_BLOCK_FREED  0x99954317 /* freed 已被释放*/
+#define	MEM_BLOCK_CACHED 0xFB8277DC /* cached 被缓存 */
+#define	MEM_BLOCK_GUARD  0x2A8FCC84 /* guard 保护*/
+#define	MEM_BLOCK_LEAK   0x6C5E8F2D /* leak 泄露 */
 
 /* mm block type */
 typedef struct _zend_mm_block_info {
@@ -368,7 +368,7 @@ typedef struct _zend_mm_block {
 #if ZEND_DEBUG
 	unsigned int magic;
 # ifdef ZTS
-	THREAD_T thread_id;
+	THREAD_T thread_id;/* 线程保护，防止内存被其他线程篡改 */
 # endif
 	zend_mm_debug_info debug;
 #elif ZEND_MM_HEAP_PROTECTION
@@ -381,7 +381,7 @@ typedef struct _zend_mm_small_free_block {
 #if ZEND_DEBUG
 	unsigned int magic;
 # ifdef ZTS
-	THREAD_T thread_id;
+	THREAD_T thread_id;/* 线程保护，防止内存被其他线程篡改 */
 # endif
 #endif
 	struct _zend_mm_free_block *prev_free_block;
@@ -393,14 +393,14 @@ typedef struct _zend_mm_free_block {
 #if ZEND_DEBUG
 	unsigned int magic;
 # ifdef ZTS
-	THREAD_T thread_id;
+	THREAD_T thread_id;/* 线程保护，防止内存被其他线程篡改 */
 # endif
 #endif
 	struct _zend_mm_free_block *prev_free_block;
 	struct _zend_mm_free_block *next_free_block;
 
 	struct _zend_mm_free_block **parent;
-	struct _zend_mm_free_block *child[2];
+	struct _zend_mm_free_block *child[2];/* 树结构 */
 } zend_mm_free_block;
 
 #define ZEND_MM_NUM_BUCKETS (sizeof(size_t) << 3)
@@ -413,7 +413,7 @@ typedef struct _zend_mm_free_block {
 #endif
 
 struct _zend_mm_heap {
-	int                 use_zend_alloc;
+	int                 use_zend_alloc;/* 是否使用ZEND内存管理功能 */
 	void               *(*_malloc)(size_t);
 	void                (*_free)(void*);
 	void               *(*_realloc)(void*, size_t);
@@ -474,7 +474,7 @@ static unsigned int _zend_mm_cookie = 0;
 	(block)->info._cookie = ZEND_MM_COOKIE(block)
 # define ZEND_MM_CHECK_COOKIE(block) \
 	if (UNEXPECTED((block)->info._cookie != ZEND_MM_COOKIE(block))) { \
-		zend_mm_panic("zend_mm_heap corrupted"); \
+		zend_mm_panic("zend_mm_heap corrupted"); \ /* corrupted 被破坏 */
 	}
 #else
 # define ZEND_MM_SET_COOKIE(block)
@@ -482,10 +482,10 @@ static unsigned int _zend_mm_cookie = 0;
 #endif
 
 /* Default memory segment size */
-#define ZEND_MM_SEG_SIZE   (256 * 1024)
+#define ZEND_MM_SEG_SIZE   (256 * 1024) /* 默认内存段大小 */
 
 /* Reserved space for error reporting in case of memory overflow */
-#define ZEND_MM_RESERVE_SIZE            (8*1024)
+#define ZEND_MM_RESERVE_SIZE            (8*1024) /* 内存溢出时错误报告的保留空间 */
 
 #ifdef _WIN64
 # define ZEND_MM_LONG_CONST(x)	(x##i64)
@@ -493,11 +493,11 @@ static unsigned int _zend_mm_cookie = 0;
 # define ZEND_MM_LONG_CONST(x)	(x##L)
 #endif
 
-#define ZEND_MM_TYPE_MASK		ZEND_MM_LONG_CONST(0x3)
+#define ZEND_MM_TYPE_MASK		ZEND_MM_LONG_CONST(0x3) /* 例如Linux中为 0x3L */
 
-#define ZEND_MM_FREE_BLOCK		ZEND_MM_LONG_CONST(0x0)
-#define ZEND_MM_USED_BLOCK		ZEND_MM_LONG_CONST(0x1)
-#define ZEND_MM_GUARD_BLOCK		ZEND_MM_LONG_CONST(0x3)
+#define ZEND_MM_FREE_BLOCK		ZEND_MM_LONG_CONST(0x0) /* 例如Linux中为 0x0L */
+#define ZEND_MM_USED_BLOCK		ZEND_MM_LONG_CONST(0x1) /* 例如Linux中为 0x1L */
+#define ZEND_MM_GUARD_BLOCK		ZEND_MM_LONG_CONST(0x3) /* 例如Linux中为 0x3L */
 
 #define ZEND_MM_BLOCK(b, type, size)	do { \
 											size_t _size = (size); \
@@ -662,7 +662,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC) ZEND_ATTRIBUTE_ALLOC_SIZE(3);
 
-static inline unsigned int zend_mm_high_bit(size_t _size) /* 计算size中最高位的1的比特位是多少 zend_mm_high_bit(512)计算的值为9 */
+static inline unsigned int zend_mm_high_bit(size_t _size) /* 计算_size的二进制的位数减1，例如513的二进制1000000001， zend_mm_high_bit(513)计算的值为9 */
 {
 #if defined(__GNUC__) && (defined(__native_client__) || defined(i386))
 	unsigned int n;
@@ -690,7 +690,7 @@ static inline unsigned int zend_mm_high_bit(size_t _size) /* 计算size中最高
 #endif
 }
 
-static inline unsigned int zend_mm_low_bit(size_t _size)
+static inline unsigned int zend_mm_low_bit(size_t _size)/* 返回二进制右起第一个1之后的0的个数，例如132的二进制为1000 0100,右起第一个1之后的0有2个，所以zend_mm_low_bit(132)等于2 */
 {
 #if defined(__GNUC__) && (defined(__native_client__) || defined(i386))
 	unsigned int n;
@@ -724,18 +724,18 @@ static inline unsigned int zend_mm_low_bit(size_t _size)
 #endif
 }
 
-static inline void zend_mm_add_to_free_list(zend_mm_heap *heap, zend_mm_free_block *mm_block)
+static inline void zend_mm_add_to_free_list(zend_mm_heap *heap, zend_mm_free_block *mm_block)/* 将堆添加到free块中 */
 {
 	size_t size;
 	size_t index;
 
-	ZEND_MM_SET_MAGIC(mm_block, MEM_BLOCK_FREED);
+	ZEND_MM_SET_MAGIC(mm_block, MEM_BLOCK_FREED);/* 在ZEND_DEBUG模式下等价(mm_block)->magic = (0x99954317);否则为空操作 */
 
-	size = ZEND_MM_FREE_BLOCK_SIZE(mm_block);
-	if (EXPECTED(!ZEND_MM_SMALL_SIZE(size))) {
+	size = ZEND_MM_FREE_BLOCK_SIZE(mm_block);/* 等价size = (mm_block)->info._size */
+	if (EXPECTED(!ZEND_MM_SMALL_SIZE(size))) {/* 等价if(size >= ((ZEND_MM_NUM_BUCKETS<<ZEND_MM_ALIGNMENT_LOG2)+ZEND_MM_ALIGNED_MIN_HEADER_SIZE)) */
 		zend_mm_free_block **p;
 
-		index = ZEND_MM_LARGE_BUCKET_INDEX(size);
+		index = ZEND_MM_LARGE_BUCKET_INDEX(size);/* 等价index = zend_mm_high_bit(size) */
 		p = &heap->large_free_buckets[index];
 		mm_block->child[0] = mm_block->child[1] = NULL;
 		if (!*p) {
@@ -746,7 +746,7 @@ static inline void zend_mm_add_to_free_list(zend_mm_heap *heap, zend_mm_free_blo
 		} else {
 			size_t m;
 
-			for (m = size << (ZEND_MM_NUM_BUCKETS - index); ; m <<= 1) {
+			for (m = size << (ZEND_MM_NUM_BUCKETS - index); ; m <<= 1) { /* ZEND_MM_NUM_BUCKETS等价(sizeof(size_t) << 3)；m <<= 1等价m = m<<1*/
 				zend_mm_free_block *prev = *p;
 
 				if (ZEND_MM_FREE_BLOCK_SIZE(prev) != size) {
@@ -785,7 +785,7 @@ static inline void zend_mm_add_to_free_list(zend_mm_heap *heap, zend_mm_free_blo
 	}
 }
 
-static inline void zend_mm_remove_from_free_list(zend_mm_heap *heap, zend_mm_free_block *mm_block)
+static inline void zend_mm_remove_from_free_list(zend_mm_heap *heap, zend_mm_free_block *mm_block)/* 从free块中移除 */
 {
 	zend_mm_free_block *prev = mm_block->prev_free_block;
 	zend_mm_free_block *next = mm_block->next_free_block;
@@ -974,7 +974,7 @@ static void zend_mm_free_cache(zend_mm_heap *heap)
 #endif
 
 #if ZEND_MM_HEAP_PROTECTION || ZEND_MM_COOKIES
-static void zend_mm_random(unsigned char *buf, size_t size) /* {{{ */
+static void zend_mm_random(unsigned char *buf, size_t size)/* 生成一个长度为size的随机字符串到buf中 */ /* {{{ */
 {
 	size_t i = 0;
 	unsigned char t;
@@ -1008,7 +1008,7 @@ static void zend_mm_random(unsigned char *buf, size_t size) /* {{{ */
 		   }
 		} while (0);
 	}
-#elif defined(HAVE_DEV_URANDOM)
+#elif defined(HAVE_DEV_URANDOM)/* have_dev_urandom */
 	int fd = open("/dev/urandom", 0);
 
 	if (fd >= 0) {
@@ -1040,7 +1040,7 @@ static void zend_mm_random(unsigned char *buf, size_t size) /* {{{ */
  * - This function does *not* perform sanity checks on the arguments
  */
 ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, size_t block_size, size_t reserve_size, int internal, void *params)
-{
+{/* 初始化内存堆(_zend_mm_heap)信息并且返回，zend_mm_startup函数调用 */
 	zend_mm_storage *storage;
 	zend_mm_heap    *heap;
 
@@ -1076,7 +1076,7 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	}
 #endif
 
-	if (zend_mm_low_bit(block_size) != zend_mm_high_bit(block_size)) {
+	if (zend_mm_low_bit(block_size) != zend_mm_high_bit(block_size)) {/* 判断block_size是不是2的倍数 */
 		fprintf(stderr, "'block_size' must be a power of two\n");
 /* See http://support.microsoft.com/kb/190351 */
 #ifdef PHP_WIN32
@@ -1112,7 +1112,7 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	memset(heap->cache_stat, 0, sizeof(heap->cache_stat));
 # endif
 
-	heap->use_zend_alloc = 1;
+	heap->use_zend_alloc = 1;/* 启用ZEND内存管理功能 */
 	heap->real_size = 0;
 	heap->overflow = 0;
 	heap->real_peak = 0;
@@ -1125,7 +1125,7 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	if (reserve_size > 0) {
 		heap->reserve = _zend_mm_alloc_int(heap, reserve_size ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC);
 	}
-	if (internal) {
+	if (internal) { /* internal内部的，调用值为0，不要研究 */
 		int i;
 		zend_mm_free_block *p, *q, *orig;
 		zend_mm_heap *mm_heap = _zend_mm_alloc_int(heap, sizeof(zend_mm_heap)  ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC);
@@ -1164,7 +1164,7 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 {
 	int i;
 	size_t seg_size;
-	char *mem_type = getenv("ZEND_MM_MEM_TYPE");
+	char *mem_type = getenv("ZEND_MM_MEM_TYPE");/* 内存分配方案 malloc，win32，mmap_anon，mmap_zero */
 	char *tmp;
 	const zend_mm_mem_handlers *handlers;
 	zend_mm_heap *heap;
@@ -1177,7 +1177,7 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 				break;
 			}
 		}
-		if (!mem_handlers[i].name) {
+		if (!mem_handlers[i].name) {/* 这就是为什么mem_handlers最后一个数据是{NULL, NULL, NULL, NULL, NULL, NULL}*/
 			fprintf(stderr, "Wrong or unsupported zend_mm storage type '%s'\n", mem_type);
 			fprintf(stderr, "  supported types:\n");
 /* See http://support.microsoft.com/kb/190351 */
@@ -1196,10 +1196,10 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 	}
 	handlers = &mem_handlers[i];
 
-	tmp = getenv("ZEND_MM_SEG_SIZE");
+	tmp = getenv("ZEND_MM_SEG_SIZE");/* 内存段大小 */
 	if (tmp) {
-		seg_size = zend_atoi(tmp, 0);
-		if (zend_mm_low_bit(seg_size) != zend_mm_high_bit(seg_size)) {
+		seg_size = zend_atoi(tmp, 0);/* 将字符串转成int整数,因为getenv()的返回结果是字符串类型 */
+		if (zend_mm_low_bit(seg_size) != zend_mm_high_bit(seg_size)) { /* 判断seg_size是不是2的倍数 */
 			fprintf(stderr, "ZEND_MM_SEG_SIZE must be a power of two\n");
 /* See http://support.microsoft.com/kb/190351 */
 #ifdef PHP_WIN32
@@ -1208,37 +1208,37 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 			exit(255);
 		} else if (seg_size < ZEND_MM_ALIGNED_SEGMENT_SIZE + ZEND_MM_ALIGNED_HEADER_SIZE) {
 			fprintf(stderr, "ZEND_MM_SEG_SIZE is too small\n");
-/* See http://support.microsoft.com/kb/190351 */
+/* See http://support.microsoft.com/kb/190351 */f
 #ifdef PHP_WIN32
 			fflush(stderr);
 #endif
 			exit(255);
 		}
 	} else {
-		seg_size = ZEND_MM_SEG_SIZE;
+		seg_size = ZEND_MM_SEG_SIZE;/* 如果环境变量中没有设置，就取默认内存段大小256*1024 */
 	}
 
-	heap = zend_mm_startup_ex(handlers, seg_size, ZEND_MM_RESERVE_SIZE, 0, NULL);
+	heap = zend_mm_startup_ex(handlers, seg_size, ZEND_MM_RESERVE_SIZE, 0, NULL);/* #define ZEND_MM_RESERVE_SIZE (8*1024) 内存溢出时错误报告的保留空间 */
 	if (heap) {
-		tmp = getenv("ZEND_MM_COMPACT");
+		tmp = getenv("ZEND_MM_COMPACT");/* 数据压缩大小 */
 		if (tmp) {
 			heap->compact_size = zend_atoi(tmp, 0);
 		} else {
-			heap->compact_size = 2 * 1024 * 1024;
+			heap->compact_size = 2 * 1024 * 1024;/* 默认2G */
 		}
 	}
 	return heap;
 }
 
 #if ZEND_DEBUG
-static long zend_mm_find_leaks(zend_mm_segment *segment, zend_mm_block *b)
+static long zend_mm_find_leaks(zend_mm_segment *segment, zend_mm_block *b)/* 查找内存快泄露数量 */
 {
 	long leaks = 0;
 	zend_mm_block *p, *q;
 
 	p = ZEND_MM_NEXT_BLOCK(b);
 	while (1) {
-		if (ZEND_MM_IS_GUARD_BLOCK(p)) {
+		if (ZEND_MM_IS_GUARD_BLOCK(p)) { /* (((p)->info._size & ZEND_MM_TYPE_MASK) == ZEND_MM_GUARD_BLOCK) */
 			ZEND_MM_CHECK_MAGIC(p, MEM_BLOCK_GUARD);
 			segment = segment->next_segment;
 			if (!segment) {
@@ -1272,7 +1272,7 @@ static long zend_mm_find_leaks(zend_mm_segment *segment, zend_mm_block *b)
 	return leaks;
 }
 
-static void zend_mm_check_leaks(zend_mm_heap *heap TSRMLS_DC)
+static void zend_mm_check_leaks(zend_mm_heap *heap TSRMLS_DC)/* 检查内存泄露 */
 {
 	zend_mm_segment *segment = heap->segments_list;
 	zend_mm_block *p, *q;
@@ -1333,7 +1333,7 @@ static void zend_mm_check_leaks(zend_mm_heap *heap TSRMLS_DC)
 }
 
 static int zend_mm_check_ptr(zend_mm_heap *heap, void *ptr, int silent ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
-{
+{/* ZEND_DEBUG模式下ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC等价,const char *__zend_filename, const uint __zend_lineno,const char *__zend_orig_filename, const uint __zend_orig_lineno  否则为空 */
 	zend_mm_block *p;
 	int no_cache_notice = 0;
 	int had_problems = 0;
@@ -1371,7 +1371,7 @@ static int zend_mm_check_ptr(zend_mm_heap *heap, void *ptr, int silent ZEND_FILE
 	p = ZEND_MM_HEADER_OF(ptr);
 
 #ifdef ZTS
-	if (ZEND_MM_BAD_THREAD_ID(p)) {
+	if (ZEND_MM_BAD_THREAD_ID(p)) {/* #define ZEND_MM_BAD_THREAD_ID(block) ((block)->thread_id != tsrm_thread_id()) */
 		if (!silent) {
 			zend_debug_alloc_output("Invalid pointer: ((thread_id=0x%0.8X) != (expected=0x%0.8X))\n", (long)p->thread_id, (long)tsrm_thread_id());
 			had_problems = 1;
@@ -1556,7 +1556,7 @@ static int zend_mm_check_ptr(zend_mm_heap *heap, void *ptr, int silent ZEND_FILE
 	return ((!had_problems) ? 1 : 0);
 }
 
-static int zend_mm_check_heap(zend_mm_heap *heap, int silent ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+static int zend_mm_check_heap(zend_mm_heap *heap, int silent ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 检查堆中block的错误个数 */
 {
 	zend_mm_segment *segment = heap->segments_list;
 	zend_mm_block *p, *q;
@@ -1597,15 +1597,15 @@ static int zend_mm_check_heap(zend_mm_heap *heap, int silent ZEND_FILE_LINE_DC Z
 	}
 }
 #endif
-
-ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, int full_shutdown, int silent TSRMLS_DC)
+f
+ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, int full_shutdown, int silent TSRMLS_DC)/* 内存关闭函数，full_shutdown是否整个内存堆关闭 */
 {
 	zend_mm_storage *storage;
 	zend_mm_segment *segment;
 	zend_mm_segment *prev;
 	int internal;
 
-	if (!heap->use_zend_alloc) {
+	if (!heap->use_zend_alloc) { /* 如果没有使用ZEND内存管理功能，直接是否系统内存 */
 		if (full_shutdown) {
 			free(heap);
 		}
@@ -1804,10 +1804,10 @@ static void zend_mm_safe_error(zend_mm_heap *heap,
 	zend_bailout();
 }
 
-static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t true_size)
+static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t true_size)/* 查找大的内存快 */
 {
 	zend_mm_free_block *best_fit;
-	size_t index = ZEND_MM_LARGE_BUCKET_INDEX(true_size);
+	size_t index = ZEND_MM_LARGE_BUCKET_INDEX(true_size);/* ZEND_MM_LARGE_BUCKET_INDEX(true_size)等价zend_mm_high_bit(true_size) */
 	size_t bitmap = heap->large_free_bitmap >> index;
 	zend_mm_free_block *p;
 
@@ -1824,10 +1824,10 @@ static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t
 		best_fit = NULL;
 		p = heap->large_free_buckets[index];
 		for (m = true_size << (ZEND_MM_NUM_BUCKETS - index); ; m <<= 1) {
-			if (UNEXPECTED(ZEND_MM_FREE_BLOCK_SIZE(p) == true_size)) {
+			if (UNEXPECTED(ZEND_MM_FREE_BLOCK_SIZE(p) == true_size)) {/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
 				return p->next_free_block;
-			} else if (ZEND_MM_FREE_BLOCK_SIZE(p) >= true_size &&
-			           ZEND_MM_FREE_BLOCK_SIZE(p) < best_size) {
+			} else if (ZEND_MM_FREE_BLOCK_SIZE(p) >= true_size &&/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
+			           ZEND_MM_FREE_BLOCK_SIZE(p) < best_size) {/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
 				best_size = ZEND_MM_FREE_BLOCK_SIZE(p);
 				best_fit = p;
 			}
@@ -1848,11 +1848,11 @@ static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t
 		}
 
 		for (p = rst; p; p = p->child[p->child[0] != NULL]) {
-			if (UNEXPECTED(ZEND_MM_FREE_BLOCK_SIZE(p) == true_size)) {
+			if (UNEXPECTED(ZEND_MM_FREE_BLOCK_SIZE(p) == true_size)) {/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
 				return p->next_free_block;
-			} else if (ZEND_MM_FREE_BLOCK_SIZE(p) > true_size &&
-			           ZEND_MM_FREE_BLOCK_SIZE(p) < best_size) {
-				best_size = ZEND_MM_FREE_BLOCK_SIZE(p);
+			} else if (ZEND_MM_FREE_BLOCK_SIZE(p) > true_size &&/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
+			           ZEND_MM_FREE_BLOCK_SIZE(p) < best_size) {/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
+				best_size = ZEND_MM_FREE_BLOCK_SIZE(p);/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
 				best_fit = p;
 			}
 		}
@@ -1870,14 +1870,14 @@ static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t
 	/* Search for smallest "large" free block */
 	best_fit = p = heap->large_free_buckets[index + zend_mm_low_bit(bitmap)];
 	while ((p = p->child[p->child[0] != NULL])) {
-		if (ZEND_MM_FREE_BLOCK_SIZE(p) < ZEND_MM_FREE_BLOCK_SIZE(best_fit)) {
+		if (ZEND_MM_FREE_BLOCK_SIZE(p) < ZEND_MM_FREE_BLOCK_SIZE(best_fit)) {/* ZEND_MM_FREE_BLOCK_SIZE(b)等价(b)->info._size */
 			best_fit = p;
 		}
 	}
 	return best_fit->next_free_block;
 }
 
-static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存申请处理函数 */
 {
 	zend_mm_free_block *best_fit;
 	size_t true_size = ZEND_MM_TRUE_SIZE(size);
@@ -1896,7 +1896,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 		size_t index = ZEND_MM_BUCKET_INDEX(true_size);
 		size_t bitmap;
 
-		if (UNEXPECTED(true_size < size)) {
+		if (UNEXPECTED(true_size < size)) {/* 等价if(true_size < size) { */
 			goto out_of_memory;
 		}
 #if ZEND_MM_CACHE
@@ -1971,7 +1971,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 #if ZEND_MM_CACHE
 			zend_mm_free_cache(heap);
 #endif
-			HANDLE_UNBLOCK_INTERRUPTIONS();
+			HANDLE_UNBLOCK_INTERRUPTIONS();/* 等价if (zend_unblock_interruptions) { zend_unblock_interruptions(); } */
 #if ZEND_DEBUG
 			zend_mm_safe_error(heap, "Allowed memory size of %ld bytes exhausted at %s:%d (tried to allocate %lu bytes)", heap->limit, __zend_filename, __zend_lineno, size);
 #else
@@ -1982,7 +1982,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 		segment = (zend_mm_segment *) ZEND_MM_STORAGE_ALLOC(segment_size);
 
 		if (!segment) {
-			/* Storage manager cannot allocate memory */
+			/* Storage manager cannot allocate memory 存储管理器无法分配内存 */
 #if ZEND_MM_CACHE
 			zend_mm_free_cache(heap);
 #endif
@@ -2053,11 +2053,11 @@ zend_mm_finished_searching_for_block:
 
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 
-	return ZEND_MM_DATA_OF(best_fit);
+	return f(best_fit);
 }
 
 
-static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存释放处理函数 */
 {
 	zend_mm_block *mm_block;
 	zend_mm_block *next_block;
@@ -2120,7 +2120,7 @@ static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 }
 
-static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存重新申请处理函数 */
 {
 	zend_mm_block *mm_block = ZEND_MM_HEADER_OF(p);
 	zend_mm_block *next_block;
@@ -2414,12 +2414,12 @@ static int alloc_globals_id;
 static zend_alloc_globals alloc_globals;
 #endif
 
-ZEND_API int is_zend_mm(TSRMLS_D)
+ZEND_API int is_zend_mm(TSRMLS_D)/* 是否使用的ZEND内存管理功能 */
 {
 	return AG(mm_heap)->use_zend_alloc;
 }
 
-ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存申请调用入口，真正的emalloc(size)实际就是掉的这里，#define emalloc(size)	_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC) */
 {
 	TSRMLS_FETCH();
 
@@ -2429,7 +2429,7 @@ ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 	return _zend_mm_alloc_int(AG(mm_heap), size ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
 }
 
-ZEND_API void _efree(void *ptr ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+ZEND_API void _efree(void *ptr ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存释放调用 */
 {
 	TSRMLS_FETCH();
 

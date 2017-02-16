@@ -21,8 +21,8 @@
 
 #ifndef ZEND_HIGHLIGHT_H
 #define ZEND_HIGHLIGHT_H
-
-#define HL_COMMENT_COLOR     "#FF8000"    /* orange */
+/* 高亮代码的颜色 */
+#define HL_COMMENT_COLOR     "#FF8000"    /* orange */ 
 #define HL_DEFAULT_COLOR     "#0000BB"    /* blue */
 #define HL_HTML_COLOR        "#000000"    /* black */
 #define HL_STRING_COLOR      "#DD0000"    /* red */
@@ -40,11 +40,11 @@ typedef struct _zend_syntax_highlighter_ini {
 
 BEGIN_EXTERN_C()
 ZEND_API void zend_highlight(zend_syntax_highlighter_ini *syntax_highlighter_ini TSRMLS_DC);
-ZEND_API void zend_strip(TSRMLS_D);
+ZEND_API void zend_strip(TSRMLS_D); /* strip剥除的意思，很明显，该函数是去除PHP代码无效内容 */
 ZEND_API int highlight_file(char *filename, zend_syntax_highlighter_ini *syntax_highlighter_ini TSRMLS_DC);
 ZEND_API int highlight_string(zval *str, zend_syntax_highlighter_ini *syntax_highlighter_ini, char *str_name TSRMLS_DC);
-ZEND_API void zend_html_putc(char c);
-ZEND_API void zend_html_puts(const char *s, uint len TSRMLS_DC);
+ZEND_API void zend_html_putc(char c); /* 该函数是为了转换特殊的HTML字符，例如空格转成HTML的&nbsp; */
+ZEND_API void zend_html_puts(const char *s, uint len TSRMLS_DC); /* 将字符串转义成HTML文本 */
 END_EXTERN_C()
 
 extern zend_syntax_highlighter_ini syntax_highlighter_ini;

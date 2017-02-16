@@ -232,9 +232,9 @@ typedef struct _zend_property_info {
 } zend_property_info;
 
 
-typedef struct _zend_arg_info { /* 存储函数参数的结构体 */
-	const char *name; /* 参数的名称 */
-	zend_uint name_len; /* 参数名称的长度 */
+typedef struct _zend_arg_info { /* 存储函数的结构体 */
+	const char *name; /* 函数名 */
+	zend_uint name_len; /* 函数名的长度 */
 	const char *class_name; /* 类名 */
 	zend_uint class_name_len; /* 类名长度 */
 	zend_uchar type_hint;

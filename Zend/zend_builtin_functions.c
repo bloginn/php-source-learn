@@ -30,8 +30,8 @@
 
 #undef ZEND_TEST_EXCEPTIONS
 
-static ZEND_FUNCTION(zend_version);
-static ZEND_FUNCTION(func_num_args);
+static ZEND_FUNCTION(zend_version);/* 等价static zif_zend_version(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
+static ZEND_FUNCTION(func_num_args);/* 等价zif_func_num_args(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 static ZEND_FUNCTION(func_get_arg);
 static ZEND_FUNCTION(func_get_args);
 static ZEND_FUNCTION(strlen);
@@ -96,12 +96,12 @@ static ZEND_FUNCTION(gc_enable);
 static ZEND_FUNCTION(gc_disable);
 
 /* {{{ arginfo */
-ZEND_BEGIN_ARG_INFO(arginfo_zend__void, 0)
-ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO(arginfo_zend__void, 0)				/* static const zend_arg_info arginfo_zend__void[] = {{ NULL, 0, NULL, 1, -1, 0, 0, 0 }, */
+ZEND_END_ARG_INFO()										/* }; */
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_func_get_arg, 0, 0, 1)
-	ZEND_ARG_INFO(0, arg_num)
-ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_func_get_arg, 0, 0, 1)	/* static const zend_arg_info arginfo_func_get_arg[] = {{ NULL, 0, NULL, 1, 0, 0, 0, 0 }, */
+	ZEND_ARG_INFO(0, arg_num)							/* { "arg_num", sizeof("arg_num")-1, NULL, 0, 0, 0, 0, 0 }, */
+ZEND_END_ARG_INFO()										/* }; */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_strlen, 0, 0, 1)
 	ZEND_ARG_INFO(0, str)
@@ -241,7 +241,7 @@ ZEND_END_ARG_INFO()
 /* }}} */
 
 static const zend_function_entry builtin_functions[] = { /* {{{ */
-	ZEND_FE(zend_version,		arginfo_zend__void)
+	ZEND_FE(zend_version,		arginfo_zend__void)/* {"zend_version", zif_zend_version, arginfo_zend__void, (zend_uint) (sizeof(arginfo_zend__void)/sizeof(struct _zend_arg_info)-1), 0}, */
 	ZEND_FE(func_num_args,		arginfo_zend__void)
 	ZEND_FE(func_get_arg,		arginfo_func_get_arg)
 	ZEND_FE(func_get_args,		arginfo_zend__void)
@@ -307,14 +307,14 @@ static const zend_function_entry builtin_functions[] = { /* {{{ */
 	ZEND_FE(gc_enabled, 		arginfo_zend__void)
 	ZEND_FE(gc_enable, 		arginfo_zend__void)
 	ZEND_FE(gc_disable, 		arginfo_zend__void)
-	ZEND_FE_END
+	ZEND_FE_END				/* { NULL, NULL, NULL, 0, 0 } */
 };
 /* }}} */
 
-ZEND_MINIT_FUNCTION(core) { /* {{{ */
+ZEND_MINIT_FUNCTION(core) { /* {{{ */ /* int zm_startup_core(int type, int module_number TSRMLS_DC) */
 	zend_class_entry class_entry;
 
-	INIT_CLASS_ENTRY(class_entry, "stdClass", NULL);
+	INIT_CLASS_ENTRY(class_entry, "stdClass", NULL);/* INIT_OVERLOADED_CLASS_ENTRY(class_entry, "stdClass", NULL, NULL, NULL, NULL) */
 	zend_standard_class_def = zend_register_internal_class(&class_entry TSRMLS_CC);
 
 	zend_register_default_classes(TSRMLS_C);
@@ -340,16 +340,16 @@ zend_module_entry zend_builtin_module = { /* {{{ */
 int zend_startup_builtin_functions(TSRMLS_D) /* {{{ */
 {
 	zend_builtin_module.module_number = 0;
-	zend_builtin_module.type = MODULE_PERSISTENT;
+	zend_builtin_module.type = MODULE_PERSISTENT;/* MODULE_PERSISTENT等于1 */
 	return (EG(current_module) = zend_register_module_ex(&zend_builtin_module TSRMLS_CC)) == NULL ? FAILURE : SUCCESS;
 }
 /* }}} */
 
 /* {{{ proto string zend_version(void)
    Get the version of the Zend Engine */
-ZEND_FUNCTION(zend_version)
+ZEND_FUNCTION(zend_version)/* 等价zif_zend_version(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	RETURN_STRINGL(ZEND_VERSION, sizeof(ZEND_VERSION)-1, 1);
+	RETURN_STRINGL(ZEND_VERSION, sizeof(ZEND_VERSION)-1, 1);/* 等价{do{(*return_value).value.str.len=5;(*return_value).value.str.val=estrndup("2.6.0",5);(*return_value).type=IS_STRING;}while (0) return;} */
 }
 /* }}} */
 
@@ -366,7 +366,7 @@ ZEND_FUNCTION(gc_collect_cycles)
    Returns status of the circular reference collector */
 ZEND_FUNCTION(gc_enabled)
 {
-	RETURN_BOOL(GC_G(gc_enabled));
+	RETURN_BOOL(GC_G(gc_enabled));/* GC_G(gc_enabled)等价(gc_globals.gc_enabled),RETURN_BOOL(v)等价{do{(*return_value).value.str.val=(v!=0);(*return_value).type=IS_BOOL;}while (0) return;} */
 }
 /* }}} */
 
@@ -374,7 +374,7 @@ ZEND_FUNCTION(gc_enabled)
    Activates the circular reference collector */
 ZEND_FUNCTION(gc_enable)
 {
-	zend_alter_ini_entry("zend.enable_gc", sizeof("zend.enable_gc"), "1", sizeof("1")-1, ZEND_INI_USER, ZEND_INI_STAGE_RUNTIME);
+	zend_alter_ini_entry("zend.enable_gc", sizeof("zend.enable_gc"), "1", sizeof("1")-1, ZEND_INI_USER, ZEND_INI_STAGE_RUNTIME);/* zend_alter_ini_entry函数在zend_ini.c中 */
 }
 /* }}} */
 
@@ -395,7 +395,7 @@ ZEND_FUNCTION(func_num_args)
 	if (ex && ex->function_state.arguments) {
 		RETURN_LONG((long)(zend_uintptr_t)*(ex->function_state.arguments));
 	} else {
-		zend_error(E_WARNING, "func_num_args():  Called from the global scope - no function context");
+		zend_error(E_WARNING, "func_num_args():  Called from the global scope - no function context");/* func_num_args()在全局作用域调用会报这个错误 */
 		RETURN_LONG(-1);
 	}
 }
@@ -412,12 +412,12 @@ ZEND_FUNCTION(func_get_arg)
 	long requested_offset;
 	zend_execute_data *ex = EG(current_execute_data)->prev_execute_data;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &requested_offset) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &requested_offset) == FAILURE) {	/* ZEND_NUM_ARGS()等价(ht) */
 		return;
 	}
 
 	if (requested_offset < 0) {
-		zend_error(E_WARNING, "func_get_arg():  The argument number should be >= 0");
+		zend_error(E_WARNING, "func_get_arg():  The argument number should be >= 0");/* func_get_arg(-1)的调用会报这个错误 */
 		RETURN_FALSE;
 	}
 
@@ -430,7 +430,7 @@ ZEND_FUNCTION(func_get_arg)
 	arg_count = (int)(zend_uintptr_t) *p;		/* this is the amount of arguments passed to func_get_arg(); */
 
 	if (requested_offset >= arg_count) {
-		zend_error(E_WARNING, "func_get_arg():  Argument %ld not passed to function", requested_offset);
+		zend_error(E_WARNING, "func_get_arg():  Argument %ld not passed to function", requested_offset);/* 如果参数大于等于函数参数的个数，会报这个错误，因为requested_offset从0开始的 */
 		RETURN_FALSE;
 	}
 
@@ -483,7 +483,7 @@ ZEND_FUNCTION(strlen)
 	char *s1;
 	int s1_len;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &s1, &s1_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &s1, &s1_len) == FAILURE) {	/* ZEND_NUM_ARGS()等价(ht) */
 		return;
 	}
 
@@ -494,29 +494,29 @@ ZEND_FUNCTION(strlen)
 
 /* {{{ proto int strcmp(string str1, string str2)
    Binary safe string comparison */
-ZEND_FUNCTION(strcmp)
+ZEND_FUNCTION(strcmp)/* 二进制安全字符串比较 */
 {
 	char *s1, *s2;
 	int s1_len, s2_len;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &s1, &s1_len, &s2, &s2_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &s1, &s1_len, &s2, &s2_len) == FAILURE) {	/* ZEND_NUM_ARGS()等价(ht) */
 		return;
 	}
 
-	RETURN_LONG(zend_binary_strcmp(s1, s1_len, s2, s2_len));
+	RETURN_LONG(zend_binary_strcmp(s1, s1_len, s2, s2_len));/* 调用zend_operators.c中的zend_binary_strcmp函数 */
 }
 /* }}} */
 
 
 /* {{{ proto int strncmp(string str1, string str2, int len)
    Binary safe string comparison */
-ZEND_FUNCTION(strncmp)
+ZEND_FUNCTION(strncmp)/* 二进制安全比较字符串开头的若干个字符 */
 {
 	char *s1, *s2;
 	int s1_len, s2_len;
 	long len;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &s1, &s1_len, &s2, &s2_len, &len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &s1, &s1_len, &s2, &s2_len, &len) == FAILURE) {	/* ZEND_NUM_ARGS()等价(ht) */
 		return;
 	}
 
@@ -532,7 +532,7 @@ ZEND_FUNCTION(strncmp)
 
 /* {{{ proto int strcasecmp(string str1, string str2)
    Binary safe case-insensitive string comparison */
-ZEND_FUNCTION(strcasecmp)
+ZEND_FUNCTION(strcasecmp)/* 二进制安全比较字符串（不区分大小写） */
 {
 	char *s1, *s2;
 	int s1_len, s2_len;
@@ -548,7 +548,7 @@ ZEND_FUNCTION(strcasecmp)
 
 /* {{{ proto int strncasecmp(string str1, string str2, int len)
    Binary safe string comparison */
-ZEND_FUNCTION(strncasecmp)
+ZEND_FUNCTION(strncasecmp)/* 二进制安全比较字符串开头的若干个字符（不区分大小写） */
 {
 	char *s1, *s2;
 	int s1_len, s2_len;
@@ -559,7 +559,7 @@ ZEND_FUNCTION(strncasecmp)
 	}
 
 	if (len < 0) {
-		zend_error(E_WARNING, "Length must be greater than or equal to 0");
+		zend_error(E_WARNING, "Length must be greater than or equal to 0");/* strncasecmp('12345','23456',-1);类似于这样的调用报错 */
 		RETURN_FALSE;
 	}
 
@@ -583,9 +583,9 @@ ZEND_FUNCTION(each)
 		return;
 	}
 
-	target_hash = HASH_OF(array);
+	target_hash = HASH_OF(array);/* 如果是array类型或者object类型，则获取对应数据，否则为NULL */
 	if (!target_hash) {
-		zend_error(E_WARNING,"Variable passed to each() is not an array or object");
+		zend_error(E_WARNING,"Variable passed to each() is not an array or object");/* 如果不是array或者object类型的数据，报该错误，例如$a = 123;echo each($a); */
 		return;
 	}
 	if (zend_hash_get_current_data(target_hash, (void **) &entry_ptr)==FAILURE) {
@@ -637,7 +637,7 @@ ZEND_FUNCTION(error_reporting)
 	}
 
 	old_error_reporting = EG(error_reporting);
-	if(ZEND_NUM_ARGS() != 0) {
+	if(ZEND_NUM_ARGS() != 0) {/* ZEND_NUM_ARGS()等价(ht) */
 		zend_alter_ini_entry("error_reporting", sizeof("error_reporting"), err, err_len, ZEND_INI_USER, ZEND_INI_STAGE_RUNTIME);
 	}
 
@@ -655,14 +655,14 @@ ZEND_FUNCTION(define)
 	zval *val;
 	zval *val_free = NULL;
 	zend_bool non_cs = 0;
-	int case_sensitive = CONST_CS;
-	zend_constant c;
+	int case_sensitive = CONST_CS;/* 区分大小写 */
+	zend_constant c;/* 常量数据结构在zend_constants.h中定义 */
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|b", &name, &name_len, &val, &non_cs) == FAILURE) {
 		return;
 	}
 
-	if(non_cs) {
+	if(non_cs) {/* 如果参数define函数的第三个参数non_cs为true,表示大小写不明感 */
 		case_sensitive = 0;
 	}
 

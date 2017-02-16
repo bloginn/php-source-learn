@@ -113,7 +113,7 @@
 # define ZEND_EXTENSIONS_SUPPORT	1
 #else
 # define DL_HANDLE					void *
-# define ZEND_EXTENSIONS_SUPPORT	0 	/* ZEND_EXTENSIONS_SUPPORT是否支持扩展 */
+# define ZEND_EXTENSIONS_SUPPORT	0 	/* ZEND_EXTENSIONS_SUPPORT:是否支持扩展 */
 #endif
 
 #if HAVE_ALLOCA_H && !defined(_ALLOCA_H)
@@ -197,7 +197,7 @@ char *alloca ();
 # define ZEND_ALLOCA_MAX_SIZE (32 * 1024)
 # define ALLOCA_FLAG(name) \
 	zend_bool name;
-# define SET_ALLOCA_FLAG(name) \
+# define SET_ALLOCA_FLAG(name) \ /* SET_ALLOCA_FLAG未见使用 */
 	name = 1
 # define do_alloca_ex(size, limit, use_heap) \
 	((use_heap = (UNEXPECTED((size) > (limit)))) ? emalloc(size) : alloca(size))
@@ -242,10 +242,10 @@ char *alloca ();
 #define ZEND_ASSERT(c)
 #endif	/* ZEND_DEBUG */
 
-#ifdef ZTS
-#define ZTS_V 1
+#ifdef ZTS /* ZTS线程安全(thread safe),在安装PHP时添加--with-tsrm-st参数(./configure --with-tsrm-st)后会在main/php-config.h中多一个#define ZTS 1 */
+#define ZTS_V 1 /* 可通过phpinfo()查看Thread Safety参数为enabled的时表示开启 */
 #else
-#define ZTS_V 0
+#define ZTS_V 0 /* FastCGI模式运行PHP的话就没有必要用,用None Thread Safe(NTS，非线程安全)的版本能够更好的提高效率 */
 #endif
 
 #include "zend_errors.h"
@@ -331,7 +331,7 @@ typedef union _zvalue_value {
 	zend_ast *ast;
 } zvalue_value;
 
-struct _zval_struct {
+struct _zval_struct { /* 也就是所谓zval类型，查看typedef struct _zval_struct zval; 文件Zend/zend_types.h */
 	/* Variable information */
 	zvalue_value value;		/* value */
 	zend_uint refcount__gc;
@@ -395,7 +395,7 @@ struct _zval_struct {
 # define UNEXPECTED(condition) (condition)
 #endif
 
-static zend_always_inline zend_uint zval_refcount_p(zval* pz) {
+static zend_always_inline zend_uint zval_refcount_p(zval* pz) { /* zend_always_inline为inline，表示该函数为内联函数，编译器会将pz->refcount__gc直接替换调用zval_refcount_p函数的地方 */
 	return pz->refcount__gc;
 }
 
@@ -475,24 +475,24 @@ struct _zend_trait_alias {
 };
 typedef struct _zend_trait_alias zend_trait_alias;
 
-struct _zend_class_entry {
+struct _zend_class_entry { /* 类的原型 */
 	char type; /* 用户定义的类和模块或者内置的类 ZEND_INTERNAL_CLASS或ZEND_USER_CLASS */
-	const char *name;
-	zend_uint name_length;
-	struct _zend_class_entry *parent;
-	int refcount;
-	zend_uint ce_flags;
+	const char *name;	/* 类的名称 */
+	zend_uint name_length; /* 类的名称的长度 */
+	struct _zend_class_entry *parent; /* 父类 */
+	int refcount; /* 引用次数 */
+	zend_uint ce_flags; /* 标记类的关键字，例如ZEND_ACC_IMPLICIT_ABSTRACT_CLASS(抽象),ZEND_ACC_FINAL_CLASS(final),ZEND_ACC_INTERFACE(接口类)等 */
 
-	HashTable function_table;
-	HashTable properties_info;
-	zval **default_properties_table;
-	zval **default_static_members_table;
+	HashTable function_table; /* 方法的HASH表 */
+	HashTable properties_info; /* 属性信息的HASH表 */
+	zval **default_properties_table; /* 默认属性 */
+	zval **default_static_members_table; /* 默认静态成员 */
 	zval **static_members_table;
-	HashTable constants_table;
-	int default_properties_count;
-	int default_static_members_count;
+	HashTable constants_table; /* 类中常量的hash表 */
+	int default_properties_count; /* 类属性的个数 */
+	int default_static_members_count; /* 类静态成员的个数 */
 
-	union _zend_function *constructor;
+	union _zend_function *constructor; /* 一系列魔术方法 */
 	union _zend_function *destructor;
 	union _zend_function *clone;
 	union _zend_function *__get;
@@ -501,25 +501,25 @@ struct _zend_class_entry {
 	union _zend_function *__isset;
 	union _zend_function *__call;
 	union _zend_function *__callstatic;
-	union _zend_function *__tostring;
+	union _zend_function *__tostring; /* 一系列魔术方法 */
 	union _zend_function *__debugInfo;
 	union _zend_function *serialize_func;
-	union _zend_function *unserialize_func;
+	union _zend_function *unserialize_func; 
 
-	zend_class_iterator_funcs iterator_funcs;
+	zend_class_iterator_funcs iterator_funcs; /* 迭代器结构 */
 
-	/* handlers */
+	/* handlers 类句柄 */
 	zend_object_value (*create_object)(zend_class_entry *class_type TSRMLS_DC);
 	zend_object_iterator *(*get_iterator)(zend_class_entry *ce, zval *object, int by_ref TSRMLS_DC);
 	int (*interface_gets_implemented)(zend_class_entry *iface, zend_class_entry *class_type TSRMLS_DC); /* a class implements this interface */
 	union _zend_function *(*get_static_method)(zend_class_entry *ce, char* method, int method_len TSRMLS_DC);
 
-	/* serializer callbacks */
+	/* 序列化回调函数指针 */
 	int (*serialize)(zval *object, unsigned char **buffer, zend_uint *buf_len, zend_serialize_data *data TSRMLS_DC);
 	int (*unserialize)(zval **object, zend_class_entry *ce, const unsigned char *buf, zend_uint buf_len, zend_unserialize_data *data TSRMLS_DC);
 
-	zend_class_entry **interfaces;
-	zend_uint num_interfaces;
+	zend_class_entry **interfaces; /* 继承的接口 */
+	zend_uint num_interfaces; /* 继承的接口数量 */
 	
 	zend_class_entry **traits;
 	zend_uint num_traits;
@@ -528,11 +528,11 @@ struct _zend_class_entry {
 
 	union {
 		struct {
-			const char *filename;
-			zend_uint line_start;
-			zend_uint line_end;
-			const char *doc_comment;
-			zend_uint doc_comment_len;
+			const char *filename; // 类的存放文件地址 绝对地址
+			zend_uint line_start; // 类定义的开始行
+			zend_uint line_end; // 类定义的结束行
+			const char *doc_comment; // 类注释
+			zend_uint doc_comment_len; // 类注释内容长度
 		} user;
 		struct {
 			const struct _zend_function_entry *builtin_functions;
@@ -574,13 +574,13 @@ typedef int (*zend_write_func_t)(const char *str, uint str_length);
 #define ZEND_STRL(str)		(str), (sizeof(str)-1)
 #define ZEND_STRS(str)		(str), (sizeof(str))
 #define ZEND_NORMALIZE_BOOL(n)			\
-	((n) ? (((n)>0) ? 1 : -1) : 0)
+	((n) ? (((n)>0) ? 1 : -1) : 0)	/* 将n取-1，0，1三种情况 */
 #define ZEND_TRUTH(x)		((x) ? 1 : 0)
 #define ZEND_LOG_XOR(a, b)		(ZEND_TRUTH(a) ^ ZEND_TRUTH(b))
 
 /* data types */
 /* All data types <= IS_BOOL have their constructor/destructors skipped */
-#define IS_NULL		0
+#define IS_NULL		0 /* PHP所有的数据类型 */
 #define IS_LONG		1
 #define IS_DOUBLE	2
 #define IS_BOOL		3
