@@ -28,14 +28,14 @@
 /* The first number is the engine version and the rest is the date.
  * This way engine 2/3 API no. is always greater than engine 1 API no..
  */
-#define ZEND_EXTENSION_API_NO	220131226
+#define ZEND_EXTENSION_API_NO	220131226 /* phpinfo();中看到的Zend Extension	的值 */
 
 typedef struct _zend_extension_version_info {
-	int zend_extension_api_no;
-	char *build_id;
+	int zend_extension_api_no;	/* 实际为ZEND_EXTENSION_API_NO 例如:220131226 */
+	char *build_id;				/* 实际为ZEND_EXTENSION_BUILD_ID  例如:API220131226,NTS */
 } zend_extension_version_info;
 
-#define ZEND_EXTENSION_BUILD_ID "API" ZEND_TOSTR(ZEND_EXTENSION_API_NO) ZEND_BUILD_TS ZEND_BUILD_DEBUG ZEND_BUILD_SYSTEM ZEND_BUILD_EXTRA
+#define ZEND_EXTENSION_BUILD_ID "API" ZEND_TOSTR(ZEND_EXTENSION_API_NO) ZEND_BUILD_TS ZEND_BUILD_DEBUG ZEND_BUILD_SYSTEM ZEND_BUILD_EXTRA /* 等价"API220131226,NTS|TS,(,debug)....."*/
 
 typedef struct _zend_extension zend_extension;
 
@@ -57,39 +57,39 @@ typedef void (*op_array_ctor_func_t)(zend_op_array *op_array);
 typedef void (*op_array_dtor_func_t)(zend_op_array *op_array);
 
 struct _zend_extension {
-	char *name;
-	char *version;
-	char *author;
-	char *URL;
-	char *copyright;
+	char *name;										/* 扩展名称 */
+	char *version;									/* 扩展版本号 */
+	char *author;									/* 扩展作者 */
+	char *URL;										/* 扩展链接 */
+	char *copyright;								/* 扩展版权信息 */
 
-	startup_func_t startup;
-	shutdown_func_t shutdown;
-	activate_func_t activate;
-	deactivate_func_t deactivate;
+	startup_func_t startup;							/* 扩展启动调用开始 */
+	shutdown_func_t shutdown;						/* 扩展关闭调用函数 */
+	activate_func_t activate;						/* */
+	deactivate_func_t deactivate;					/* */
 
-	message_handler_func_t message_handler;
+	message_handler_func_t message_handler;			/* */
 
-	op_array_handler_func_t op_array_handler;
+	op_array_handler_func_t op_array_handler;		/* */
 
-	statement_handler_func_t statement_handler;
-	fcall_begin_handler_func_t fcall_begin_handler;
-	fcall_end_handler_func_t fcall_end_handler;
+	statement_handler_func_t statement_handler;		/* */
+	fcall_begin_handler_func_t fcall_begin_handler;	/* */
+	fcall_end_handler_func_t fcall_end_handler;		/* */
 
-	op_array_ctor_func_t op_array_ctor;
-	op_array_dtor_func_t op_array_dtor;
+	op_array_ctor_func_t op_array_ctor;				/* */	
+	op_array_dtor_func_t op_array_dtor;				/* */
 
-	int (*api_no_check)(int api_no);
-	int (*build_id_check)(const char* build_id);
-	void *reserved3;
-	void *reserved4;
-	void *reserved5;
-	void *reserved6;
-	void *reserved7;
-	void *reserved8;
+	int (*api_no_check)(int api_no);				/* */
+	int (*build_id_check)(const char* build_id);	/* */
+	void *reserved3;								/* */
+	void *reserved4;								/* */
+	void *reserved5;								/* */
+	void *reserved6;								/* */
+	void *reserved7;								/* */
+	void *reserved8;								/* */
 
-	DL_HANDLE handle;
-	int resource_number;
+	DL_HANDLE handle;								/* */
+	int resource_number;							/* */
 };
 
 BEGIN_EXTERN_C()
@@ -103,9 +103,9 @@ END_EXTERN_C()
 #define ZEND_EXTENSION()	\
 	ZEND_EXT_API zend_extension_version_info extension_version_info = { ZEND_EXTENSION_API_NO, ZEND_EXTENSION_BUILD_ID }
 
-#define STANDARD_ZEND_EXTENSION_PROPERTIES       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1
-#define COMPAT_ZEND_EXTENSION_PROPERTIES         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1
-#define BUILD_COMPAT_ZEND_EXTENSION_PROPERTIES   NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1
+#define STANDARD_ZEND_EXTENSION_PROPERTIES       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1 	/* 标准ZEND扩展参数 */
+#define COMPAT_ZEND_EXTENSION_PROPERTIES         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1 		/* 兼容ZEND扩展参数 */
+#define BUILD_COMPAT_ZEND_EXTENSION_PROPERTIES   NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1 				/* 建立兼容ZEND扩展参数 */
 
 
 ZEND_API extern zend_llist zend_extensions;
@@ -114,7 +114,7 @@ void zend_extension_dtor(zend_extension *extension);
 ZEND_API void zend_append_version_info(const zend_extension *extension);
 int zend_startup_extensions_mechanism(void);
 int zend_startup_extensions(void);
-void zend_shutdown_extensions(TSRMLS_D);
+void zend_shutdown_fextensions(TSRMLS_D);
 
 BEGIN_EXTERN_C()
 ZEND_API int zend_load_extension(const char *path);

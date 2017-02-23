@@ -30,10 +30,10 @@ typedef struct _dynamic_array {
 } dynamic_array;
 
 BEGIN_EXTERN_C()
-ZEND_API int zend_dynamic_array_init(dynamic_array *da, unsigned int element_size, unsigned int size);
-ZEND_API void *zend_dynamic_array_push(dynamic_array *da);
-ZEND_API void *zend_dynamic_array_pop(dynamic_array *da);
-ZEND_API void *zend_dynamic_array_get_element(dynamic_array *da, unsigned int index);
+ZEND_API int zend_dynamic_array_init(dynamic_array *da, unsigned int element_size, unsigned int size);/* 未见调用 */
+ZEND_API void *zend_dynamic_array_push(dynamic_array *da);/* 未见调用 */
+ZEND_API void *zend_dynamic_array_pop(dynamic_array *da);/* 未见调用 */
+ZEND_API void *zend_dynamic_array_get_element(dynamic_array *da, unsigned int index);/* 未见调用 */
 END_EXTERN_C()
 
 #endif /* ZEND_DYNAMIC_ARRAY_H */

@@ -551,17 +551,17 @@ const zend_function_entry zend_funcs_serializable[] = {
 /* {{{ zend_register_interfaces */
 ZEND_API void zend_register_interfaces(TSRMLS_D)
 {
-	REGISTER_ITERATOR_INTERFACE(traversable, Traversable);
+	REGISTER_ITERATOR_INTERFACE(traversable, Traversable); /* 注册预定义接口 遍历接口 */
 
-	REGISTER_ITERATOR_INTERFACE(aggregate, IteratorAggregate);
-	REGISTER_ITERATOR_IMPLEMENT(aggregate, traversable);
+	REGISTER_ITERATOR_INTERFACE(aggregate, IteratorAggregate); /* 注册预定义接口 聚合式迭代器 */
+	REGISTER_ITERATOR_IMPLEMENT(aggregate, traversable); /* 注册预定义接口 聚合式迭代器 */
 
-	REGISTER_ITERATOR_INTERFACE(iterator, Iterator);
-	REGISTER_ITERATOR_IMPLEMENT(iterator, traversable);
+	REGISTER_ITERATOR_INTERFACE(iterator, Iterator); /* 注册预定义接口 迭代器接口 */
+	REGISTER_ITERATOR_IMPLEMENT(iterator, traversable); /* 注册预定义接口 迭代器接口 */
 
-	REGISTER_ITERATOR_INTERFACE(arrayaccess, ArrayAccess);
+	REGISTER_ITERATOR_INTERFACE(arrayaccess, ArrayAccess); /* 注册预定义接口 数组式访问 */
 
-	REGISTER_ITERATOR_INTERFACE(serializable, Serializable)
+	REGISTER_ITERATOR_INTERFACE(serializable, Serializable) /* 注册预定义接口 序列化接口 */
 }
 /* }}} */
 

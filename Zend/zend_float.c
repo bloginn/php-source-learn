@@ -15,7 +15,7 @@
    | Authors: Christian Seiler <chris_se@gmx.net>                         |
    +----------------------------------------------------------------------+
 */
-
+/* FPU：(Float Point Unit，浮点运算单元) FPU是专用于浮点运算的处理器 */
 /* $Id$ */
 
 #include "zend.h"

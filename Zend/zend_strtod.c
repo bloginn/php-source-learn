@@ -431,7 +431,7 @@ static void destroy_freelist(void);
 
 #ifdef ZTS
 
-static MUTEX_T dtoa_mutex;
+static MUTEX_T dtoa_mutex; /* 互斥锁 */
 static MUTEX_T pow5mult_mutex; 
 
 #define _THREAD_PRIVATE_MUTEX_LOCK(x) tsrm_mutex_lock(x);
@@ -473,16 +473,16 @@ ZEND_API int zend_shutdown_strtod(void) /* {{{ */
 }
 /* }}} */
 
-static Bigint * Balloc(int k)
+static Bigint * Balloc(int k)/* 申请一个Bigint类型的块 */
 {
 	int x;
 	Bigint *rv;
 
-	if (k > Kmax) {
+	if (k > Kmax) { /* Kmax = 15 */
 		zend_error(E_ERROR, "Balloc() allocation exceeds list boundary");
 	}
 
-	_THREAD_PRIVATE_MUTEX_LOCK(dtoa_mutex);
+	_THREAD_PRIVATE_MUTEX_LOCK(dtoa_mutex);/* 等价 tsrm_mutex_lock(dtoa_mutex) 互斥锁加锁 */
 	if ((rv = freelist[k])) {
 		freelist[k] = rv->next;
 	} else {
@@ -495,18 +495,18 @@ static Bigint * Balloc(int k)
 		rv->k = k;
 		rv->maxwds = x;
 	}
-	_THREAD_PRIVATE_MUTEX_UNLOCK(dtoa_mutex);
+	_THREAD_PRIVATE_MUTEX_UNLOCK(dtoa_mutex);/* 等价 tsrm_mutex_unlock(dtoa_mutex) 互斥锁解锁 */
 	rv->sign = rv->wds = 0;
 	return rv;
 }
 
-static void Bfree(Bigint *v)
+static void Bfree(Bigint *v)/* 释放一个Bigint类型的值 */
 {
 	if (v) {
-		_THREAD_PRIVATE_MUTEX_LOCK(dtoa_mutex);
+		_THREAD_PRIVATE_MUTEX_LOCK(dtoa_mutex);/* 等价 tsrm_mutex_lock(dtoa_mutex) 互斥锁加锁 */
 		v->next = freelist[v->k];
 		freelist[v->k] = v;
-		_THREAD_PRIVATE_MUTEX_UNLOCK(dtoa_mutex);
+		_THREAD_PRIVATE_MUTEX_UNLOCK(dtoa_mutex);/* 等价 tsrm_mutex_unlock(dtoa_mutex) 互斥锁解锁 */
 	}
 }
 
@@ -2583,19 +2583,19 @@ ret:
 	return result;
 }
 
-ZEND_API double zend_hex_strtod(const char *str, const char **endptr)
+ZEND_API double zend_hex_strtod(const char *str, const char **endptr)/* 将16进制形式的字符串转换成双精度浮点型,将遇到不合条件而终止的字符指针由endptr传回；例如0x1f=31.000000,A2=162.000000 */
 {
 	const char *s = str;
 	char c;
 	int any = 0;
 	double value = 0;
 
-	if (strlen(str) < 2) {
+	if (strlen(str) < 2) {/* 如果字符串为空或者单字符，则返回0.0 */
 		*endptr = str;
 		return 0.0;
 	}
 
-	if (*s == '0' && (s[1] == 'x' || s[1] == 'X')) {
+	if (*s == '0' && (s[1] == 'x' || s[1] == 'X')) { /* 例如0x123获取0X123 */
 		s += 2;
 	}
 
@@ -2603,11 +2603,11 @@ ZEND_API double zend_hex_strtod(const char *str, const char **endptr)
 		if (c >= '0' && c <= '9') {
 			c -= '0';
 		} else if (c >= 'A' && c <= 'F') {
-			c -= 'A' - 10;
+			c -= 'A' - 10;/* c = c - 'A' + 10 例如F转成15 */
 		} else if (c >= 'a' && c <= 'f') {
-			c -= 'a' - 10;
+			c -= 'a' - 10;/* c = c - 'a' + 10 例如f转成15 */
 		} else {
-			break;
+			break;/* 如果字符不是0-9a-fA-F则停止转换 */
 		}
 
 		any = 1;
@@ -2621,14 +2621,14 @@ ZEND_API double zend_hex_strtod(const char *str, const char **endptr)
 	return value;
 }
 
-ZEND_API double zend_oct_strtod(const char *str, const char **endptr)
+ZEND_API double zend_oct_strtod(const char *str, const char **endptr)/* 将8进制形式的字符串转换成双精度浮点型,将遇到不合条件而终止的字符指针由endptr传回；例如20=16.000000,290=2.000000 */
 {
 	const char *s = str;
 	char c;
 	double value = 0;
 	int any = 0;
 
-	if (strlen(str) < 1) {
+	if (strlen(str) < 1) {/* 如果字符串为空字符，则返回0.0 */
 		*endptr = str;
 		return 0.0;
 	}
@@ -2654,7 +2654,7 @@ ZEND_API double zend_oct_strtod(const char *str, const char **endptr)
 	return value;
 }
 
-ZEND_API double zend_bin_strtod(const char *str, const char **endptr)
+ZEND_API double zend_bin_strtod(const char *str, const char **endptr)/* 将2进制形式的字符串转换成双精度浮点型,将遇到不合条件而终止的字符指针由endptr传回；例如0B10=2.000000,11=3.000000 */
 {
 	const char *s = str;
 	char 		c;
@@ -2679,7 +2679,7 @@ ZEND_API double zend_bin_strtod(const char *str, const char **endptr)
 		if ('0' == c || '1' == c)
 			value = value * 2 + c - '0';
 		else
-			break;
+			break;/* 如果字符不是0-1则停止转换 */
 
 		any = 1;
 	}

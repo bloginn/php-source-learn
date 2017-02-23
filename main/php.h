@@ -253,7 +253,7 @@ END_EXTERN_C()
 # elif defined(MAX_PATH)
 #  define MAXPATHLEN MAX_PATH
 # else
-#  define MAXPATHLEN 256    /* Should be safe for any weird systems that do not define it */
+#  define MAXPATHLEN 256  /* 最大路径长度 */  /* Should be safe for any weird systems that do not define it */
 # endif
 #endif
 

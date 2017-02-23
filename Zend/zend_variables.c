@@ -28,7 +28,7 @@
 #include "zend_list.h"
 
 
-ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC)
+ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC) /* PHP变量的析构函数 释放zvalue的值 */
 {
 	switch (Z_TYPE_P(zvalue) & IS_CONSTANT_TYPE_MASK) {
 		case IS_STRING:
@@ -76,7 +76,7 @@ ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC)
 }
 
 
-ZEND_API void _zval_internal_dtor(zval *zvalue ZEND_FILE_LINE_DC)
+ZEND_API void _zval_internal_dtor(zval *zvalue ZEND_FILE_LINE_DC)/* 内部变量的释放 */
 {
 	switch (Z_TYPE_P(zvalue) & IS_CONSTANT_TYPE_MASK) {
 		case IS_STRING:
@@ -100,9 +100,9 @@ ZEND_API void _zval_internal_dtor(zval *zvalue ZEND_FILE_LINE_DC)
 }
 
 
-ZEND_API void zval_add_ref(zval **p)
+ZEND_API void zval_add_ref(zval **p)/* 增加_zval的refcount__gc 被使用的次数 */
 {
-	Z_ADDREF_PP(p);
+	Z_ADDREF_PP(p);/* 等价 zval_addref_p(*p) 等价 return ++p->refcount__gc;  */
 }
 
 
@@ -155,7 +155,7 @@ ZEND_API void _zval_copy_ctor_func(zval *zvalue ZEND_FILE_LINE_DC)
 }
 
 
-ZEND_API int zend_print_variable(zval *var) 
+ZEND_API int zend_print_variable(zval *var)/* 打印var的值 */ 
 {
 	return zend_print_zval(var, 0);
 }
@@ -177,7 +177,7 @@ ZEND_API void _zval_copy_ctor_wrapper(zval *zvalue)
 }
 
 
-ZEND_API void _zval_internal_dtor_wrapper(zval *zvalue)
+ZEND_API void _zval_internal_dtor_wrapper(zval *zvalue) /* 内部变量的释放 等价前面的 _zval_internal_dtor函数 */
 {
 	zval_internal_dtor(zvalue);
 }
@@ -195,7 +195,7 @@ ZEND_API void _zval_internal_ptr_dtor_wrapper(zval **zval_ptr)
 }
 #endif
 
-ZEND_API int zval_copy_static_var(zval **p TSRMLS_DC, int num_args, va_list args, zend_hash_key *key) /* {{{ */
+ZEND_API int zval_copy_static_var(zval **p TSRMLS_DC, int num_args, va_list args, zend_hash_key *key) /* {{{ */ /* 复制静态值 */
 {
 	HashTable *target = va_arg(args, HashTable*);
 	zend_bool is_ref;

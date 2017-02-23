@@ -18,7 +18,7 @@
    |          Zeev Suraski <zeev@zend.com>                                |
    +----------------------------------------------------------------------+
 */
-
+/* 异常处理相关函数 */
 /* $Id$ */
 
 #include "zend.h"
@@ -34,7 +34,7 @@ static zend_class_entry *error_exception_ce;
 static zend_object_handlers default_exception_handlers;
 ZEND_API void (*zend_throw_exception_hook)(zval *ex TSRMLS_DC);
 
-void zend_exception_set_previous(zval *exception, zval *add_previous TSRMLS_DC)
+void zend_exception_set_previous(zval *exception, zval *add_previous TSRMLS_DC)/* 设置之前的异常 */
 {
 	zval *previous, *ancestor;
 
@@ -89,7 +89,7 @@ void zend_exception_restore(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_throw_exception_internal(zval *exception TSRMLS_DC) /* {{{ */
+void zend_throw_exception_internal(zval *exception TSRMLS_DC) /* {{{ */ /* 内部异常调用 */
 {
 #ifdef HAVE_DTRACE
 	if (DTRACE_EXCEPTION_THROWN_ENABLED()) {
@@ -105,7 +105,7 @@ void zend_throw_exception_internal(zval *exception TSRMLS_DC) /* {{{ */
 	}
 #endif /* HAVE_DTRACE */
 
-	if (exception != NULL) {
+	if (exception != NULL) {/* 如果之前还有异常，则处理前异常 */
 		zval *previous = EG(exception);
 		zend_exception_set_previous(exception, EG(exception) TSRMLS_CC);
 		EG(exception) = exception;
@@ -190,16 +190,16 @@ static zend_object_value zend_error_exception_new(zend_class_entry *class_type T
 
 /* {{{ proto Exception Exception::__clone()
    Clone the exception object */
-ZEND_METHOD(exception, __clone)
+ZEND_METHOD(exception, __clone)/* 等价 void zim_exception___clone(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	/* Should never be executable */
-	zend_throw_exception(NULL, "Cannot clone object using __clone()", 0 TSRMLS_CC);
+	zend_throw_exception(NULL, "Cannot clone object using __clone()", 0 TSRMLS_CC);/* 由于__clone方式是私有的，所以不会被外界调用，自然这种错误不会发生 */
 }
 /* }}} */
 
 /* {{{ proto Exception::__construct(string message, int code [, Exception previous])
    Exception constructor */
-ZEND_METHOD(exception, __construct)
+ZEND_METHOD(exception, __construct)/* 等价 void zim_exception___construct(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	char  *message = NULL;
 	long   code = 0;
@@ -207,21 +207,21 @@ ZEND_METHOD(exception, __construct)
 	int    argc = ZEND_NUM_ARGS(), message_len;
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, argc TSRMLS_CC, "|slO!", &message, &message_len, &code, &previous, default_exception_ce) == FAILURE) {
-		zend_error(E_ERROR, "Wrong parameters for Exception([string $exception [, long $code [, Exception $previous = NULL]]])");
+		zend_error(E_ERROR, "Wrong parameters for Exception([string $exception [, long $code [, Exception $previous = NULL]]])");/* 如果参数错误，例如代码:(new Exception())->__construct(1,1,1); */
 	}
 
-	object = getThis();
+	object = getThis();/* getThis()等价(this_ptr) */
 
 	if (message) {
-		zend_update_property_stringl(default_exception_ce, object, "message", sizeof("message")-1, message, message_len TSRMLS_CC);
+		zend_update_property_stringl(default_exception_ce, object, "message", sizeof("message")-1, message, message_len TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 
 	if (code) {
-		zend_update_property_long(default_exception_ce, object, "code", sizeof("code")-1, code TSRMLS_CC);
+		zend_update_property_long(default_exception_ce, object, "code", sizeof("code")-1, code TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 
 	if (previous) {
-		zend_update_property(default_exception_ce, object, "previous", sizeof("previous")-1, previous TSRMLS_CC);
+		zend_update_property(default_exception_ce, object, "previous", sizeof("previous")-1, previous TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 }
 /* }}} */
@@ -234,15 +234,15 @@ ZEND_METHOD(exception, __construct)
 		zval *tmp; \
 		MAKE_STD_ZVAL(tmp); \
 		ZVAL_STRINGL(tmp, name, sizeof(name)-1, 1); \
-		Z_OBJ_HANDLER_P(object, unset_property)(object, tmp, 0 TSRMLS_CC); \
+		Z_OBJ_HANDLER_P(object, unset_property)(object, tmp, 0 TSRMLS_CC); \ /* unset_property实际是zend_std_unset_property函数 */
 		zval_ptr_dtor(&tmp); \
 	}
 
-ZEND_METHOD(exception, __wakeup)
+ZEND_METHOD(exception, __wakeup)/* 等价 void zim_exception___wakeup(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	zval *value;
-	zval *object = getThis();
-	CHECK_EXC_TYPE("message", IS_STRING);
+	zval *object = getThis();/* getThis()等价(this_ptr) */
+	CHECK_EXC_TYPE("message", IS_STRING);/* 如果参数类型与对应的类型不符合，则释放message的值 */
 	CHECK_EXC_TYPE("string", IS_STRING);
 	CHECK_EXC_TYPE("code", IS_LONG);
 	CHECK_EXC_TYPE("file", IS_STRING);
@@ -254,7 +254,7 @@ ZEND_METHOD(exception, __wakeup)
 
 /* {{{ proto ErrorException::__construct(string message, int code, int severity [, string filename [, int lineno [, Exception previous]]])
    ErrorException constructor */
-ZEND_METHOD(error_exception, __construct)
+ZEND_METHOD(error_exception, __construct)/* 等价 void zim_error_exception___construct(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	char  *message = NULL, *filename = NULL;
 	long   code = 0, severity = E_ERROR, lineno;
@@ -265,34 +265,34 @@ ZEND_METHOD(error_exception, __construct)
 		zend_error(E_ERROR, "Wrong parameters for ErrorException([string $exception [, long $code, [ long $severity, [ string $filename, [ long $lineno  [, Exception $previous = NULL]]]]]])");
 	}
 
-	object = getThis();
+	object = getThis();/* getThis()等价(this_ptr) */
 
 	if (message) {
-		zend_update_property_string(default_exception_ce, object, "message", sizeof("message")-1, message TSRMLS_CC);
+		zend_update_property_string(default_exception_ce, object, "message", sizeof("message")-1, message TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 
 	if (code) {
-		zend_update_property_long(default_exception_ce, object, "code", sizeof("code")-1, code TSRMLS_CC);
+		zend_update_property_long(default_exception_ce, object, "code", sizeof("code")-1, code TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 
 	if (previous) {
-		zend_update_property(default_exception_ce, object, "previous", sizeof("previous")-1, previous TSRMLS_CC);
+		zend_update_property(default_exception_ce, object, "previous", sizeof("previous")-1, previous TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 
-	zend_update_property_long(default_exception_ce, object, "severity", sizeof("severity")-1, severity TSRMLS_CC);
+	zend_update_property_long(default_exception_ce, object, "severity", sizeof("severity")-1, severity TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 
 	if (argc >= 4) {
-	    zend_update_property_string(default_exception_ce, object, "file", sizeof("file")-1, filename TSRMLS_CC);
+	    zend_update_property_string(default_exception_ce, object, "file", sizeof("file")-1, filename TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
     	if (argc < 5) {
     	    lineno = 0; /* invalidate lineno */
     	}
-    	zend_update_property_long(default_exception_ce, object, "line", sizeof("line")-1, lineno TSRMLS_CC);
+    	zend_update_property_long(default_exception_ce, object, "line", sizeof("line")-1, lineno TSRMLS_CC);/* 使用__construct的参数修改对应属性 */
 	}
 }
 /* }}} */
 
 #define DEFAULT_0_PARAMS \
-	if (zend_parse_parameters_none() == FAILURE) { \
+	if (zend_parse_parameters_none() == FAILURE) { \ /* zend_parse_parameters_none()等价zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") */
 		return; \
 	}
 
@@ -310,61 +310,61 @@ static void _default_exception_get_entry(zval *object, char *name, int name_len,
 
 /* {{{ proto string Exception::getFile()
    Get the file in which the exception occurred */
-ZEND_METHOD(exception, getFile)
+ZEND_METHOD(exception, getFile)/* 等价 void zim_exception_getFile(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	_default_exception_get_entry(getThis(), "file", sizeof("file")-1, return_value TSRMLS_CC);
+	_default_exception_get_entry(getThis(), "file", sizeof("file")-1, return_value TSRMLS_CC);/* getThis()等价(this_ptr) */
 }
 /* }}} */
 
 /* {{{ proto int Exception::getLine()
    Get the line in which the exception occurred */
-ZEND_METHOD(exception, getLine)
+ZEND_METHOD(exception, getLine)/* 等价 void zim_exception_getLine(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	_default_exception_get_entry(getThis(), "line", sizeof("line")-1, return_value TSRMLS_CC);
+	_default_exception_get_entry(getThis(), "line", sizeof("line")-1, return_value TSRMLS_CC);/* getThis()等价(this_ptr) */
 }
 /* }}} */
 
 /* {{{ proto string Exception::getMessage()
    Get the exception message */
-ZEND_METHOD(exception, getMessage)
+ZEND_METHOD(exception, getMessage)/* 等价 void zim_exception_getMessage(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	_default_exception_get_entry(getThis(), "message", sizeof("message")-1, return_value TSRMLS_CC);
+	_default_exception_get_entry(getThis(), "message", sizeof("message")-1, return_value TSRMLS_CC);/* getThis()等价(this_ptr) */
 }
 /* }}} */
 
 /* {{{ proto int Exception::getCode()
    Get the exception code */
-ZEND_METHOD(exception, getCode)
+ZEND_METHOD(exception, getCode)/* 等价 void zim_exception_getCode(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	_default_exception_get_entry(getThis(), "code", sizeof("code")-1, return_value TSRMLS_CC);
+	_default_exception_get_entry(getThis(), "code", sizeof("code")-1, return_value TSRMLS_CC);/* getThis()等价(this_ptr) */
 }
 /* }}} */
 
 /* {{{ proto array Exception::getTrace()
    Get the stack trace for the location in which the exception occurred */
-ZEND_METHOD(exception, getTrace)
+ZEND_METHOD(exception, getTrace)/* 等价 void zim_exception_getTrace(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	_default_exception_get_entry(getThis(), "trace", sizeof("trace")-1, return_value TSRMLS_CC);
+	_default_exception_get_entry(getThis(), "trace", sizeof("trace")-1, return_value TSRMLS_CC);/* getThis()等价(this_ptr) */
 }
 /* }}} */
 
 /* {{{ proto int ErrorException::getSeverity()
    Get the exception severity */
-ZEND_METHOD(error_exception, getSeverity)
+ZEND_METHOD(error_exception, getSeverity)/* 等价 void zim_exception_getSeverity(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	_default_exception_get_entry(getThis(), "severity", sizeof("severity")-1, return_value TSRMLS_CC);
+	_default_exception_get_entry(getThis(), "severity", sizeof("severity")-1, return_value TSRMLS_CC);/* getThis()等价(this_ptr) */
 }
 /* }}} */
 
@@ -613,15 +613,15 @@ static int _build_trace_string(zval **frame TSRMLS_DC, int num_args, va_list arg
 
 /* {{{ proto string Exception::getTraceAsString()
    Obtain the backtrace for the exception as a string (instead of an array) */
-ZEND_METHOD(exception, getTraceAsString)
+ZEND_METHOD(exception, getTraceAsString)/* 等价 void zim_exception_getTraceAsString(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	zval *trace;
 	char *res, **str, *s_tmp;
 	int res_len = 0, *len = &res_len, num = 0;
 
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	trace = zend_read_property(default_exception_ce, getThis(), "trace", sizeof("trace")-1, 1 TSRMLS_CC);
+	trace = zend_read_property(default_exception_ce, getThis(), "trace", sizeof("trace")-1, 1 TSRMLS_CC);/* getThis()等价(this_ptr) */
 	if (Z_TYPE_P(trace) != IS_ARRAY) {
 		RETURN_FALSE;
 	}
@@ -643,13 +643,13 @@ ZEND_METHOD(exception, getTraceAsString)
 
 /* {{{ proto string Exception::getPrevious()
    Return previous Exception or NULL. */
-ZEND_METHOD(exception, getPrevious)
+ZEND_METHOD(exception, getPrevious)/* 等价 void zim_exception_getPrevious(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	zval *previous;
 
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
-	previous = zend_read_property(default_exception_ce, getThis(), "previous", sizeof("previous")-1, 1 TSRMLS_CC);
+	previous = zend_read_property(default_exception_ce, getThis(), "previous", sizeof("previous")-1, 1 TSRMLS_CC);/* getThis()等价(this_ptr) */
 	RETURN_ZVAL(previous, 1, 0);
 }
 /* }}} */
@@ -668,7 +668,7 @@ int zend_spprintf(char **message, int max_len, const char *format, ...) /* {{{ *
 
 /* {{{ proto string Exception::__toString()
    Obtain the string representation of the Exception object */
-ZEND_METHOD(exception, __toString)
+ZEND_METHOD(exception, __toString)/* 等价 void zim_exception___toString(int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC) */
 {
 	zval message, file, line, *trace, *exception;
 	char *str, *prev_str;
@@ -676,11 +676,11 @@ ZEND_METHOD(exception, __toString)
 	zend_fcall_info fci;
 	zval fname;
 
-	DEFAULT_0_PARAMS;
+	DEFAULT_0_PARAMS;/* 如果有参数,直接return; */
 
 	str = estrndup("", 0);
 
-	exception = getThis();
+	exception = getThis();/* getThis()等价(this_ptr) */
 	ZVAL_STRINGL(&fname, "gettraceasstring", sizeof("gettraceasstring")-1, 1);
 
 	while (exception && Z_TYPE_P(exception) == IS_OBJECT && instanceof_function(Z_OBJCE_P(exception), default_exception_ce TSRMLS_CC)) {
@@ -738,7 +738,7 @@ ZEND_METHOD(exception, __toString)
 
 	/* We store the result in the private property string so we can access
 	 * the result in uncaught exception handlers without memleaks. */
-	zend_update_property_string(default_exception_ce, getThis(), "string", sizeof("string")-1, str TSRMLS_CC);
+	zend_update_property_string(default_exception_ce, getThis(), "string", sizeof("string")-1, str TSRMLS_CC);/* getThis()等价(this_ptr) */
 
 	RETURN_STRINGL(str, len, 0);
 }
@@ -754,28 +754,28 @@ ZEND_METHOD(exception, __toString)
  * And never try to change the state of exceptions and never implement anything
  * that gives the user anything to accomplish this.
  */
-ZEND_BEGIN_ARG_INFO_EX(arginfo_exception___construct, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_exception___construct, 0, 0, 0)/* 异常类Exception的__construct方法的参数 */
 	ZEND_ARG_INFO(0, message)
 	ZEND_ARG_INFO(0, code)
 	ZEND_ARG_INFO(0, previous)
 ZEND_END_ARG_INFO()
 
 const static zend_function_entry default_exception_functions[] = {
-	ZEND_ME(exception, __clone, NULL, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)
-	ZEND_ME(exception, __construct, arginfo_exception___construct, ZEND_ACC_PUBLIC)
-	ZEND_ME(exception, __wakeup, NULL, ZEND_ACC_PUBLIC)
-	ZEND_ME(exception, getMessage, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, getCode, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, getFile, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, getLine, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, getTrace, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, getPrevious, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, getTraceAsString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
-	ZEND_ME(exception, __toString, NULL, 0)
+	ZEND_ME(exception, __clone, NULL, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)/* final private __clone(){} */
+	ZEND_ME(exception, __construct, arginfo_exception___construct, ZEND_ACC_PUBLIC)/* public __construct($message=0, $code=0, $previous=0){} */
+	ZEND_ME(exception, __wakeup, NULL, ZEND_ACC_PUBLIC)/* public __wakeup(){} */
+	ZEND_ME(exception, getMessage, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getMessage(){} */
+	ZEND_ME(exception, getCode, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getCode(){} */
+	ZEND_ME(exception, getFile, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getFile(){} */
+	ZEND_ME(exception, getLine, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getLine(){} */
+	ZEND_ME(exception, getTrace, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getTrace(){} */
+	ZEND_ME(exception, getPrevious, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getPrevious(){} */
+	ZEND_ME(exception, getTraceAsString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/*  final public getTraceAsString(){} */
+	ZEND_ME(exception, __toString, NULL, 0)/* public __toString(){} */
 	{NULL, NULL, NULL}
 };
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_error_exception___construct, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_error_exception___construct, 0, 0, 0)/* 错误异常类ErrorException的__construct方法的参数 */
 	ZEND_ARG_INFO(0, message)
 	ZEND_ARG_INFO(0, code)
 	ZEND_ARG_INFO(0, severity)
@@ -785,34 +785,34 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_error_exception___construct, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
 static const zend_function_entry error_exception_functions[] = {
-	ZEND_ME(error_exception, __construct, arginfo_error_exception___construct, ZEND_ACC_PUBLIC)
-	ZEND_ME(error_exception, getSeverity, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
+	ZEND_ME(error_exception, __construct, arginfo_error_exception___construct, ZEND_ACC_PUBLIC)/* public __construct($message = 0, $code = 0, $severity = 1, $filename = 0, $lineno = 0, $previous = 0) */
+	ZEND_ME(error_exception, getSeverity, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)/* final public getSeverity(){} */
 	{NULL, NULL, NULL}
 };
 /* }}} */
 
-void zend_register_default_exception(TSRMLS_D) /* {{{ */
+void zend_register_default_exception(TSRMLS_D) /* {{{ */	/* 注册Exception和ErrorException异常内部类 */
 {
 	zend_class_entry ce;
 
-	INIT_CLASS_ENTRY(ce, "Exception", default_exception_functions);
-	default_exception_ce = zend_register_internal_class(&ce TSRMLS_CC);
+	INIT_CLASS_ENTRY(ce, "Exception", default_exception_functions);/* default_exception_functions为默认的异常方法数组,763~776行 */
+	default_exception_ce = zend_register_internal_class(&ce TSRMLS_CC);/* 注册为内部类 */
 	default_exception_ce->create_object = zend_default_exception_new;
 	memcpy(&default_exception_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	default_exception_handlers.clone_obj = NULL;
 
-	zend_declare_property_string(default_exception_ce, "message", sizeof("message")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);
-	zend_declare_property_string(default_exception_ce, "string", sizeof("string")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
-	zend_declare_property_long(default_exception_ce, "code", sizeof("code")-1, 0, ZEND_ACC_PROTECTED TSRMLS_CC);
-	zend_declare_property_null(default_exception_ce, "file", sizeof("file")-1, ZEND_ACC_PROTECTED TSRMLS_CC);
-	zend_declare_property_null(default_exception_ce, "line", sizeof("line")-1, ZEND_ACC_PROTECTED TSRMLS_CC);
-	zend_declare_property_null(default_exception_ce, "trace", sizeof("trace")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
-	zend_declare_property_null(default_exception_ce, "previous", sizeof("previous")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(default_exception_ce, "message", sizeof("message")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);/* 声明属性,protectd $message; */
+	zend_declare_property_string(default_exception_ce, "string", sizeof("string")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);/* 声明属性,private $string; */
+	zend_declare_property_long(default_exception_ce, "code", sizeof("code")-1, 0, ZEND_ACC_PROTECTED TSRMLS_CC);/* 声明属性,protectd $code; */
+	zend_declare_property_null(default_exception_ce, "file", sizeof("file")-1, ZEND_ACC_PROTECTED TSRMLS_CC);/* 声明属性,protectd $file; */
+	zend_declare_property_null(default_exception_ce, "line", sizeof("line")-1, ZEND_ACC_PROTECTED TSRMLS_CC);/* 声明属性,protectd $line; */
+	zend_declare_property_null(default_exception_ce, "trace", sizeof("trace")-1, ZEND_ACC_PRIVATE TSRMLS_CC);/* 声明属性,private $trace; */
+	zend_declare_property_null(default_exception_ce, "previous", sizeof("previous")-1, ZEND_ACC_PRIVATE TSRMLS_CC);/* 声明属性,private $previous; */
 
-	INIT_CLASS_ENTRY(ce, "ErrorException", error_exception_functions);
-	error_exception_ce = zend_register_internal_class_ex(&ce, default_exception_ce, NULL TSRMLS_CC);
+	INIT_CLASS_ENTRY(ce, "ErrorException", error_exception_functions);/* error_exception_functions为默认的异常方法,787~791行 */
+	error_exception_ce = zend_register_internal_class_ex(&ce, default_exception_ce, NULL TSRMLS_CC);/* 注册为内部类，并继承Exception类 */
 	error_exception_ce->create_object = zend_error_exception_new;
-	zend_declare_property_long(error_exception_ce, "severity", sizeof("severity")-1, E_ERROR, ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_long(error_exception_ce, "severity", sizeof("severity")-1, E_ERROR, ZEND_ACC_PROTECTED TSRMLS_CC);/* 声明属性,protected int $severity; */
 }
 /* }}} */
 
@@ -828,11 +828,11 @@ ZEND_API zend_class_entry *zend_get_error_exception(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API zval * zend_throw_exception(zend_class_entry *exception_ce, const char *message, long code TSRMLS_DC) /* {{{ */
+ZEND_API zval * zend_throw_exception(zend_class_entry *exception_ce, const char *message, long code TSRMLS_DC) /* {{{ */ /* 内部异常调用函数 */
 {
 	zval *ex;
 
-	MAKE_STD_ZVAL(ex);
+	MAKE_STD_ZVAL(ex);/* ALLOC_ZVAL(ex);INIT_ZVAL(*ex); */
 	if (exception_ce) {
 		if (!instanceof_function(exception_ce, default_exception_ce TSRMLS_CC)) {
 			zend_error(E_NOTICE, "Exceptions must be derived from the Exception base class");
@@ -856,7 +856,7 @@ ZEND_API zval * zend_throw_exception(zend_class_entry *exception_ce, const char 
 }
 /* }}} */
 
-ZEND_API zval * zend_throw_exception_ex(zend_class_entry *exception_ce, long code TSRMLS_DC, const char *format, ...) /* {{{ */
+ZEND_API zval * zend_throw_exception_ex(zend_class_entry *exception_ce, long code TSRMLS_DC, const char *format, ...) /* {{{ */ /* 调用zend_throw_exception之前将值打印出来*/
 {
 	va_list arg;
 	char *message;
@@ -871,10 +871,10 @@ ZEND_API zval * zend_throw_exception_ex(zend_class_entry *exception_ce, long cod
 }
 /* }}} */
 
-ZEND_API zval * zend_throw_error_exception(zend_class_entry *exception_ce, const char *message, long code, int severity TSRMLS_DC) /* {{{ */
+ZEND_API zval * zend_throw_error_exception(zend_class_entry *exception_ce, const char *message, long code, int severity TSRMLS_DC) /* {{{ */ /* main/main.c中有调用 */
 {
 	zval *ex = zend_throw_exception(exception_ce, message, code TSRMLS_CC);
-	zend_update_property_long(default_exception_ce, ex, "severity", sizeof("severity")-1, severity TSRMLS_CC);
+	zend_update_property_long(default_exception_ce, ex, "severity", sizeof("severity")-1, severity TSRMLS_CC);/* 设置异常的严重程度 */
 	return ex;
 }
 /* }}} */
@@ -944,13 +944,13 @@ ZEND_API void zend_throw_exception_object(zval *exception TSRMLS_DC) /* {{{ */
 	zend_class_entry *exception_ce;
 
 	if (exception == NULL || Z_TYPE_P(exception) != IS_OBJECT) {
-		zend_error(E_ERROR, "Need to supply an object when throwing an exception");
+		zend_error(E_ERROR, "Need to supply an object when throwing an exception");/* 如果exception不是一个对象，则报次错误,不过调用该函数之前就已经做了检测，所以这里不会发生 */
 	}
 
 	exception_ce = Z_OBJCE_P(exception);
 
 	if (!exception_ce || !instanceof_function(exception_ce, default_exception_ce TSRMLS_CC)) {
-		zend_error(E_ERROR, "Exceptions must be valid objects derived from the Exception base class");
+		zend_error(E_ERROR, "Exceptions must be valid objects derived from the Exception base class");/* 如果throw的类不是继承Extension类则报该错误,例如:throw new MyClass("messages"); */
 	}
 	zend_throw_exception_internal(exception TSRMLS_CC);
 }

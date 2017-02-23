@@ -25,10 +25,10 @@
 typedef struct _zend_stack {
 	int top, max;
 	void **elements;
-} zend_stack;
+} zend_stack;/* zend的堆栈结构体 */
 
 
-#define STACK_BLOCK_SIZE 64
+#define STACK_BLOCK_SIZE 64 /* 堆栈块的大小 */
 
 BEGIN_EXTERN_C()
 ZEND_API int zend_stack_init(zend_stack *stack);

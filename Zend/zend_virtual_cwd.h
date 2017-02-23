@@ -58,7 +58,7 @@
 /* mode_t isn't defined on Windows */
 typedef unsigned short mode_t;
 
-#define DEFAULT_SLASH '\\'
+#define DEFAULT_SLASH '\\' /* 默认的斜线 */
 #define DEFAULT_DIR_SEPARATOR	';'
 #define IS_SLASH(c)	((c) == '/' || (c) == '\\')
 #define IS_SLASH_P(c)	(*(c) == '/' || \
@@ -69,20 +69,20 @@ typedef unsigned short mode_t;
 #define COPY_WHEN_ABSOLUTE(path) 2
 #define IS_UNC_PATH(path, len) \
 	(len >= 2 && IS_SLASH(path[0]) && IS_SLASH(path[1]))
-#define IS_ABSOLUTE_PATH(path, len) \
-	(len >= 2 && ((isalpha(path[0]) && path[1] == ':') || IS_UNC_PATH(path, len)))
+#define IS_ABSOLUTE_PATH(path, len) \ /* 判断是否为绝对路径 */
+	(len >= 2 && ((isalpha(path[0]) && path[1] == ':') || IS_UNC_PATH(path, len))) /* 这里主要用于Windows系统,例如路径 c:// isalpha()判断字符是否为字母 */
 
 #elif defined(NETWARE)
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
 
-#define DEFAULT_SLASH '/'
+#define DEFAULT_SLASH '/' /* 默认的斜线 */
 #define DEFAULT_DIR_SEPARATOR	';'
 #define IS_SLASH(c)	((c) == '/' || (c) == '\\')
 #define IS_SLASH_P(c)	IS_SLASH(*(c))
 /* Colon indicates volume name, either first character should be forward slash or backward slash */
-#define IS_ABSOLUTE_PATH(path, len) \
+#define IS_ABSOLUTE_PATH(path, len) \ 	/* 判断是否为绝对路径 */
     ((strchr(path, ':') != NULL) || ((len >= 1) && ((path[0] == '/') || (path[0] == '\\'))))
 
 #else
@@ -90,7 +90,7 @@ typedef unsigned short mode_t;
 #include <dirent.h>
 #endif
 
-#define DEFAULT_SLASH '/'
+#define DEFAULT_SLASH '/' /* 默认的斜线 */
 
 #ifdef __riscos__
 #define DEFAULT_DIR_SEPARATOR  ';'
@@ -109,7 +109,7 @@ typedef unsigned short mode_t;
 #endif
 
 #ifndef IS_ABSOLUTE_PATH
-#define IS_ABSOLUTE_PATH(path, len) \
+#define IS_ABSOLUTE_PATH(path, len) \ /* 判断是否为绝对路径 */
 	(IS_SLASH(path[0]))
 #endif
 
@@ -135,8 +135,8 @@ CWD_API int php_sys_stat_ex(const char *path, struct stat *buf, int lstat);
 # define php_sys_lstat(path, buf) php_sys_stat_ex(path, buf, 1)
 CWD_API int php_sys_readlink(const char *link, char *target, size_t target_len);
 #else
-# define php_sys_stat stat
-# define php_sys_lstat lstat
+# define php_sys_stat stat /* 通过文件名filename获取文件信息，并保存在buf所指的结构体stat中 */
+# define php_sys_lstat lstat /* Lstat函数与stat函数类似，区别在于lstat函数不对符号链接进行追踪。如果参数filename是一个符号链接名，lstat函数仅仅返回链接本身的信息 */
 # ifdef HAVE_SYMLINK
 # define php_sys_readlink(link, target, target_len) readlink(link, target, target_len)
 # endif
@@ -310,7 +310,7 @@ CWD_API realpath_cache_bucket** realpath_cache_get_buckets(TSRMLS_D);
 #define VCWD_MKDIR(pathname, mode) mkdir(pathname, mode)
 #define VCWD_RMDIR(pathname) rmdir(pathname)
 #define VCWD_OPENDIR(pathname) opendir(pathname)
-#define VCWD_POPEN(command, type) popen(command, type)
+#define VCWD_POPEN(command, type) popen(command, type) /* popen() 函数通过创建一个管道，调用 fork 产生一个子进程，执行一个 shell 以运行命令来开启一个进程。这个进程必须由 pclose() 函数关闭，而不是 fclose() 函数 */
 #if defined(TSRM_WIN32)
 #define VCWD_ACCESS(pathname, mode) tsrm_win32_access(pathname, mode TSRMLS_CC)
 #else

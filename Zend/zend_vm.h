@@ -15,7 +15,7 @@
    | Authors: Dmitry Stogov <dmitry@zend.com>                             |
    +----------------------------------------------------------------------+
 */
-
+/* VM virtual machine 虚拟机的意思 */
 /* $Id$ */
 
 #ifndef ZEND_VM_H

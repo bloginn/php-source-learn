@@ -63,7 +63,7 @@
 #endif
 
 #ifndef HAVE_REALPATH
-#define realpath(x,y) strcpy(y,x)
+#define realpath(x,y) strcpy(y,x) /* strcpy(y,x)把从x地址开始且含有'\0'结束符的字符串复制到以y开始的地址空间。 */
 #endif
 
 #define VIRTUAL_CWD_DEBUG 0
@@ -112,7 +112,7 @@ static int php_check_dots(const char *element, int n)
 #define IS_DIRECTORY_UP(element, len) \
 	(len >= 2 && !php_check_dots(element, len))
 
-#define IS_DIRECTORY_CURRENT(element, len) \
+#define IS_DIRECTORY_CURRENT(element, len) \ /* 是否是当前目录 */
 	(len == 1 && element[0] == '.')
 
 #elif defined(NETWARE)
@@ -205,7 +205,7 @@ typedef struct {
 
 #define SECS_BETWEEN_EPOCHS (__int64)11644473600
 #define SECS_TO_100NS (__int64)10000000
-static inline time_t FileTimeToUnixTime(const FILETIME FileTime)
+static inline time_t FileTimeToUnixTime(const FILETIME FileTime) /* 用于将win32系统获取的文件信息中的时间转成unix时间格式 */
 {
 	__int64 UnixTime;
 	long *nsec = NULL;
@@ -229,7 +229,7 @@ static inline time_t FileTimeToUnixTime(const FILETIME FileTime)
 	return (time_t)UnixTime;
 }
 
-CWD_API int php_sys_readlink(const char *link, char *target, size_t target_len){ /* {{{ */
+CWD_API int php_sys_readlink(const char *link, char *target, size_t target_len){ /* {{{ */ /* 用于win32系统 将参数 link 的符号链接内容存储到参数 target 所指的内存空间，等价Linux的readlink()函数 */
 	HINSTANCE kernel32;
 	HANDLE hFile;
 	DWORD dwRet;
@@ -291,14 +291,14 @@ CWD_API int php_sys_readlink(const char *link, char *target, size_t target_len){
 }
 /* }}} */
 
-CWD_API int php_sys_stat_ex(const char *path, struct stat *buf, int lstat) /* {{{ */
+CWD_API int php_sys_stat_ex(const char *path, struct stat *buf, int lstat) /* {{{ */ /* 用于win32系统获取文件信息，等价于Linux的stat函数 */
 {
-	WIN32_FILE_ATTRIBUTE_DATA data;
+	WIN32_FILE_ATTRIBUTE_DATA data;/* win32系统的文件属性数据结构体 请看 https://msdn.microsoft.com/en-us/library/ms892377.aspx */
 	__int64 t;
 	const size_t path_len = strlen(path);
 	ALLOCA_FLAG(use_heap_large);
 
-	if (!GetFileAttributesEx(path, GetFileExInfoStandard, &data)) {
+	if (!GetFileAttributesEx(path, GetFileExInfoStandard, &data)) { /* win32系统获取文件信息并保存在data中 请看 https://msdn.microsoft.com/en-us/library/windows/desktop/aa364946(v=vs.85).aspx */
 		return stat(path, buf);
 	}
 
@@ -405,18 +405,18 @@ CWD_API int php_sys_stat_ex(const char *path, struct stat *buf, int lstat) /* {{
 /* }}} */
 #endif
 
-static int php_is_dir_ok(const cwd_state *state)  /* {{{ */
+static int php_is_dir_ok(const cwd_state *state)  /* {{{ */ /* 判断是否为目录，如果为目录返回0，否则返回1 */
 {
 	struct stat buf;
 
-	if (php_sys_stat(state->cwd, &buf) == 0 && S_ISDIR(buf.st_mode))
+	if (php_sys_stat(state->cwd, &buf) == 0 && S_ISDIR(buf.st_mode)) /* php_sys_stat(path,buf)通过文件名filename获取文件信息，并保存在buf所指的结构体stat中，并判断是否为目录 */
 		return (0);
 
 	return (1);
 }
 /* }}} */
 
-static int php_is_file_ok(const cwd_state *state)  /* {{{ */
+static int php_is_file_ok(const cwd_state *state)  /* {{{ */ /* 判断是否为文件，如果为文件返回0，否则返回1 */
 {
 	struct stat buf;
 
@@ -443,9 +443,9 @@ static void cwd_globals_dtor(virtual_cwd_globals *cwd_g TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-CWD_API void virtual_cwd_startup(void) /* {{{ */
+CWD_API void virtual_cwd_startup(void) /* {{{ */ /* 启用虚拟CWD */
 {
-	char cwd[MAXPATHLEN];
+	char cwd[MAXPATHLEN];/* MAXPATHLEN 256 */
 	char *result;
 
 #ifdef NETWARE
@@ -460,10 +460,10 @@ CWD_API void virtual_cwd_startup(void) /* {{{ */
 		}
 	}
 #else
-	result = getcwd(cwd, sizeof(cwd));
+	result = getcwd(cwd, sizeof(cwd)); /* getcwd()会将当前工作目录的绝对路径复制到参数cwd所指的内存空间中,成功则返回当前工作目录，失败返回 FALSE */
 #endif
 	if (!result) {
-		cwd[0] = '\0';
+		cwd[0] = '\0'; /* 如果获取失败,则直接设为结束符 */
 	}
 
 	main_cwd_state.cwd_length = strlen(cwd);
@@ -486,7 +486,7 @@ CWD_API void virtual_cwd_startup(void) /* {{{ */
 }
 /* }}} */
 
-CWD_API void virtual_cwd_shutdown(void) /* {{{ */
+CWD_API void virtual_cwd_shutdown(void) /* {{{ */ /* 关闭虚拟CWD */
 {
 #ifndef ZTS
 	cwd_globals_dtor(&cwd_globals TSRMLS_CC);
@@ -499,32 +499,32 @@ CWD_API void virtual_cwd_shutdown(void) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_cwd_activate(TSRMLS_D) /* {{{ */
+CWD_API int virtual_cwd_activate(TSRMLS_D) /* {{{ */ /* 激活虚拟CWD */
 {
 	if (CWDG(cwd).cwd == NULL) {
-		CWD_STATE_COPY(&CWDG(cwd), &main_cwd_state);
+		CWD_STATE_COPY(&CWDG(cwd), &main_cwd_state); /* 复制main_cwd_state到&(cwd_globals.cwd)中 */
 	}
 	return 0;
 }
 /* }}} */
 
-CWD_API int virtual_cwd_deactivate(TSRMLS_D) /* {{{ */
+CWD_API int virtual_cwd_deactivate(TSRMLS_D) /* {{{ */ /* 停用虚拟CWD */
 {
 	if (CWDG(cwd).cwd != NULL) {
-		CWD_STATE_FREE(&CWDG(cwd));
+		CWD_STATE_FREE(&CWDG(cwd)); /* 等价 efree(&(cwd_globals.cwd)->cwd) */
 		CWDG(cwd).cwd = NULL;
 	}
 	return 0;
 }
 /* }}} */
 
-CWD_API char *virtual_getcwd_ex(size_t *length TSRMLS_DC) /* {{{ */
+CWD_API char *virtual_getcwd_ex(size_t *length TSRMLS_DC) /* {{{ */ /* 从全局变量中取cwd_globals.cwd的值，如果没有则返回"/"或"//" */
 {
 	cwd_state *state;
 
-	state = &CWDG(cwd);
+	state = &CWDG(cwd); /* 等价 state = &(cwd_globals.cwd) */
 
-	if (state->cwd_length == 0) {
+	if (state->cwd_length == 0) { /* 如果路径为空,则返回"/"或"//" */
 		char *retval;
 
 		*length = 1;
@@ -539,7 +539,7 @@ CWD_API char *virtual_getcwd_ex(size_t *length TSRMLS_DC) /* {{{ */
 
 #ifdef TSRM_WIN32
 	/* If we have something like C: */
-	if (state->cwd_length == 2 && state->cwd[state->cwd_length-1] == ':') {
+	if (state->cwd_length == 2 && state->cwd[state->cwd_length-1] == ':') { /* 如果路径类似c: 则返回C:// */
 		char *retval;
 
 		*length = state->cwd_length+1;
@@ -547,7 +547,7 @@ CWD_API char *virtual_getcwd_ex(size_t *length TSRMLS_DC) /* {{{ */
 		if (retval == NULL) {
 			return NULL;
 		}
-		memcpy(retval, state->cwd, *length);
+		memcpy(retval, state->cwd, *length);/* 复制 state->cwd 所指的内存内容的前 length 个字节到 retval 所指的内存地址上 */
 		retval[0] = toupper(retval[0]);
 		retval[*length-1] = DEFAULT_SLASH;
 		retval[*length] = '\0';
@@ -555,12 +555,12 @@ CWD_API char *virtual_getcwd_ex(size_t *length TSRMLS_DC) /* {{{ */
 	}
 #endif
 	*length = state->cwd_length;
-	return estrdup(state->cwd);
+	return estrdup(state->cwd);/* c语言中常用的一种字符串拷贝库函数，一般和free()函数成对出现 */
 }
 /* }}} */
 
 /* Same semantics as UNIX getcwd() */
-CWD_API char *virtual_getcwd(char *buf, size_t size TSRMLS_DC) /* {{{ */
+CWD_API char *virtual_getcwd(char *buf, size_t size TSRMLS_DC) /* {{{ */ /* 获取当前的工作目录 类似UNIX中的getcwd()函数 */
 {
 	size_t length;
 	char *cwd;
@@ -572,10 +572,10 @@ CWD_API char *virtual_getcwd(char *buf, size_t size TSRMLS_DC) /* {{{ */
 	}
 	if (length > size-1) {
 		efree(cwd);
-		errno = ERANGE; /* Is this OK? */
+		errno = ERANGE; /* C库宏 ERANGE 表示范围错误发生，如果输入参数范围以外的数学函数定义和errno设置为ERANGE */
 		return NULL;
 	}
-	memcpy(buf, cwd, length+1);
+	memcpy(buf, cwd, length+1);/* 复制 cwd 所指的内存内容的前 length+1 个字节到 buf 所指的内存地址上 */
 	efree(cwd);
 	return buf;
 }
@@ -1178,7 +1178,7 @@ static int tsrm_realpath_r(char *path, int start, int len, int *ll, time_t *t, i
 
 /* Resolve path relatively to state and put the real path into state */
 /* returns 0 for ok, 1 for error */
-CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func verify_path, int use_realpath TSRMLS_DC) /* {{{ */
+CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func verify_path, int use_realpath TSRMLS_DC) /* {{{ */ /* 将相对路径转成绝对路径 */
 {
 	int path_length = strlen(path);
 	char resolved_path[MAXPATHLEN];
@@ -1192,7 +1192,7 @@ CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func
 	if (path_length == 0 || path_length >= MAXPATHLEN-1) {
 #ifdef TSRM_WIN32
 # if _MSC_VER < 1300
-		errno = EINVAL;
+		errno = EINVAL;/* 表示参数错误 */
 # else
 		_set_errno(EINVAL);
 # endif
@@ -1209,7 +1209,7 @@ CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func
 	/* cwd_length can be 0 when getcwd() fails.
 	 * This can happen under solaris when a dir does not have read permissions
 	 * but *does* have execute permissions */
-	if (!IS_ABSOLUTE_PATH(path, path_length)) {
+	if (!IS_ABSOLUTE_PATH(path, path_length)) {/* 如果不是绝对路径 */
 		if (state->cwd_length == 0) {
 			/* resolve relative path */
 			start = 0;
@@ -1392,7 +1392,7 @@ CWD_API int virtual_chdir(const char *path TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_chdir_file(const char *path, int (*p_chdir)(const char *path TSRMLS_DC) TSRMLS_DC) /* {{{ */
+CWD_API int virtual_chdir_file(const char *path, int (*p_chdir)(const char *path TSRMLS_DC) TSRMLS_DC) /* {{{ */ /* 切换当前路径，类似于Linux的 chdir() 函数 */
 {
 	int length = strlen(path);
 	char *temp;
@@ -1400,27 +1400,27 @@ CWD_API int virtual_chdir_file(const char *path, int (*p_chdir)(const char *path
 	ALLOCA_FLAG(use_heap)
 
 	if (length == 0) {
-		return 1; /* Can't cd to empty string */
+		return 1; /* Can't cd to empty string */ /* 不能切换到一个空字符串目录中 */
 	}
-	while(--length >= 0 && !IS_SLASH(path[length])) {
+	while(--length >= 0 && !IS_SLASH(path[length])) { /* 如果path中一个斜线也没有,length最终减到-1 */
 	}
 
 	if (length == -1) {
 		/* No directory only file name */
-		errno = ENOENT;
+		errno = ENOENT;/* 一般是没找到文件或路径,包括因为权限问题没找到的情况 */
 		return -1;
 	}
 
 	if (length == COPY_WHEN_ABSOLUTE(path) && IS_ABSOLUTE_PATH(path, length+1)) { /* Also use trailing slash if this is absolute */
 		length++;
 	}
-	temp = (char *) do_alloca(length+1, use_heap);
+	temp = (char *) do_alloca(length+1, use_heap); /* do_alloca(length+1, use_heap) 等价 emalloc(length+1) */
 	memcpy(temp, path, length);
 	temp[length] = 0;
 #if VIRTUAL_CWD_DEBUG
 	fprintf (stderr, "Changing directory to %s\n", temp);
 #endif
-	retval = p_chdir(temp TSRMLS_CC);
+	retval = p_chdir(temp TSRMLS_CC); /* p_chdir最终会是 virtual_chdir 或者 chdir */
 	free_alloca(temp, use_heap);
 	return retval;
 }
@@ -1493,7 +1493,7 @@ CWD_API int virtual_filepath(const char *path, char **filepath TSRMLS_DC) /* {{{
 }
 /* }}} */
 
-CWD_API FILE *virtual_fopen(const char *path, const char *mode TSRMLS_DC) /* {{{ */
+CWD_API FILE *virtual_fopen(const char *path, const char *mode TSRMLS_DC) /* {{{ */ /* 打开文件 */
 {
 	cwd_state new_state;
 	FILE *f;
@@ -1516,7 +1516,7 @@ CWD_API FILE *virtual_fopen(const char *path, const char *mode TSRMLS_DC) /* {{{
 }
 /* }}} */
 
-CWD_API int virtual_access(const char *pathname, int mode TSRMLS_DC) /* {{{ */
+CWD_API int virtual_access(const char *pathname, int mode TSRMLS_DC) /* {{{ */ /* 确定文件或文件夹的访问权限。即，检查某个文件的存取方式，比如说是只读方式、只写方式等。如果指定的存取方式有效，则函数返回0，否则函数返回-1 */
 {
 	cwd_state new_state;
 	int ret;
@@ -1552,7 +1552,7 @@ static void UnixTimeToFileTime(time_t t, LPFILETIME pft) /* {{{ */
 }
 /* }}} */
 
-TSRM_API int win32_utime(const char *filename, struct utimbuf *buf) /* {{{ */
+TSRM_API int win32_utime(const char *filename, struct utimbuf *buf) /* {{{ */ /* win32用来修改参数filename文件所属的inode存取时间 */
 {
 	FILETIME mtime, atime;
 	HANDLE hFile;
@@ -1589,7 +1589,7 @@ TSRM_API int win32_utime(const char *filename, struct utimbuf *buf) /* {{{ */
 /* }}} */
 #endif
 
-CWD_API int virtual_utime(const char *filename, struct utimbuf *buf TSRMLS_DC) /* {{{ */
+CWD_API int virtual_utime(const char *filename, struct utimbuf *buf TSRMLS_DC) /* {{{ */ /* 用来修改参数filename文件所属的inode存取时间 */
 {
 	cwd_state new_state;
 	int ret;
@@ -1612,7 +1612,7 @@ CWD_API int virtual_utime(const char *filename, struct utimbuf *buf TSRMLS_DC) /
 /* }}} */
 #endif
 
-CWD_API int virtual_chmod(const char *filename, mode_t mode TSRMLS_DC) /* {{{ */
+CWD_API int virtual_chmod(const char *filename, mode_t mode TSRMLS_DC) /* {{{ */ /* 改变文件的读写许可设置 */
 {
 	cwd_state new_state;
 	int ret;
@@ -1631,7 +1631,7 @@ CWD_API int virtual_chmod(const char *filename, mode_t mode TSRMLS_DC) /* {{{ */
 /* }}} */
 
 #if !defined(TSRM_WIN32) && !defined(NETWARE)
-CWD_API int virtual_chown(const char *filename, uid_t owner, gid_t group, int link TSRMLS_DC) /* {{{ */
+CWD_API int virtual_chown(const char *filename, uid_t owner, gid_t group, int link TSRMLS_DC) /* {{{ */ /* 改变文件的用户所有者和组 */
 {
 	cwd_state new_state;
 	int ret;
@@ -1658,7 +1658,7 @@ CWD_API int virtual_chown(const char *filename, uid_t owner, gid_t group, int li
 /* }}} */
 #endif
 
-CWD_API int virtual_open(const char *path TSRMLS_DC, int flags, ...) /* {{{ */
+CWD_API int virtual_open(const char *path TSRMLS_DC, int flags, ...) /* {{{ */ /* 打开文件 */
 {
 	cwd_state new_state;
 	int f;
@@ -1686,7 +1686,7 @@ CWD_API int virtual_open(const char *path TSRMLS_DC, int flags, ...) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_creat(const char *path, mode_t mode TSRMLS_DC) /* {{{ */
+CWD_API int virtual_creat(const char *path, mode_t mode TSRMLS_DC) /* {{{ */ /* 新建文件 */
 {
 	cwd_state new_state;
 	int f;
@@ -1704,7 +1704,7 @@ CWD_API int virtual_creat(const char *path, mode_t mode TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_rename(const char *oldname, const char *newname TSRMLS_DC) /* {{{ */
+CWD_API int virtual_rename(const char *oldname, const char *newname TSRMLS_DC) /* {{{ */ /* 重命名 */
 {
 	cwd_state old_state;
 	cwd_state new_state;
@@ -1741,7 +1741,7 @@ CWD_API int virtual_rename(const char *oldname, const char *newname TSRMLS_DC) /
 }
 /* }}} */
 
-CWD_API int virtual_stat(const char *path, struct stat *buf TSRMLS_DC) /* {{{ */
+CWD_API int virtual_stat(const char *path, struct stat *buf TSRMLS_DC) /* {{{ */ /* 通过文件名filename获取文件信息，并保存在buf所指的结构体stat中 封装的 php_sys_stat() 等价Linux中的stat函数  */
 {
 	cwd_state new_state;
 	int retval;
@@ -1759,7 +1759,7 @@ CWD_API int virtual_stat(const char *path, struct stat *buf TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_lstat(const char *path, struct stat *buf TSRMLS_DC) /* {{{ */
+CWD_API int virtual_lstat(const char *path, struct stat *buf TSRMLS_DC) /* {{{ */ /* 通过文件名filename获取文件信息，并保存在buf所指的结构体stat中 等价Linux中的 lstat() 函数，Lstat函数与stat函数类似，区别在于lstat函数不对符号链接进行追踪。如果参数filename是一个符号链接名，lstat函数仅仅返回链接本身的信息 */
 {
 	cwd_state new_state;
 	int retval;
@@ -1777,7 +1777,7 @@ CWD_API int virtual_lstat(const char *path, struct stat *buf TSRMLS_DC) /* {{{ *
 }
 /* }}} */
 
-CWD_API int virtual_unlink(const char *path TSRMLS_DC) /* {{{ */
+CWD_API int virtual_unlink(const char *path TSRMLS_DC) /* {{{ */ /* 删除一个文件项并减少它的链接数，若成功则返回0，否则返回-1 */
 {
 	cwd_state new_state;
 	int retval;
@@ -1795,7 +1795,7 @@ CWD_API int virtual_unlink(const char *path TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_mkdir(const char *pathname, mode_t mode TSRMLS_DC) /* {{{ */
+CWD_API int virtual_mkdir(const char *pathname, mode_t mode TSRMLS_DC) /* {{{ */ /* 创建目录 */
 {
 	cwd_state new_state;
 	int retval;
@@ -1816,7 +1816,7 @@ CWD_API int virtual_mkdir(const char *pathname, mode_t mode TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-CWD_API int virtual_rmdir(const char *pathname TSRMLS_DC) /* {{{ */
+CWD_API int virtual_rmdir(const char *pathname TSRMLS_DC) /* {{{ */ /* 删除目录 */
 {
 	cwd_state new_state;
 	int retval;
@@ -1838,7 +1838,7 @@ CWD_API int virtual_rmdir(const char *pathname TSRMLS_DC) /* {{{ */
 DIR *opendir(const char *name);
 #endif
 
-CWD_API DIR *virtual_opendir(const char *pathname TSRMLS_DC) /* {{{ */
+CWD_API DIR *virtual_opendir(const char *pathname TSRMLS_DC) /* {{{ */ /* 打开目录 */
 {
 	cwd_state new_state;
 	DIR *retval;
@@ -1857,16 +1857,16 @@ CWD_API DIR *virtual_opendir(const char *pathname TSRMLS_DC) /* {{{ */
 /* }}} */
 
 #ifdef TSRM_WIN32
-CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* {{{ */
+CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* {{{ */ /* 通过创建一个管道，调用 fork 产生一个子进程，执行一个 shell 以运行命令来开启一个进程 */
 {
-	return popen_ex(command, type, CWDG(cwd).cwd, NULL TSRMLS_CC);
+	return popen_ex(command, type, CWDG(cwd).cwd, NULL TSRMLS_CC);/* 该函数在 TSRM/tsrm_win32.c */
 }
 /* }}} */
 #elif defined(NETWARE)
 /* On NetWare, the trick of prepending "cd cwd; " doesn't work so we need to perform
    a VCWD_CHDIR() and mutex it
  */
-CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* {{{ */
+CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* {{{ */ /* 通过创建一个管道，调用 fork 产生一个子进程，执行一个 shell 以运行命令来开启一个进程 */
 {
 	char prev_cwd[MAXPATHLEN];
 	char *getcwd_result;
@@ -1893,7 +1893,7 @@ CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* 
 }
 /* }}} */
 #else /* Unix */
-CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* {{{ */
+CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* {{{ */ /* 通过创建一个管道，调用 fork 产生一个子进程，执行一个 shell 以运行命令来开启一个进程 */
 {
 	int command_length;
 	int dir_length, extra = 0;
@@ -1956,7 +1956,7 @@ CWD_API FILE *virtual_popen(const char *command, const char *type TSRMLS_DC) /* 
 CWD_API char *tsrm_realpath(const char *path, char *real_path TSRMLS_DC) /* {{{ */
 {
 	cwd_state new_state;
-	char cwd[MAXPATHLEN];
+	char cwd[MAXPATHLEN]; /* MAXPATHLEN 256 */
 
 	/* realpath("") returns CWD */
 	if (!*path) {
@@ -1966,11 +1966,11 @@ CWD_API char *tsrm_realpath(const char *path, char *real_path TSRMLS_DC) /* {{{ 
 		}
 		new_state.cwd[0] = '\0';
 		new_state.cwd_length = 0;
-		if (VCWD_GETCWD(cwd, MAXPATHLEN)) {
+		if (VCWD_GETCWD(cwd, MAXPATHLEN)) { /* virtual_getcwd(cwd, 256) 获取当前的工作目录 */
 			path = cwd;
 		}
 	} else if (!IS_ABSOLUTE_PATH(path, strlen(path)) &&
-					VCWD_GETCWD(cwd, MAXPATHLEN)) {
+					VCWD_GETCWD(cwd, MAXPATHLEN)) { /* virtual_getcwd(cwd, 256)  获取当前的工作目录 */
 		new_state.cwd = estrdup(cwd);
 		new_state.cwd_length = strlen(cwd);
 	} else {

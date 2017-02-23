@@ -190,7 +190,7 @@ Finished:
 	return NULL;
 }
 
-TSRM_API int tsrm_win32_access(const char *pathname, int mode TSRMLS_DC)
+TSRM_API int tsrm_win32_access(const char *pathname, int mode TSRMLS_DC) /* 确定文件或文件夹的访问权限。即，检查某个文件的存取方式，比如说是只读方式、只写方式等。如果指定的存取方式有效，则函数返回0，否则函数返回-1 */
 {
 	time_t t;
 	HANDLE thread_token = NULL;

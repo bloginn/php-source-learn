@@ -192,6 +192,6 @@ const char *zend_vm_opcodes_map[168] = {
 	"ZEND_ASSIGN_POW",
 };
 
-ZEND_API const char* zend_get_opcode_name(zend_uchar opcode) {
+ZEND_API const char* zend_get_opcode_name(zend_uchar opcode) { /* 通过opcode码获取opcode名称 */
 	return zend_vm_opcodes_map[opcode];
 }

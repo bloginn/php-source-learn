@@ -23,7 +23,7 @@
 
 BEGIN_EXTERN_C()
 
-ZEND_API const char *zend_get_opcode_name(zend_uchar opcode);
+ZEND_API const char *zend_get_opcode_name(zend_uchar opcode); /* 通过opcode码获取opcode名称 */
 
 END_EXTERN_C()
 

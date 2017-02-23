@@ -23,12 +23,12 @@
 
 typedef struct _dynamic_array {
         char *array;
-        unsigned int element_size;
+        unsigned int element_size;/* 每个元素大小 */
         unsigned int current;
-        unsigned int allocated;
-} dynamic_array;
+        unsigned int allocated;/* 分配数量 */
+} dynamic_array;/* 动态数组结构体 */
 
-ZEND_API int zend_dynamic_array_init(dynamic_array *da, unsigned int element_size, unsigned int size)
+ZEND_API int zend_dynamic_array_init(dynamic_array *da, unsigned int element_size, unsigned int size)/* 初始化动态数组，未见调用 */
 {
 	da->element_size = element_size;
 	da->allocated = size;
@@ -40,7 +40,7 @@ ZEND_API int zend_dynamic_array_init(dynamic_array *da, unsigned int element_siz
 	return 0;
 }
 
-ZEND_API void *zend_dynamic_array_push(dynamic_array *da)
+ZEND_API void *zend_dynamic_array_push(dynamic_array *da)/* 未见调用 */
 {
 	if (da->current == da->allocated) {
 		da->allocated *= 2;
@@ -49,13 +49,13 @@ ZEND_API void *zend_dynamic_array_push(dynamic_array *da)
 	return (void *)(da->array+(da->current++)*da->element_size);
 }
 
-ZEND_API void *zend_dynamic_array_pop(dynamic_array *da)
+ZEND_API void *zend_dynamic_array_pop(dynamic_array *da)/* 未见调用 */
 {
 	return (void *)(da->array+(--(da->current))*da->element_size);
 
 }
 
-ZEND_API void *zend_dynamic_array_get_element(dynamic_array *da, unsigned int index)
+ZEND_API void *zend_dynamic_array_get_element(dynamic_array *da, unsigned int index)/* 未见调用 */
 {
 	if (index >= da->current) {
 		return NULL;
