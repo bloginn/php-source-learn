@@ -132,7 +132,7 @@ const char HARDCODED_INI[] =
 	"max_input_time=-1\n\0";
 
 
-const opt_struct OPTIONS[] = {
+const opt_struct OPTIONS[] = { /* 用于PHP命令行模式的参数 每组三个值，第一个为简写参数(php -v),第二个为该参数是否需要值(php -c php.ini),第三个为全称参数(php --version) */
 	{'a', 0, "interactive"},
 	{'B', 1, "process-begin"},
 	{'C', 0, "no-chdir"}, /* for compatibility with CGI (do not chdir to script directory) */
@@ -488,13 +488,13 @@ static const zend_function_entry additional_functions[] = {
 
 /* {{{ php_cli_usage
  */
-static void php_cli_usage(char *argv0)
+static void php_cli_usage(char *argv0)/* 该函数用于向标准输出设备(屏幕)打印php的用法 例如 php -h 命令的输出 */
 {
 	char *prog;
 
-	prog = strrchr(argv0, '/');
+	prog = strrchr(argv0, '/');/* 查找字符在指定字符串中从左面开始的最后一次出现的位置 */
 	if (prog) {
-		prog++;
+		prog++;/* 这意味着 argv0类似于/usr/local/php/bin/php这样的字符串时 要转换成 php */
 	} else {
 		prog = "php";
 	}
@@ -660,7 +660,7 @@ static int do_cli(int argc, char **argv TSRMLS_DC) /* {{{ */
 {
 	int c;
 	zend_file_handle file_handle;
-	int behavior = PHP_MODE_STANDARD;
+	int behavior = PHP_MODE_STANDARD;/* 初始化为标准模式,即执行PHP脚本文件 */
 	char *reflection_what = NULL;
 	volatile int request_started = 0;
 	volatile int exit_status = 0;
@@ -692,7 +692,7 @@ static int do_cli(int argc, char **argv TSRMLS_DC) /* {{{ */
 				exit_status = (c == '?' && argc > 1 && !strchr(argv[1],  c));
 				goto out;
 
-			case 'v': /* show php version & quit */
+			case 'v': /* 输出PHP版本信息，并且退出，这里输出的是 php -v 的结果 */
 				php_printf("PHP %s (%s) (built: %s %s) %s\nCopyright (c) 1997-2016 The PHP Group\n%s",
 					PHP_VERSION, cli_sapi_module.name, __DATE__, __TIME__,
 #if ZEND_DEBUG && defined(HAVE_GCOV)
@@ -704,7 +704,7 @@ static int do_cli(int argc, char **argv TSRMLS_DC) /* {{{ */
 #else
 					"",
 #endif
-					get_zend_version()
+					get_zend_version() /* 获取zend的版本信息 例如 Zend Engine v2.6.0, Copyright (c) 1998-2016 Zend Technologies */
 				);
 				sapi_deactivate(TSRMLS_C);
 				goto out;
@@ -1194,7 +1194,7 @@ err:
 /* {{{ main
  */
 #ifdef PHP_CLI_WIN32_NO_CONSOLE
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) /* 用win32 application的工程，入口函数就是winmain */
 #else
 int main(int argc, char *argv[])
 #endif
@@ -1208,7 +1208,7 @@ int main(int argc, char *argv[])
 #endif
 
 	int c;
-	int exit_status = SUCCESS;
+	int exit_status = SUCCESS;/* 退出状态 */
 	int module_started = 0, sapi_started = 0;
 	char *php_optarg = NULL;
 	int php_optind = 1, use_extended_info = 0;
@@ -1267,18 +1267,18 @@ int main(int argc, char *argv[])
 	setmode(_fileno(stderr), O_BINARY);		/* make the stdio mode be binary */
 #endif
 
-	while ((c = php_getopt(argc, argv, OPTIONS, &php_optarg, &php_optind, 0, 2))!=-1) {
+	while ((c = php_getopt(argc, argv, OPTIONS, &php_optarg, &php_optind, 0, 2))!=-1) { /* 从第二个开始获取参数，因为第一个为命令本身 */
 		switch (c) {
 			case 'c':
 				if (ini_path_override) {
 					free(ini_path_override);
 				}
- 				ini_path_override = strdup(php_optarg);
+ 				ini_path_override = strdup(php_optarg);/* 获取参数中PHP的配置文件路径 */
 				break;
 			case 'n':
-				ini_ignore = 1;
+				ini_ignore = 1;/* 不使用 php.ini */
 				break;
-			case 'd': {
+			case 'd': { /* 用该参数可以自行设置 php.ini 文件中设置变量的值 */
 				/* define ini entries on command line */
 				int len = strlen(php_optarg);
 				char *val;
@@ -1315,14 +1315,14 @@ int main(int argc, char *argv[])
 				cli_server_sapi_module.additional_functions = server_additional_functions;
 				break;
 #endif
-			case 'h': /* help & quit */
-			case '?':
-				php_cli_usage(argv[0]);
+			case 'h': /* help & quit */ /* 只有这种形式直接输出，不需要执行do_cli() */
+			case '?': /* 意味着 php -"?" 和 php -h 是一样的 */
+				php_cli_usage(argv[0]);/* 打印php命令的帮助信息,argv[0]代表命令本身 */
 				goto out;
-			case 'i': case 'v': case 'm':
-				sapi_module = &cli_sapi_module;
+			case 'i': case 'v': case 'm': /* -i输出PHP的信息，-v输出版本信息，-m输出PHP的扩展模块 */
+				sapi_module = &cli_sapi_module;/* 防止被-S参数修改，这表示 php -S 127.0.0.1:8801 -v 是打印版本信息，而不会启动 cli-server */
 				goto exit_loop;
-			case 'e': /* enable extended info output */
+			case 'e': /* enable extended info output */ /* 为调试器/探查器生成扩展信息 */
 				use_extended_info = 1;
 				break;
 		}

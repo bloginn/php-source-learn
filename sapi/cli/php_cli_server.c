@@ -830,7 +830,7 @@ static void sapi_cli_server_log_message(char *msg TSRMLS_DC) /* {{{ */
 
 /* {{{ sapi_module_struct cli_server_sapi_module
  */
-sapi_module_struct cli_server_sapi_module = {
+sapi_module_struct cli_server_sapi_module = { /* 该模型用于cli启动的服务 php -S 127.0.0.1:8801  */
 	"cli-server",							/* name */
 	"Built-in HTTP server",		/* pretty name */
 

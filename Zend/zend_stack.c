@@ -115,8 +115,8 @@ ZEND_API int zend_stack_count(const zend_stack *stack)/* 获取堆栈的元素�
 	return stack->top;
 }
 
-
-ZEND_API void zend_stack_apply(zend_stack *stack, int type, int (*apply_function)(void *element))
+/* 用于非ZTS */
+ZEND_API void zend_stack_apply(zend_stack *stack, int type, int (*apply_function)(void *element))/* 堆栈应用还是申请 */
 {
 	int i;
 
@@ -138,8 +138,8 @@ ZEND_API void zend_stack_apply(zend_stack *stack, int type, int (*apply_function
 	}
 }
 
-
-ZEND_API void zend_stack_apply_with_argument(zend_stack *stack, int type, int (*apply_function)(void *element, void *arg), void *arg)
+/* 用于ZTS */
+ZEND_API void zend_stack_apply_with_argument(zend_stack *stack, int type, int (*apply_function)(void *element, void *arg), void *arg)/* 堆栈应用还是申请 用于ZTS */
 {
 	int i;
 

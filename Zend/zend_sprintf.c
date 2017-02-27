@@ -28,7 +28,7 @@
 #endif
 
 #if ZEND_BROKEN_SPRINTF
-int zend_sprintf(char *buffer, const char *format, ...)
+int zend_sprintf(char *buffer, const char *format, ...) /* 使用参数列表发送格式化format输出到字符串buffer */
 {
 	va_list args;
 

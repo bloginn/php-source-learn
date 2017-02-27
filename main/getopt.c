@@ -54,8 +54,8 @@ static int php_opt_error(int argc, char * const *argv, int oint, int optchr, int
 /* }}} */
 
 PHPAPI int php_optidx = -1;
-
-PHPAPI int php_getopt(int argc, char* const *argv, const opt_struct opts[], char **optarg, int *optind, int show_err, int arg_start) /* {{{ */
+/* argc参数的个数(php -v)为2，argv参数的数组，opts所有opt_struct结构参数集合[{'c',1,'php-ini'},{'v',0,'version'}]，optarg */
+PHPAPI int php_getopt(int argc, char* const *argv, const opt_struct opts[], char **optarg, int *optind, int show_err, int arg_start) /* {{{ */ /* 获取命令行模式的参数 */
 {
 	static int optchr = 0;
 	static int dash = 0; /* have already seen the - */

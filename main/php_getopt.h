@@ -34,9 +34,9 @@ As NetWare LibC has optind and optarg macros defined in unistd.h our local varia
 /* Define structure for one recognized option (both single char and long name).
  * If short_open is '-' this is the last option. */
 typedef struct _opt_struct {
-	char opt_char;
-	int  need_param;
-	char * opt_name;
+	char opt_char;/* 选项字符 例如 php -v */
+	int  need_param;/* 选项是否需要值 例如 php -c php.ini */
+	char * opt_name;/* 选项的名称 例如 php --version */
 } opt_struct;
 
 BEGIN_EXTERN_C()
