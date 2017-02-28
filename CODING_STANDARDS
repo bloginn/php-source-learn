@@ -1,5 +1,5 @@
 ========================
-  PHP Coding Standards
+  PHP Coding Standards 如果要想写PHP扩展的话，这个文件一定要阅读一下 不管你个人的代码风格是什么样，怎么样使用缩进和花括号，既然来到了这样一个团体里就应该去适应这样的规范，这样在阅读代码或者别人阅读你的 代码是都会更轻松
 ========================
 
 This file lists several standards that any programmer adding or changing
