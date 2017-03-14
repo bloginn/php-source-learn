@@ -27,7 +27,7 @@
 #include "zend_globals.h"
 #include "zend_API.h"
 
-void free_zend_constant(zend_constant *c)
+void free_zend_constant(zend_constant *c)/* 常量的销毁函数 */
 {
 	if (!(c->flags & CONST_PERSISTENT)) {
 		zval_dtor(&c->value);/* 如果c->flags的值不含CONST_PERSISTENT持久化的，则释放c->value */
@@ -261,7 +261,7 @@ static int zend_get_special_constant(const char *name, uint name_len, zend_const
 		/* check for __COMPILER_HALT_OFFSET__ */
 		zend_mangle_property_name(&haltname, &len, haltoff,
 			sizeof("__COMPILER_HALT_OFFSET__") - 1, cfilename, clen, 0);
-		ret = zend_hash_find(EG(zend_constants), haltname, len+1, (void **) c);
+		ret = zend_hash_find(EG(zend_constants), haltname, len+1, (void **) c);/* 这里和zend_compile.c文件的zend_do_halt_compiler_register()对应的 仅被定义于使用了__halt_compiler的文件  */
 		efree(haltname);
 		return (ret == SUCCESS);
 	} else {

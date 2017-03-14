@@ -31,13 +31,13 @@
 #define	PHP_USER_CONSTANT INT_MAX	/* a constant defined in user space */
 
 typedef struct _zend_constant {
-	zval value; /* zval结构，PHP内部变量的存储结构 */
+	zval value; /* 常量的值 zval结构，PHP内部变量的存储结构 */
 	int flags;  /* 常量的标记如 CONST_CS,CONST_PERSISTENT,CONST_CT_SUBST;见27~29行 */
 	char *name; /* 常量名称 */
 	uint name_len; /* 常量名称长度 */
 	int module_number; /* 模块号 */
 } zend_constant; /* 常量结构体定义 */
-/* 注册类常量宏,带module_number */
+/* 注册类常量的宏,带module_number */
 #define REGISTER_NULL_CONSTANT(name, flags)  zend_register_null_constant((name), sizeof(name), (flags), module_number TSRMLS_CC)
 #define REGISTER_BOOL_CONSTANT(name, bval, flags)  zend_register_bool_constant((name), sizeof(name), (bval), (flags), module_number TSRMLS_CC)
 #define REGISTER_LONG_CONSTANT(name, lval, flags)  zend_register_long_constant((name), sizeof(name), (lval), (flags), module_number TSRMLS_CC)
@@ -51,7 +51,7 @@ typedef struct _zend_constant {
 #define REGISTER_NS_DOUBLE_CONSTANT(ns, name, dval, flags)  zend_register_double_constant(ZEND_NS_NAME(ns, name), sizeof(ZEND_NS_NAME(ns, name)), (dval), (flags), module_number TSRMLS_CC)
 #define REGISTER_NS_STRING_CONSTANT(ns, name, str, flags)  zend_register_string_constant(ZEND_NS_NAME(ns, name), sizeof(ZEND_NS_NAME(ns, name)), (str), (flags), module_number TSRMLS_CC)
 #define REGISTER_NS_STRINGL_CONSTANT(ns, name, str, len, flags)  zend_register_stringl_constant(ZEND_NS_NAME(ns, name), sizeof(ZEND_NS_NAME(ns, name)), (str), (len), (flags), module_number TSRMLS_CC)
-/* 注册全局常量宏 */
+/* 注册全局常量的宏 */
 #define REGISTER_MAIN_NULL_CONSTANT(name, flags)  zend_register_null_constant((name), sizeof(name), (flags), 0 TSRMLS_CC)
 #define REGISTER_MAIN_BOOL_CONSTANT(name, bval, flags)  zend_register_bool_constant((name), sizeof(name), (bval), (flags), 0 TSRMLS_CC)
 #define REGISTER_MAIN_LONG_CONSTANT(name, lval, flags)  zend_register_long_constant((name), sizeof(name), (lval), (flags), 0 TSRMLS_CC)

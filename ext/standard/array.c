@@ -282,7 +282,7 @@ PHPAPI int php_count_recursive(zval *array, long mode TSRMLS_DC) /* {{{ */
 			return 0;
 		}
 
-		cnt = zend_hash_num_elements(Z_ARRVAL_P(array));
+		cnt = zend_hash_num_elements(Z_ARRVAL_P(array));/* 实际上获取array的hash_table结构的nNumOfElements值 */
 		if (mode == COUNT_RECURSIVE) {
 			HashPosition pos;
 

@@ -34,7 +34,7 @@
 #define ZEND_CLOSURE_PROPERTY_ERROR() \
 	zend_error(E_RECOVERABLE_ERROR, "Closure object cannot have properties")
 
-typedef struct _zend_closure {
+typedef struct _zend_closure {/* 闭包结构 */
 	zend_object    std;
 	zend_function  func;
 	zval          *this_ptr;
@@ -454,7 +454,7 @@ void zend_register_closure_ce(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_create_closure(zval *res, zend_function *func, zend_class_entry *scope, zval *this_ptr TSRMLS_DC) /* {{{ */
+ZEND_API void zend_create_closure(zval *res, zend_function *func, zend_class_entry *scope, zval *this_ptr TSRMLS_DC) /* {{{ */ /* 创建一个闭包对象 */
 {
 	zend_closure *closure;
 

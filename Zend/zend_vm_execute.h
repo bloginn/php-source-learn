@@ -2624,7 +2624,7 @@ static int ZEND_FASTCALL  ZEND_RETURN_SPEC_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARG
 			if (IS_CONST != IS_TMP_VAR) {
 				zval_copy_ctor(ret);
 			}
-			*EG(return_value_ptr_ptr) = ret;
+			*EG(return_value_ptr_ptr) = ret;/* 函数的返回值在程序执行时存储在 *EG(return_value_ptr_ptr) */
 
 		} else if ((IS_CONST == IS_CV || IS_CONST == IS_VAR) &&
 		           retval_ptr == &EG(uninitialized_zval)) {
@@ -2634,9 +2634,9 @@ static int ZEND_FASTCALL  ZEND_RETURN_SPEC_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARG
 				Z_DELREF_P(retval_ptr);
 			}
 			ALLOC_INIT_ZVAL(ret);
-			*EG(return_value_ptr_ptr) = ret;
+			*EG(return_value_ptr_ptr) = ret;/* 函数的返回值在程序执行时存储在 *EG(return_value_ptr_ptr) */
 		} else {
-			*EG(return_value_ptr_ptr) = retval_ptr;
+			*EG(return_value_ptr_ptr) = retval_ptr;/* 函数的返回值在程序执行时存储在 *EG(return_value_ptr_ptr) */
 			if (IS_CONST == IS_CV) {
 				Z_ADDREF_P(retval_ptr);
 			}
@@ -41602,7 +41602,7 @@ static int ZEND_FASTCALL ZEND_NULL_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 }
 
 
-void zend_init_opcodes_handlers(void)
+void zend_init_opcodes_handlers(void) /* ZEND_[opcode]_SPEC_(变量类型1)_(变量类型2)_HANDLER */
 {
   static const opcode_handler_t labels[] = {
     ZEND_NOP_SPEC_HANDLER, /* 0 */

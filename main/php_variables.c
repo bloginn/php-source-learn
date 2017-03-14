@@ -909,7 +909,7 @@ static zend_bool php_auto_globals_create_request(const char *name, uint name_len
 	return 0;
 }
 
-void php_startup_auto_globals(TSRMLS_D)
+void php_startup_auto_globals(TSRMLS_D)/* PHP预定义变量的注册 */
 {
 	zend_register_auto_global(ZEND_STRL("_GET"), 0, php_auto_globals_create_get TSRMLS_CC);
 	zend_register_auto_global(ZEND_STRL("_POST"), 0, php_auto_globals_create_post TSRMLS_CC);

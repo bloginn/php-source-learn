@@ -55,7 +55,7 @@ typedef struct _zend_object_handlers zend_object_handlers;
 typedef struct _zval_struct zval;
 
 typedef struct _zend_object_value {
-	zend_object_handle handle;
+	zend_object_handle handle;/* unsigned int类型 EG(objects_store).object_buckets 的索引 */
 	const zend_object_handlers *handlers;
 } zend_object_value;
 

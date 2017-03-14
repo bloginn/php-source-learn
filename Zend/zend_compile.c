@@ -290,9 +290,9 @@ ZEND_API zend_bool zend_is_compiling(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-static zend_uint get_temporary_variable(zend_op_array *op_array) /* {{{ */
+static zend_uint get_temporary_variable(zend_op_array *op_array) /* {{{ *//* 获取一个临时变量 */
 {
-	return (zend_uint)(zend_uintptr_t)EX_TMP_VAR_NUM(0, (op_array->T)++);
+	return (zend_uint)(zend_uintptr_t)EX_TMP_VAR_NUM(0, (op_array->T)++);/* 等价 return (zend_uint)(zend_uintptr_t)(((temp_variable*)(((char*)(0)) + ((int)(0)))) - (1 + (op_array->T)++)) */
 }
 /* }}} */
 
@@ -581,29 +581,29 @@ static inline zend_bool zend_is_function_or_method_call(const znode *variable) /
 }
 /* }}} */
 
-void zend_do_binary_op(zend_uchar op, znode *result, const znode *op1, const znode *op2 TSRMLS_DC) /* {{{ */
+void zend_do_binary_op(zend_uchar op, znode *result, const znode *op1, const znode *op2 TSRMLS_DC) /* {{{ *//* 主要用于二元语法操作编译 例如 加 减 乘 除 | & ^ 等 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = op;
-	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result_type = IS_TMP_VAR;/* 设置结果的类型为临时变量 */
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, op1);
 	SET_NODE(opline->op2, op2);
-	GET_NODE(result, opline->result);
+	GET_NODE(result, opline->result);/* 将获取了临时变量的地址赋值给result返回给语法解析器以做后用 */
 }
 /* }}} */
 
-void zend_do_unary_op(zend_uchar op, znode *result, const znode *op1 TSRMLS_DC) /* {{{ */
+void zend_do_unary_op(zend_uchar op, znode *result, const znode *op1 TSRMLS_DC) /* {{{ *//* 主要用于一元语法操作编译 例如 ! ~ 等 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = op;
-	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result_type = IS_TMP_VAR;/* 设置结果的类型为临时变量 */
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, op1);
-	GET_NODE(result, opline->result);
-	SET_UNUSED(opline->op2);
+	GET_NODE(result, opline->result);/* 将获取了临时变量的地址赋值给result返回给语法解析器以做后用 */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -613,7 +613,7 @@ static void zend_do_op_data(zend_op *data_op, const znode *value TSRMLS_DC) /* {
 {
 	data_op->opcode = ZEND_OP_DATA;
 	SET_NODE(data_op->op1, value);
-	SET_UNUSED(data_op->op2);
+	SET_UNUSED(data_op->op2);/* 等价 data_op->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -631,7 +631,7 @@ void zend_do_binary_assign_op(zend_uchar op, znode *result, const znode *op1, co
 				last_op->extended_value = ZEND_ASSIGN_OBJ;
 
 				zend_do_op_data(opline, op2 TSRMLS_CC);
-				SET_UNUSED(opline->result);
+				SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 				GET_NODE(result, last_op->result);
 				return;
 			case ZEND_FETCH_DIM_RW:
@@ -639,9 +639,9 @@ void zend_do_binary_assign_op(zend_uchar op, znode *result, const znode *op1, co
 				last_op->extended_value = ZEND_ASSIGN_DIM;
 
 				zend_do_op_data(opline, op2 TSRMLS_CC);
-				opline->op2.var = get_temporary_variable(CG(active_op_array));
+				opline->op2.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 				opline->op2_type = IS_VAR;
-				SET_UNUSED(opline->result);
+				SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 				GET_NODE(result,last_op->result);
 				return;
 			default:
@@ -653,7 +653,7 @@ void zend_do_binary_assign_op(zend_uchar op, znode *result, const znode *op1, co
 	SET_NODE(opline->op1, op1);
 	SET_NODE(opline->op2, op2);
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -694,7 +694,7 @@ void fetch_simple_variable_ex(znode *result, znode *varname, int bp, zend_uchar 
 
 	opline_ptr->opcode = op;
 	opline_ptr->result_type = IS_VAR;
-	opline_ptr->result.var = get_temporary_variable(CG(active_op_array));
+	opline_ptr->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline_ptr->op1, varname);
 	GET_NODE(result, opline_ptr->result);
 	SET_UNUSED(opline_ptr->op2);
@@ -742,7 +742,7 @@ void zend_do_fetch_static_member(znode *result, znode *class_name TSRMLS_DC) /* 
 
 		opline.opcode = ZEND_FETCH_W;
 		opline.result_type = IS_VAR;
-		opline.result.var = get_temporary_variable(CG(active_op_array));
+		opline.result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		opline.op1_type = IS_CONST;
 		LITERAL_STRINGL(opline.op1, estrdup(CG(active_op_array)->vars[result->u.op.var].name), CG(active_op_array)->vars[result->u.op.var].name_len, 0);
 		CALCULATE_LITERAL_HASH(opline.op1.constant);
@@ -767,7 +767,7 @@ void zend_do_fetch_static_member(znode *result, znode *class_name TSRMLS_DC) /* 
 			init_op(&opline TSRMLS_CC);
 			opline.opcode = ZEND_FETCH_W;
 			opline.result_type = IS_VAR;
-			opline.result.var = get_temporary_variable(CG(active_op_array));
+			opline.result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 			opline.op1_type = IS_CONST;
 			LITERAL_STRINGL(opline.op1, estrdup(CG(active_op_array)->vars[opline_ptr->op1.var].name), CG(active_op_array)->vars[opline_ptr->op1.var].name_len, 0);
 			CALCULATE_LITERAL_HASH(opline.op1.constant);
@@ -828,7 +828,7 @@ void fetch_array_dim(znode *result, const znode *parent, const znode *dim TSRMLS
 	init_op(&opline TSRMLS_CC);
 	opline.opcode = ZEND_FETCH_DIM_W;	/* the backpatching routine assumes W */
 	opline.result_type = IS_VAR;
-	opline.result.var = get_temporary_variable(CG(active_op_array));
+	opline.result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline.op1, parent);
 	SET_NODE(opline.op2, dim);
 	if (opline.op2_type == IS_CONST && Z_TYPE(CONSTANT(opline.op2.constant)) == IS_STRING) {
@@ -861,21 +861,21 @@ void zend_do_print(znode *result, const znode *arg TSRMLS_DC) /* {{{ */
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	opline->opcode = ZEND_PRINT;
 	SET_NODE(opline->op1, arg);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
 
-void zend_do_echo(const znode *arg TSRMLS_DC) /* {{{ */
-{
+void zend_do_echo(const znode *arg TSRMLS_DC) /* {{{ */ /* echo语法的编译处理 我们从语法解析和vld扩展分析中可以看到 echo 12,'abc',1+2; 这样的语法会三次调用这个函数,即生成3个opcode */
+{/* 这里并没有设置opcode的result结果字段  从这里我们也能看出print和echo的区别来，print有返回值，而echo没有 */
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_ECHO;
 	SET_NODE(opline->op1, arg);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -898,8 +898,8 @@ void zend_do_abstract_method(const znode *function_name, znode *modifiers, const
 			zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 			opline->opcode = ZEND_RAISE_ABSTRACT_ERROR;
-			SET_UNUSED(opline->op1);
-			SET_UNUSED(opline->op2);
+			SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+			SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 		} else {
 			/* we had code in the function body */
 			zend_error_noreturn(E_COMPILE_ERROR, "%s function %s::%s() cannot contain body", method_type, CG(active_class_entry)->name, Z_STRVAL(function_name->u.constant));
@@ -946,13 +946,13 @@ void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {
 				opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 				opline->opcode = ZEND_FETCH_R;
 				opline->result_type = IS_VAR;
-				opline->result.var = get_temporary_variable(CG(active_op_array));
+				opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 				opline->op1_type = IS_CONST;
 				LITERAL_STRINGL(opline->op1,
 					CG(active_op_array)->vars[value->u.op.var].name,
 					CG(active_op_array)->vars[value->u.op.var].name_len, 1);
 				CALCULATE_LITERAL_HASH(opline->op1.constant);
-				SET_UNUSED(opline->op2);
+				SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 				opline->extended_value = ZEND_FETCH_LOCAL;
 				GET_NODE(value, opline->result);
 			}
@@ -990,7 +990,7 @@ void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {
 					}
 					last_op->opcode = ZEND_ASSIGN_OBJ;
 					zend_do_op_data(opline, value TSRMLS_CC);
-					SET_UNUSED(opline->result);
+					SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 					GET_NODE(result, last_op->result);
 					return;
 				} else if (last_op->opcode == ZEND_FETCH_DIM_W) {
@@ -1006,9 +1006,9 @@ void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {
 					}
 					last_op->opcode = ZEND_ASSIGN_DIM;
 					zend_do_op_data(opline, value TSRMLS_CC);
-					opline->op2.var = get_temporary_variable(CG(active_op_array));
+					opline->op2.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 					opline->op2_type = IS_VAR;
-					SET_UNUSED(opline->result);
+					SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 					GET_NODE(result, last_op->result);
 					return;
 				} else if (opline_is_fetch_this(last_op TSRMLS_CC)) {
@@ -1025,7 +1025,7 @@ void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {
 	SET_NODE(opline->op1, variable);
 	SET_NODE(opline->op2, value);
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -1060,7 +1060,7 @@ void zend_do_assign_ref(znode *result, const znode *lvar, const znode *rvar TSRM
 	}
 	if (result) {
 		opline->result_type = IS_VAR;
-		opline->result.var = get_temporary_variable(CG(active_op_array));
+		opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		GET_NODE(result, opline->result);
 	} else {
 		opline->result_type = IS_UNUSED | EXT_TYPE_UNUSED;
@@ -1105,7 +1105,7 @@ void zend_do_while_cond(const znode *expr, znode *close_bracket_token TSRMLS_DC)
 	opline->opcode = ZEND_JMPZ;
 	SET_NODE(opline->op1, expr);
 	close_bracket_token->u.op.opline_num = while_cond_op_number;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	do_begin_loop(TSRMLS_C);
 	INC_BPC(CG(active_op_array));
@@ -1119,8 +1119,8 @@ void zend_do_while_end(const znode *while_token, const znode *close_bracket_toke
 	/* add unconditional jump */
 	opline->opcode = ZEND_JMP;
 	opline->op1.opline_num = while_token->u.op.opline_num;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	/* update while's conditional jmp */
 	CG(active_op_array)->opcodes[close_bracket_token->u.op.opline_num].op2.opline_num = get_next_op_number(CG(active_op_array));
@@ -1139,7 +1139,7 @@ void zend_do_for_cond(const znode *expr, znode *second_semicolon_token TSRMLS_DC
 	opline->opcode = ZEND_JMPZNZ;
 	SET_NODE(opline->op1, expr);  /* the conditional expression */
 	second_semicolon_token->u.op.opline_num = for_cond_op_number;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -1150,8 +1150,8 @@ void zend_do_for_before_statement(const znode *cond_start, const znode *second_s
 	opline->opcode = ZEND_JMP;
 	opline->op1.opline_num = cond_start->u.op.opline_num;
 	CG(active_op_array)->opcodes[second_semicolon_token->u.op.opline_num].extended_value = get_next_op_number(CG(active_op_array));
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	do_begin_loop(TSRMLS_C);
 
@@ -1166,8 +1166,8 @@ void zend_do_for_end(const znode *second_semicolon_token TSRMLS_DC) /* {{{ */
 	opline->opcode = ZEND_JMP;
 	opline->op1.opline_num = second_semicolon_token->u.op.opline_num+1;
 	CG(active_op_array)->opcodes[second_semicolon_token->u.op.opline_num].op2.opline_num = get_next_op_number(CG(active_op_array));
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	do_end_loop(second_semicolon_token->u.op.opline_num+1, 0 TSRMLS_CC);
 
@@ -1186,7 +1186,7 @@ void zend_do_pre_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC
 		if (last_op->opcode == ZEND_FETCH_OBJ_RW) {
 			last_op->opcode = (op==ZEND_PRE_INC)?ZEND_PRE_INC_OBJ:ZEND_PRE_DEC_OBJ;
 			last_op->result_type = IS_VAR;
-			last_op->result.var = get_temporary_variable(CG(active_op_array));
+			last_op->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 			GET_NODE(result, last_op->result);
 			return;
 		}
@@ -1195,9 +1195,9 @@ void zend_do_pre_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = op;
 	SET_NODE(opline->op1, op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -1213,7 +1213,7 @@ void zend_do_post_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_D
 		if (last_op->opcode == ZEND_FETCH_OBJ_RW) {
 			last_op->opcode = (op==ZEND_POST_INC)?ZEND_POST_INC_OBJ:ZEND_POST_DEC_OBJ;
 			last_op->result_type = IS_TMP_VAR;
-			last_op->result.var = get_temporary_variable(CG(active_op_array));
+			last_op->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 			GET_NODE(result, last_op->result);
 			return;
 		}
@@ -1222,9 +1222,9 @@ void zend_do_post_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_D
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = op;
 	SET_NODE(opline->op1, op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -1237,7 +1237,7 @@ void zend_do_if_cond(const znode *cond, znode *closing_bracket_token TSRMLS_DC) 
 	opline->opcode = ZEND_JMPZ;
 	SET_NODE(opline->op1, cond);
 	closing_bracket_token->u.op.opline_num = if_cond_op_number;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	INC_BPC(CG(active_op_array));
 }
 /* }}} */
@@ -1260,8 +1260,8 @@ void zend_do_if_after_statement(const znode *closing_bracket_token, unsigned cha
 	zend_llist_add_element(jmp_list_ptr, &if_end_op_number);
 
 	CG(active_op_array)->opcodes[closing_bracket_token->u.op.opline_num].op2.opline_num = if_end_op_number+1;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -1423,9 +1423,9 @@ void zend_do_add_string(znode *result, const znode *op1, znode *op2 TSRMLS_DC) /
 		SET_NODE(opline->op1, op1);
 		SET_NODE(opline->result, op1);
 	} else {
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 		opline->result_type = IS_TMP_VAR;
-		opline->result.var = get_temporary_variable(CG(active_op_array));
+		opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	}
 	SET_NODE(opline->op2, op2);
 	GET_NODE(result, opline->result);
@@ -1442,9 +1442,9 @@ void zend_do_add_variable(znode *result, const znode *op1, const znode *op2 TSRM
 		SET_NODE(opline->op1, op1);
 		SET_NODE(opline->result, op1);
 	} else {
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 		opline->result_type = IS_TMP_VAR;
-		opline->result.var = get_temporary_variable(CG(active_op_array));
+		opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	}
 	SET_NODE(opline->op2, op2);
 	GET_NODE(result, opline->result);
@@ -1458,7 +1458,7 @@ void zend_do_free(znode *op1 TSRMLS_DC) /* {{{ */
 
 		opline->opcode = ZEND_FREE;
 		SET_NODE(opline->op1, op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	} else if (op1->op_type==IS_VAR) {
 		zend_op *opline = &CG(active_op_array)->opcodes[CG(active_op_array)->last-1];
 
@@ -1477,7 +1477,7 @@ void zend_do_free(znode *op1 TSRMLS_DC) /* {{{ */
 				opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 				opline->opcode = ZEND_FREE;
 				SET_NODE(opline->op1, op1);
-				SET_UNUSED(opline->op2);
+				SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 			} else {
 				opline->result_type |= EXT_TYPE_UNUSED;
 			}
@@ -1532,12 +1532,12 @@ int zend_do_verify_access_types(const znode *current_access_type, const znode *n
 }
 /* }}} */
 
-void zend_do_begin_function_declaration(znode *function_token, znode *function_name, int is_method, int return_reference, znode *fn_flags_znode TSRMLS_DC) /* {{{ */
+void zend_do_begin_function_declaration(znode *function_token, znode *function_name, int is_method, int return_reference, znode *fn_flags_znode TSRMLS_DC) /* {{{ *//* 函数或方法编译处理的开始 is_method表示是否为方法 */
 {
 	zend_op_array op_array;
-	char *name = Z_STRVAL(function_name->u.constant);
+	char *name = Z_STRVAL(function_name->u.constant);/* 取出函数或方法的名称 */
 	int name_len = Z_STRLEN(function_name->u.constant);
-	int function_begin_line = function_token->u.op.opline_num;
+	int function_begin_line = function_token->u.op.opline_num;/* 设置开始的行数 */
 	zend_uint fn_flags;
 	const char *lcname;
 	zend_bool orig_interactive;
@@ -1545,7 +1545,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 
 	if (is_method) {
 		if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {
-			if ((Z_LVAL(fn_flags_znode->u.constant) & ~(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC))) {
+			if ((Z_LVAL(fn_flags_znode->u.constant) & ~(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC))) {/* 这里确保接口类中的方法必须是公有 */
 				zend_error_noreturn(E_COMPILE_ERROR, "Access type for interface method %s::%s() must be omitted", CG(active_class_entry)->name, Z_STRVAL(function_name->u.constant));
 			}
 			Z_LVAL(fn_flags_znode->u.constant) |= ZEND_ACC_ABSTRACT; /* propagates to the rest of the parser */
@@ -1554,7 +1554,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 	} else {
 		fn_flags = 0;
 	}
-	if ((fn_flags & ZEND_ACC_STATIC) && (fn_flags & ZEND_ACC_ABSTRACT) && !(CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE)) {
+	if ((fn_flags & ZEND_ACC_STATIC) && (fn_flags & ZEND_ACC_ABSTRACT) && !(CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE)) { /*  abstract修饰的方法 不能加上static */
 		zend_error(E_STRICT, "Static function %s%s%s() should not be abstract", is_method ? CG(active_class_entry)->name : "", is_method ? "::" : "", Z_STRVAL(function_name->u.constant));
 	}
 
@@ -1562,11 +1562,11 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 
 	orig_interactive = CG(interactive);
 	CG(interactive) = 0;
-	init_op_array(&op_array, ZEND_USER_FUNCTION, INITIAL_OP_ARRAY_SIZE TSRMLS_CC);
+	init_op_array(&op_array, ZEND_USER_FUNCTION, INITIAL_OP_ARRAY_SIZE TSRMLS_CC);/* INITIAL_OP_ARRAY_SIZE 64 op_array的初始大小 */
 	CG(interactive) = orig_interactive;
 
 	op_array.function_name = name;
-	if (return_reference) {
+	if (return_reference) {/* 如果函数是返回一个引用 例如: function &fname(){ do something... }  */
 		op_array.fn_flags |= ZEND_ACC_RETURN_REFERENCE;
 	}
 	op_array.fn_flags |= fn_flags;
@@ -1576,12 +1576,12 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 
 	op_array.line_start = zend_get_compiled_lineno(TSRMLS_C);
 
-	if (is_method) {
+	if (is_method) {/* 如果是类方法的处理 */
 		zend_ulong hash;
 
-		lcname = zend_new_interned_string(zend_str_tolower_dup(name, name_len), name_len + 1, 1 TSRMLS_CC);
+		lcname = zend_new_interned_string(zend_str_tolower_dup(name, name_len), name_len + 1, 1 TSRMLS_CC);/* 将名称转换成小写,这就是为什么不区分大小写的原因 */
 		hash = str_hash(lcname, name_len);
-		if (zend_hash_quick_add(&CG(active_class_entry)->function_table, lcname, name_len+1, hash, &op_array, sizeof(zend_op_array), (void **) &CG(active_op_array)) == FAILURE) {
+		if (zend_hash_quick_add(&CG(active_class_entry)->function_table, lcname, name_len+1, hash, &op_array, sizeof(zend_op_array), (void **) &CG(active_op_array)) == FAILURE) {/* 将方法保存在当前类结构的function_table中 */
 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot redeclare %s::%s()", CG(active_class_entry)->name, name);
 		}
 
@@ -1589,49 +1589,48 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 		zend_init_compiler_context(TSRMLS_C);
 
 		if (fn_flags & ZEND_ACC_ABSTRACT) {
-			CG(active_class_entry)->ce_flags |= ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;
+			CG(active_class_entry)->ce_flags |= ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;/* 将当前类标记内含抽象方法abstract */
 		}
 
-		if (!(fn_flags & ZEND_ACC_PPP_MASK)) {
-			fn_flags |= ZEND_ACC_PUBLIC;
+		if (!(fn_flags & ZEND_ACC_PPP_MASK)) {/* 如果方法名前面没有访问控制值(public protected private) ZEND_ACC_PPP_MASK表示(ZEND_ACC_PUBLIC | ZEND_ACC_PROTECTED | ZEND_ACC_PRIVATE) */
+			fn_flags |= ZEND_ACC_PUBLIC;/* 则将方法的访问控制设置为public共有,这就是为什么类方法默认为public了 */
 		}
 
-		if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {
-			if ((name_len == sizeof(ZEND_CALL_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALL_FUNC_NAME, sizeof(ZEND_CALL_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+		if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {/* 如果类是接口 则对方法做合法性检查 */
+			if ((name_len == sizeof(ZEND_CALL_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALL_FUNC_NAME, sizeof(ZEND_CALL_FUNC_NAME)-1))) {/* ZEND_CALL_FUNC_NAME "__call" */
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__call()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __call() must have public visibility and cannot be static");
 				}
 			} else if ((name_len == sizeof(ZEND_CALLSTATIC_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALLSTATIC_FUNC_NAME, sizeof(ZEND_CALLSTATIC_FUNC_NAME)-1))) {
-				if ((fn_flags & (ZEND_ACC_PPP_MASK ^ ZEND_ACC_PUBLIC)) || (fn_flags & ZEND_ACC_STATIC) == 0) {
+				if ((fn_flags & (ZEND_ACC_PPP_MASK ^ ZEND_ACC_PUBLIC)) || (fn_flags & ZEND_ACC_STATIC) == 0) {/* 如果类标记包含protected或private或没有static 报错:__callStatic()只能为public且为static */
 					zend_error(E_WARNING, "The magic method __callStatic() must have public visibility and be static");
 				}
 			} else if ((name_len == sizeof(ZEND_GET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_GET_FUNC_NAME, sizeof(ZEND_GET_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__get()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __get() must have public visibility and cannot be static");
 				}
 			} else if ((name_len == sizeof(ZEND_SET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_SET_FUNC_NAME, sizeof(ZEND_SET_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__set()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __set() must have public visibility and cannot be static");
 				}
 			} else if ((name_len == sizeof(ZEND_UNSET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_UNSET_FUNC_NAME, sizeof(ZEND_UNSET_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__unset()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __unset() must have public visibility and cannot be static");
 				}
 			} else if ((name_len == sizeof(ZEND_ISSET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_ISSET_FUNC_NAME, sizeof(ZEND_ISSET_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__isset()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __isset() must have public visibility and cannot be static");
 				}
 			} else if ((name_len == sizeof(ZEND_TOSTRING_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_TOSTRING_FUNC_NAME, sizeof(ZEND_TOSTRING_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__toString()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __toString() must have public visibility and cannot be static");
 				}
 			} else if ((name_len == sizeof(ZEND_INVOKE_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_INVOKE_FUNC_NAME, sizeof(ZEND_INVOKE_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__invoke()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __invoke() must have public visibility and cannot be static");
 				}
-
 			} else if ((name_len == sizeof(ZEND_DEBUGINFO_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_DEBUGINFO_FUNC_NAME, sizeof(ZEND_DEBUGINFO_FUNC_NAME)-1))) {
-				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
+				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {/* 如果类标记包含protected或private或static 报错:魔术方法__debugInfo()只能为public且不能为static */
 					zend_error(E_WARNING, "The magic method __debugInfo() must have public visibility and cannot be static");
 				}
 			}
@@ -1647,7 +1646,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 					CG(active_class_entry)->constructor = (zend_function *) CG(active_op_array);
 				}
 			} else if ((name_len == sizeof(ZEND_CONSTRUCTOR_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CONSTRUCTOR_FUNC_NAME, sizeof(ZEND_CONSTRUCTOR_FUNC_NAME)))) {
-				if (CG(active_class_entry)->constructor) {
+				if (CG(active_class_entry)->constructor) {/* 避免重复定义构造函数 */
 					zend_error(E_STRICT, "Redefining already defined constructor for class %s", CG(active_class_entry)->name);
 				}
 				CG(active_class_entry)->constructor = (zend_function *) CG(active_op_array);
@@ -1706,23 +1705,23 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 		}
 
 		str_efree(lcname);
-	} else {
+	} else {/* 以下就是普通函数的处理 */
 		zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		zval key;
 		zval **ns_name;
 
-		if (CG(current_namespace)) {
+		if (CG(current_namespace)) {/* 如果当前存在命名空间 */
 			/* Prefix function name with current namespace name */
 			znode tmp;
 
 			tmp.u.constant = *CG(current_namespace);
 			zval_copy_ctor(&tmp.u.constant);
-			zend_do_build_namespace_name(&tmp, &tmp, function_name TSRMLS_CC);
-			op_array.function_name = Z_STRVAL(tmp.u.constant);
+			zend_do_build_namespace_name(&tmp, &tmp, function_name TSRMLS_CC);/* 在函数名前面加上命名空间 */
+			op_array.function_name = Z_STRVAL(tmp.u.constant);/* 将带有命名空间的函数名保存在op_array中 可以使用vld扩展验证 */
 			name_len = Z_STRLEN(tmp.u.constant);
-			lcname = zend_str_tolower_dup(Z_STRVAL(tmp.u.constant), name_len);
+			lcname = zend_str_tolower_dup(Z_STRVAL(tmp.u.constant), name_len);/* 将函数名转换成小写 这就是为什么函数名不区分大小写 */
 		} else {
-			lcname = zend_str_tolower_dup(name, name_len);
+			lcname = zend_str_tolower_dup(name, name_len);/* 将函数名转换成小写 这就是为什么函数名不区分大小写 */
 		}
 
 		/* Function name must not conflict with import names */
@@ -1732,13 +1731,13 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 			char *tmp = zend_str_tolower_dup(Z_STRVAL_PP(ns_name), Z_STRLEN_PP(ns_name));
 
 			if (Z_STRLEN_PP(ns_name) != Z_STRLEN(function_name->u.constant) ||
-				memcmp(tmp, lcname, Z_STRLEN(function_name->u.constant))) {
+				memcmp(tmp, lcname, Z_STRLEN(function_name->u.constant))) { /* 避免函数重名 */
 				zend_error(E_COMPILE_ERROR, "Cannot declare function %s because the name is already in use", Z_STRVAL(function_name->u.constant));
 			}
 			efree(tmp);
 		}
 
-		opline->opcode = ZEND_DECLARE_FUNCTION;
+		opline->opcode = ZEND_DECLARE_FUNCTION;/* 设置自定义函数的opcode */
 		opline->op1_type = IS_CONST;
 		build_runtime_defined_function_key(&key, lcname, name_len TSRMLS_CC);
 		opline->op1.constant = zend_add_literal(CG(active_op_array), &key TSRMLS_CC);
@@ -1747,7 +1746,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 		LITERAL_STRINGL(opline->op2, lcname, name_len, 1);
 		CALCULATE_LITERAL_HASH(opline->op2.constant);
 		opline->extended_value = ZEND_DECLARE_FUNCTION;
-		zend_hash_quick_update(CG(function_table), Z_STRVAL(key), Z_STRLEN(key), Z_HASH_P(&CONSTANT(opline->op1.constant)), &op_array, sizeof(zend_op_array), (void **) &CG(active_op_array));
+		zend_hash_quick_update(CG(function_table), Z_STRVAL(key), Z_STRLEN(key), Z_HASH_P(&CONSTANT(opline->op1.constant)), &op_array, sizeof(zend_op_array), (void **) &CG(active_op_array));/* 将函数注册到全局函数表中 */
 		zend_stack_push(&CG(context_stack), (void *) &CG(context), sizeof(CG(context)));
 		zend_init_compiler_context(TSRMLS_C);
 		str_efree(lcname);
@@ -1758,8 +1757,8 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 
 		opline->opcode = ZEND_EXT_NOP;
 		opline->lineno = function_begin_line;
-		SET_UNUSED(opline->op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	}
 
 	{
@@ -1823,8 +1822,8 @@ void zend_do_handle_exception(TSRMLS_D) /* {{{ */
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_HANDLE_EXCEPTION;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -1908,7 +1907,7 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 	if (op == ZEND_RECV_INIT) {
 		SET_NODE(opline->op2, initialization);
 	} else {
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 		if (!is_variadic) {
 			CG(active_op_array)->required_num_args = CG(active_op_array)->num_args;
 		}
@@ -2051,7 +2050,7 @@ void zend_do_begin_method_call(znode *left_bracket TSRMLS_DC) /* {{{ */
 		zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_INIT_FCALL_BY_NAME;
 		opline->result.num = CG(context).nested_calls;
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 		if (left_bracket->op_type == IS_CONST) {
 			opline->op2_type = IS_CONST;
 			opline->op2.constant = zend_add_func_name_literal(CG(active_op_array), &left_bracket->u.constant TSRMLS_CC);
@@ -2075,9 +2074,9 @@ void zend_do_clone(znode *result, const znode *expr TSRMLS_DC) /* {{{ */
 
 	opline->opcode = ZEND_CLONE;
 	SET_NODE(opline->op1, expr);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -2092,14 +2091,14 @@ void zend_do_begin_dynamic_function_call(znode *function_name, int ns_call TSRML
 		   internal function with short name */
 		opline->opcode = ZEND_INIT_NS_FCALL_BY_NAME;
 		opline->result.num = CG(context).nested_calls;
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 		opline->op2_type = IS_CONST;
 		opline->op2.constant = zend_add_ns_func_name_literal(CG(active_op_array), &function_name->u.constant TSRMLS_CC);
 		GET_CACHE_SLOT(opline->op2.constant);
 	} else {
 		opline->opcode = ZEND_INIT_FCALL_BY_NAME;
 		opline->result.num = CG(context).nested_calls;
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 		if (function_name->op_type == IS_CONST) {
 			opline->op2_type = IS_CONST;
 			opline->op2.constant = zend_add_func_name_literal(CG(active_op_array), &function_name->u.constant TSRMLS_CC);
@@ -2343,7 +2342,7 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_FETCH_CLASS;
-	SET_UNUSED(opline->op1);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 	opline->extended_value = ZEND_FETCH_CLASS_DEFAULT;
 	CG(catch_begin) = fetch_class_op_number;
 	if (class_name->op_type == IS_CONST) {
@@ -2354,7 +2353,7 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 			case ZEND_FETCH_CLASS_SELF:
 			case ZEND_FETCH_CLASS_PARENT:
 			case ZEND_FETCH_CLASS_STATIC:
-				SET_UNUSED(opline->op2);
+				SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 				opline->extended_value = fetch_type;
 				zval_dtor(&class_name->u.constant);
 				break;
@@ -2368,7 +2367,7 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 	} else {
 		SET_NODE(opline->op2, class_name);
 	}
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	opline->result_type = IS_VAR; /* FIXME: Hack so that INIT_FCALL_BY_NAME still knows this is a class */
 	GET_NODE(result, opline->result);
 	result->EA = opline->extended_value;
@@ -2444,7 +2443,7 @@ void zend_resolve_goto_label(zend_op_array *op_array, zend_op *opline, int pass2
 		/* Nothing to break out of, optimize to ZEND_JMP */
 		opline->opcode = ZEND_JMP;
 		opline->extended_value = 0;
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	} else {
 		/* Set real break distance */
 		ZVAL_LONG(label, distance);
@@ -2462,7 +2461,7 @@ void zend_do_goto(const znode *label TSRMLS_DC) /* {{{ */
 
 	opline->opcode = ZEND_GOTO;
 	opline->extended_value = CG(context).current_brk_cont;
-	SET_UNUSED(opline->op1);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 	SET_NODE(opline->op2, label);
 	zend_resolve_goto_label(CG(active_op_array), opline, 0 TSRMLS_CC);
 }
@@ -2485,24 +2484,24 @@ void zend_release_labels(int temporary TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_build_full_name(znode *result, znode *prefix, znode *name, int is_class_member TSRMLS_DC) /* {{{ */
+void zend_do_build_full_name(znode *result, znode *prefix, znode *name, int is_class_member TSRMLS_DC) /* {{{ *//* 命名空间和静态方法调用处理,主要是result=prefix+'::'或'\\'+name */
 {
 	zend_uint length;
 
 	if (!result) {
-		result = prefix;
+		result = prefix;/* 如果result为空 则将prefix的地址赋值给result 也就是prefix=prefix+'::'或'\\'+name */
 	} else {
-		*result = *prefix;
+		*result = *prefix;/* 如果result不为空 则将prefix的值赋给result 最终将结果通过result传递 */
 	}
 
-	if (is_class_member) {
+	if (is_class_member) {/* 静态方法调用处理 result=prefix+'::'+name */
 		length = sizeof("::")-1 + Z_STRLEN(result->u.constant) + Z_STRLEN(name->u.constant);
 		Z_STRVAL(result->u.constant) = str_erealloc(Z_STRVAL(result->u.constant), length+1);
 		memcpy(&Z_STRVAL(result->u.constant)[Z_STRLEN(result->u.constant)], "::", sizeof("::")-1);
 		memcpy(&Z_STRVAL(result->u.constant)[Z_STRLEN(result->u.constant) + sizeof("::")-1], Z_STRVAL(name->u.constant), Z_STRLEN(name->u.constant)+1);
 		str_efree(Z_STRVAL(name->u.constant));
 		Z_STRLEN(result->u.constant) = length;
-	} else {
+	} else {/* 命名空间前加前缀处理 result=prefix+'\\'+name */
 		length = sizeof("\\")-1 + Z_STRLEN(result->u.constant) + Z_STRLEN(name->u.constant);
 		Z_STRVAL(result->u.constant) = str_erealloc(Z_STRVAL(result->u.constant), length+1);
 		memcpy(&Z_STRVAL(result->u.constant)[Z_STRLEN(result->u.constant)], "\\", sizeof("\\")-1);
@@ -2590,14 +2589,14 @@ void zend_do_end_function_call(znode *function_name, znode *result, int is_metho
 		if (fcall->fbc) {
 			opline->opcode = ZEND_DO_FCALL;
 			SET_NODE(opline->op1, function_name);
-			SET_UNUSED(opline->op2);
+			SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 			opline->op2.num = CG(context).nested_calls;
 			CALCULATE_LITERAL_HASH(opline->op1.constant);
 			GET_CACHE_SLOT(opline->op1.constant);
 		} else {
 			opline->opcode = ZEND_DO_FCALL_BY_NAME;
-			SET_UNUSED(opline->op1);
-			SET_UNUSED(opline->op2);
+			SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+			SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 			opline->op2.num = --CG(context).nested_calls;
 
 			/* This would normally be a ZEND_DO_FCALL, but was forced to use
@@ -2609,7 +2608,7 @@ void zend_do_end_function_call(znode *function_name, znode *result, int is_metho
 		}
 	}
 
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	opline->result_type = IS_VAR;
 	GET_NODE(result, opline->result);
 	opline->extended_value = fcall->arg_num;
@@ -2729,7 +2728,7 @@ void zend_do_pass_param(znode *param, zend_uchar op TSRMLS_DC) /* {{{ */
 	opline->opcode = op;
 	SET_NODE(opline->op1, param);
 	opline->op2.opline_num = fcall->arg_num;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	if (++CG(context).used_stack > CG(active_op_array)->used_stack) {
 		CG(active_op_array)->used_stack = CG(context).used_stack;
@@ -2755,7 +2754,7 @@ void zend_do_unpack_params(znode *params TSRMLS_DC) /* {{{ */
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_INIT_FCALL_BY_NAME;
 		opline->result.num = CG(context).nested_calls;
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 		opline->op2_type = IS_CONST;
 		opline->op2.constant = zend_add_func_name_literal(CG(active_op_array), &func_name TSRMLS_CC);
 		GET_CACHE_SLOT(opline->op2.constant);
@@ -2767,7 +2766,7 @@ void zend_do_unpack_params(znode *params TSRMLS_DC) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_SEND_UNPACK;
 	SET_NODE(opline->op1, params);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->op2.num = fcall->arg_num;
 }
 /* }}} */
@@ -2784,7 +2783,7 @@ static int generate_free_switch_expr(const zend_switch_entry *switch_entry TSRML
 
 	opline->opcode = (switch_entry->cond.op_type == IS_TMP_VAR) ? ZEND_FREE : ZEND_SWITCH_FREE;
 	SET_NODE(opline->op1, &switch_entry->cond);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	return 0;
 }
@@ -2803,7 +2802,7 @@ static int generate_free_foreach_copy(const zend_op *foreach_copy TSRMLS_DC) /* 
 
 	opline->opcode = (foreach_copy->result_type == IS_TMP_VAR) ? ZEND_FREE : ZEND_SWITCH_FREE;
 	COPY_NODE(opline->op1, foreach_copy->result);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	return 0;
 }
@@ -2819,9 +2818,9 @@ void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ */
 
 	if (do_end_vparse) {
 		if (returns_reference && !zend_is_function_or_method_call(expr)) {
-			zend_do_end_variable_parse(expr, BP_VAR_W, 0 TSRMLS_CC);
+			zend_do_end_variable_parse(expr, BP_VAR_W, 0 TSRMLS_CC);/* 处理返回引用 */
 		} else {
-			zend_do_end_variable_parse(expr, BP_VAR_R, 0 TSRMLS_CC);
+			zend_do_end_variable_parse(expr, BP_VAR_R, 0 TSRMLS_CC);/* 处理常规变量返回 */
 		}
 	}
 
@@ -2844,8 +2843,8 @@ void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ */
 	if (CG(context).in_finally) {
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_DISCARD_EXCEPTION;
-		SET_UNUSED(opline->op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	}
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -2865,7 +2864,7 @@ void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ */
 		LITERAL_NULL(opline->op1);
 	}
 
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -2898,17 +2897,17 @@ void zend_do_yield(znode *result, znode *value, const znode *key, zend_bool is_v
 			opline->extended_value = ZEND_RETURNS_FUNCTION;
 		}
 	} else {
-		SET_UNUSED(opline->op1);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 	}
 
 	if (key) {
 		SET_NODE(opline->op2, key);
 	} else {
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	}
 
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -2946,8 +2945,8 @@ void zend_initialize_try_catch_element(znode *catch_token TSRMLS_DC) /* {{{ */
 	zend_llist *jmp_list_ptr;
 
 	opline->opcode = ZEND_JMP;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	/* save for backpatching */
 
 	zend_llist_init(&jmp_list, sizeof(int), NULL, 0);
@@ -2988,16 +2987,16 @@ void zend_do_finally(znode *finally_token TSRMLS_DC) /* {{{ */
 	finally_token->u.op.opline_num = get_next_op_number(CG(active_op_array));
 	/* call the the "finally" block */
 	opline->opcode = ZEND_FAST_CALL;
-	SET_UNUSED(opline->op1);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 	opline->op1.opline_num = finally_token->u.op.opline_num + 1;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	/* jump to code after the "finally" block,
 	 * the actual jump address is going to be set in zend_do_end_finally()
 	 */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_JMP;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	CG(context).in_finally++;
 }
@@ -3042,8 +3041,8 @@ void zend_do_end_catch(znode *catch_token TSRMLS_DC) /* {{{ */
 	zend_llist *jmp_list_ptr;
 
 	opline->opcode = ZEND_JMP;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	/* save for backpatching */
 
 	zend_stack_top(&CG(bp_stack), (void **) &jmp_list_ptr);
@@ -3074,8 +3073,8 @@ void zend_do_end_finally(znode *try_token, znode* catch_token, znode *finally_to
 
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_FAST_RET;
-		SET_UNUSED(opline->op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 		CG(active_op_array)->opcodes[finally_token->u.op.opline_num].op1.opline_num = get_next_op_number(CG(active_op_array));
 
@@ -3091,7 +3090,7 @@ void zend_do_throw(const znode *expr TSRMLS_DC) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_THROW;
 	SET_NODE(opline->op1, expr);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -4877,11 +4876,11 @@ void zend_do_boolean_or_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ */
 	if (expr1->op_type == IS_TMP_VAR) {
 		SET_NODE(opline->result, expr1);
 	} else {
-		opline->result.var = get_temporary_variable(CG(active_op_array));
+		opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		opline->result_type = IS_TMP_VAR;
 	}
 	SET_NODE(opline->op1, expr1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	op_token->u.op.opline_num = next_op_number;
 
@@ -4897,7 +4896,7 @@ void zend_do_boolean_or_end(znode *result, const znode *expr1, const znode *expr
 	opline->opcode = ZEND_BOOL;
 	SET_NODE(opline->result, result);
 	SET_NODE(opline->op1, expr2);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	CG(active_op_array)->opcodes[op_token->u.op.opline_num].op2.opline_num = get_next_op_number(CG(active_op_array));
 }
@@ -4912,11 +4911,11 @@ void zend_do_boolean_and_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ *
 	if (expr1->op_type == IS_TMP_VAR) {
 		SET_NODE(opline->result, expr1);
 	} else {
-		opline->result.var = get_temporary_variable(CG(active_op_array));
+		opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		opline->result_type = IS_TMP_VAR;
 	}
 	SET_NODE(opline->op1, expr1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	op_token->u.op.opline_num = next_op_number;
 
@@ -4932,7 +4931,7 @@ void zend_do_boolean_and_end(znode *result, const znode *expr1, const znode *exp
 	opline->opcode = ZEND_BOOL;
 	SET_NODE(opline->result, result);
 	SET_NODE(opline->op1, expr2);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	CG(active_op_array)->opcodes[op_token->u.op.opline_num].op2.opline_num = get_next_op_number(CG(active_op_array));
 }
@@ -4952,7 +4951,7 @@ void zend_do_do_while_end(const znode *do_token, const znode *expr_open_bracket,
 	opline->opcode = ZEND_JMPNZ;
 	SET_NODE(opline->op1, expr);
 	opline->op2.opline_num = do_token->u.op.opline_num;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	do_end_loop(expr_open_bracket->u.op.opline_num, 0 TSRMLS_CC);
 
@@ -4966,7 +4965,7 @@ void zend_do_brk_cont(zend_uchar op, const znode *expr TSRMLS_DC) /* {{{ */
 
 	opline->opcode = op;
 	opline->op1.opline_num = CG(context).current_brk_cont;
-	SET_UNUSED(opline->op1);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 	if (expr) {
 		if (expr->op_type != IS_CONST) {
 			zend_error_noreturn(E_COMPILE_ERROR, "'%s' operator with non-constant operand is no longer supported", op == ZEND_BRK ? "break" : "continue");
@@ -5007,8 +5006,8 @@ void zend_do_switch_end(const znode *case_list TSRMLS_DC) /* {{{ */
 	if (switch_entry_ptr->default_case != -1) {
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_JMP;
-		SET_UNUSED(opline->op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 		opline->op1.opline_num = switch_entry_ptr->default_case;
 	}
 
@@ -5027,7 +5026,7 @@ void zend_do_switch_end(const znode *case_list TSRMLS_DC) /* {{{ */
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = (switch_entry_ptr->cond.op_type == IS_TMP_VAR) ? ZEND_FREE : ZEND_SWITCH_FREE;
 		SET_NODE(opline->op1, &switch_entry_ptr->cond);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	}
 	if (switch_entry_ptr->cond.op_type == IS_CONST) {
 		zval_dtor(&switch_entry_ptr->cond.u.constant);
@@ -5049,7 +5048,7 @@ void zend_do_case_before_statement(const znode *case_list, znode *case_token, co
 	zend_stack_top(&CG(switch_cond_stack), (void **) &switch_entry_ptr);
 
 	if (switch_entry_ptr->control_var == -1) {
-		switch_entry_ptr->control_var = get_temporary_variable(CG(active_op_array));
+		switch_entry_ptr->control_var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	}
 	opline->opcode = ZEND_CASE;
 	opline->result.var = switch_entry_ptr->control_var;
@@ -5065,7 +5064,7 @@ void zend_do_case_before_statement(const znode *case_list, znode *case_token, co
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_JMPZ;
 	SET_NODE(opline->op1, &result);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	case_token->u.op.opline_num = next_op_number;
 
 	if (case_list->op_type==IS_UNUSED) {
@@ -5082,8 +5081,8 @@ void zend_do_case_after_statement(znode *result, const znode *case_token TSRMLS_
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_JMP;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	result->u.op.opline_num = next_op_number;
 
 	switch (CG(active_op_array)->opcodes[case_token->u.op.opline_num].opcode) {
@@ -5106,8 +5105,8 @@ void zend_do_default_before_statement(const znode *case_list, znode *default_tok
 	zend_stack_top(&CG(switch_cond_stack), (void **) &switch_entry_ptr);
 
 	opline->opcode = ZEND_JMP;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	default_token->u.op.opline_num = next_op_number;
 
 	next_op_number = get_next_op_number(CG(active_op_array));
@@ -5120,23 +5119,23 @@ void zend_do_default_before_statement(const znode *case_list, znode *default_tok
 }
 /* }}} */
 
-void zend_do_begin_class_declaration(const znode *class_token, znode *class_name, const znode *parent_class_name TSRMLS_DC) /* {{{ */
+void zend_do_begin_class_declaration(const znode *class_token, znode *class_name, const znode *parent_class_name TSRMLS_DC) /* {{{ *//* 类编译处理的开始 类初始化 用来处理类名，类的类别和父类 */
 {
 	zend_op *opline;
-	int doing_inheritance = 0;
+	int doing_inheritance = 0;/* 是否有继承 */
 	zend_class_entry *new_class_entry;
 	char *lcname;
 	int error = 0;
 	zval **ns_name, key;
 
-	if (CG(active_class_entry)) {
+	if (CG(active_class_entry)) {/* 如果在类里面嵌套定义类,会报此错误 */
 		zend_error_noreturn(E_COMPILE_ERROR, "Class declarations may not be nested");
 		return;
 	}
 
-	lcname = zend_str_tolower_dup(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));
+	lcname = zend_str_tolower_dup(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));/* 将类名转换成小写 这就是类名不区分大小写的原因 */
 
-	if (!(strcmp(lcname, "self") && strcmp(lcname, "parent"))) {
+	if (!(strcmp(lcname, "self") && strcmp(lcname, "parent"))) {/* 防止类名为 self parent */
 		efree(lcname);
 		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as class name as it is reserved", Z_STRVAL(class_name->u.constant));
 	}
@@ -5144,7 +5143,7 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 	/* Class name must not conflict with import names */
 	if (CG(current_import) &&
 	    zend_hash_find(CG(current_import), lcname, Z_STRLEN(class_name->u.constant)+1, (void**)&ns_name) == SUCCESS) {
-		error = 1;
+		error = 1;/* 防止类名重复 */
 	}
 
 	if (CG(current_namespace)) {
@@ -5154,33 +5153,33 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 		tmp.op_type = IS_CONST;
 		tmp.u.constant = *CG(current_namespace);
 		zval_copy_ctor(&tmp.u.constant);
-		zend_do_build_namespace_name(&tmp, &tmp, class_name TSRMLS_CC);
+		zend_do_build_namespace_name(&tmp, &tmp, class_name TSRMLS_CC);/* 将类名建立命名空间 */
 		*class_name = tmp;
 		efree(lcname);
-		lcname = zend_str_tolower_dup(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));
+		lcname = zend_str_tolower_dup(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));/* 再次对类名转换成小写 */
 	}
 
 	if (error) {
 		char *tmp = zend_str_tolower_dup(Z_STRVAL_PP(ns_name), Z_STRLEN_PP(ns_name));
 
 		if (Z_STRLEN_PP(ns_name) != Z_STRLEN(class_name->u.constant) ||
-			memcmp(tmp, lcname, Z_STRLEN(class_name->u.constant))) {
+			memcmp(tmp, lcname, Z_STRLEN(class_name->u.constant))) {/* 防止类名重复 */
 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot declare class %s because the name is already in use", Z_STRVAL(class_name->u.constant));
 		}
 		efree(tmp);
 	}
+	/* 上面是对类名的合法性进行检测 下面对类进行初始化 */
+	new_class_entry = emalloc(sizeof(zend_class_entry));/* 给类申请一个空间 */
+	new_class_entry->type = ZEND_USER_CLASS;/* 标志类型为用户类 */
+	new_class_entry->name = zend_new_interned_string(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant) + 1, 1 TSRMLS_CC);/* 设置类名 */
+	new_class_entry->name_length = Z_STRLEN(class_name->u.constant);/* 设置类名长度 */
 
-	new_class_entry = emalloc(sizeof(zend_class_entry));
-	new_class_entry->type = ZEND_USER_CLASS;
-	new_class_entry->name = zend_new_interned_string(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant) + 1, 1 TSRMLS_CC);
-	new_class_entry->name_length = Z_STRLEN(class_name->u.constant);
+	zend_initialize_class_data(new_class_entry, 1 TSRMLS_CC);/* 初始化类 */
+	new_class_entry->info.user.filename = zend_get_compiled_filename(TSRMLS_C);/* 设置类所在的文件 */
+	new_class_entry->info.user.line_start = class_token->u.op.opline_num;/* 设置类开始的行数 */
+	new_class_entry->ce_flags |= class_token->EA;/* 设置类的类型 */
 
-	zend_initialize_class_data(new_class_entry, 1 TSRMLS_CC);
-	new_class_entry->info.user.filename = zend_get_compiled_filename(TSRMLS_C);
-	new_class_entry->info.user.line_start = class_token->u.op.opline_num;
-	new_class_entry->ce_flags |= class_token->EA;
-
-	if (parent_class_name && parent_class_name->op_type != IS_UNUSED) {
+	if (parent_class_name && parent_class_name->op_type != IS_UNUSED) { /* IS_UNUSED表示未继承父类,在语法分析中设置的 */
 		switch (parent_class_name->EA) {
 			case ZEND_FETCH_CLASS_SELF:
 				zend_error_noreturn(E_COMPILE_ERROR, "Cannot use 'self' as class name as it is reserved");
@@ -5194,7 +5193,7 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 			default:
 				break;
 		}
-		doing_inheritance = 1;
+		doing_inheritance = 1;/* 表示有继承父类 */
 	}
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -5207,7 +5206,7 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 
 	if (doing_inheritance) {
 		/* Make sure a trait does not try to extend a class */
-		if ((new_class_entry->ce_flags & ZEND_ACC_TRAIT) == ZEND_ACC_TRAIT) {
+		if ((new_class_entry->ce_flags & ZEND_ACC_TRAIT) == ZEND_ACC_TRAIT) {/* 避免trait类继承 */
 			zend_error_noreturn(E_COMPILE_ERROR, "A trait (%s) cannot extend a class. Traits can only be composed from other traits with the 'use' keyword. Error", new_class_entry->name);
 		}
 
@@ -5220,10 +5219,10 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 	LITERAL_STRINGL(opline->op2, lcname, new_class_entry->name_length, 0);
 	CALCULATE_LITERAL_HASH(opline->op2.constant);
 
-	zend_hash_quick_update(CG(class_table), Z_STRVAL(key), Z_STRLEN(key), Z_HASH_P(&CONSTANT(opline->op1.constant)), &new_class_entry, sizeof(zend_class_entry *), NULL);
-	CG(active_class_entry) = new_class_entry;
+	zend_hash_quick_update(CG(class_table), Z_STRVAL(key), Z_STRLEN(key), Z_HASH_P(&CONSTANT(opline->op1.constant)), &new_class_entry, sizeof(zend_class_entry *), NULL);/* 将类保存在HASH_Table中 */
+	CG(active_class_entry) = new_class_entry;/* 设置当前正在进行类操作,这就是为什么前面的避免类嵌套的使用 */
 
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	opline->result_type = IS_VAR;
 	GET_NODE(&CG(implementing_class), opline->result);
 
@@ -5242,34 +5241,34 @@ static void do_verify_abstract_class(TSRMLS_D) /* {{{ */
 
 	opline->opcode = ZEND_VERIFY_ABSTRACT_CLASS;
 	SET_NODE(opline->op1, &CG(implementing_class));
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
-void zend_do_end_class_declaration(const znode *class_token, const znode *parent_token TSRMLS_DC) /* {{{ */
+void zend_do_end_class_declaration(const znode *class_token, const znode *parent_token TSRMLS_DC) /* {{{ *//* 类编译处理的结束 */
 {
 	zend_class_entry *ce = CG(active_class_entry);
 
 	if (ce->constructor) {
-		ce->constructor->common.fn_flags |= ZEND_ACC_CTOR;
-		if (ce->constructor->common.fn_flags & ZEND_ACC_STATIC) {
+		ce->constructor->common.fn_flags |= ZEND_ACC_CTOR;/* 将类的构造方法设置标记成构造方法 */
+		if (ce->constructor->common.fn_flags & ZEND_ACC_STATIC) {/* 避免构造函数设置成静态 */
 			zend_error_noreturn(E_COMPILE_ERROR, "Constructor %s::%s() cannot be static", ce->name, ce->constructor->common.function_name);
 		}
 	}
 	if (ce->destructor) {
-		ce->destructor->common.fn_flags |= ZEND_ACC_DTOR;
-		if (ce->destructor->common.fn_flags & ZEND_ACC_STATIC) {
+		ce->destructor->common.fn_flags |= ZEND_ACC_DTOR;/* 将类的析构方法设置标记成构造方法 */
+		if (ce->destructor->common.fn_flags & ZEND_ACC_STATIC) {/* 避免析构函数设置成静态 */
 			zend_error_noreturn(E_COMPILE_ERROR, "Destructor %s::%s() cannot be static", ce->name, ce->destructor->common.function_name);
 		}
 	}
 	if (ce->clone) {
-		ce->clone->common.fn_flags |= ZEND_ACC_CLONE;
-		if (ce->clone->common.fn_flags & ZEND_ACC_STATIC) {
+		ce->clone->common.fn_flags |= ZEND_ACC_CLONE;/* 将类的克隆方法设置标记成构造方法 */
+		if (ce->clone->common.fn_flags & ZEND_ACC_STATIC) {/* 避免克隆函数设置成静态 */
 			zend_error_noreturn(E_COMPILE_ERROR, "Clone method %s::%s() cannot be static", ce->name, ce->clone->common.function_name);
 		}
 	}
 
-	ce->info.user.line_end = zend_get_compiled_lineno(TSRMLS_C);
+	ce->info.user.line_end = zend_get_compiled_lineno(TSRMLS_C);/* 设置类结束的行数 */
 
 	/* Check for traits and proceed like with interfaces.
 	 * The only difference will be a combined handling of them in the end.
@@ -5304,7 +5303,7 @@ void zend_do_end_class_declaration(const znode *class_token, const znode *parent
 		ce->ce_flags |= ZEND_ACC_IMPLEMENT_INTERFACES;
 	}
 
-	CG(active_class_entry) = NULL;
+	CG(active_class_entry) = NULL;/* 最后释放掉 当前类编译的中间变量 */
 }
 /* }}} */
 
@@ -5372,8 +5371,8 @@ void zend_do_use_trait(znode *trait_name TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_mangle_property_name(char **dest, int *dest_length, const char *src1, int src1_length, const char *src2, int src2_length, int internal) /* {{{ */
-{
+ZEND_API void zend_mangle_property_name(char **dest, int *dest_length, const char *src1, int src1_length, const char *src2, int src2_length, int internal) /* {{{ *//* 将src1和src2字符串连接 在前面加上'\0'赋值给dest */
+{/* dest='\0'+src1+src2 */
 	char *prop_name;
 	int prop_name_length;
 
@@ -5572,7 +5571,7 @@ void zend_do_fetch_property(znode *result, znode *object, const znode *property 
 	init_op(&opline TSRMLS_CC);
 	opline.opcode = ZEND_FETCH_OBJ_W;	/* the backpatching routine assumes W */
 	opline.result_type = IS_VAR;
-	opline.result.var = get_temporary_variable(CG(active_op_array));
+	opline.result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline.op1, object);
 	SET_NODE(opline.op2, property);
 	if (opline.op2_type == IS_CONST && Z_TYPE(CONSTANT(opline.op2.constant)) == IS_STRING) {
@@ -5585,20 +5584,20 @@ void zend_do_fetch_property(znode *result, znode *object, const znode *property 
 }
 /* }}} */
 
-void zend_do_halt_compiler_register(TSRMLS_D) /* {{{ */
+void zend_do_halt_compiler_register(TSRMLS_D) /* {{{ *//* 编译过程中遇到__halt_compiler()函数的处理 */
 {
 	char *name, *cfilename;
 	char haltoff[] = "__COMPILER_HALT_OFFSET__";
 	int len, clen;
 
-	if (CG(has_bracketed_namespaces) && CG(in_namespace)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "__HALT_COMPILER() can only be used from the outermost scope");
+	if (CG(has_bracketed_namespaces) && CG(in_namespace)) {/* 如果__halt_compiler()函数在带括号的命名空间中出现则报错 */
+		zend_error_noreturn(E_COMPILE_ERROR, "__HALT_COMPILER() can only be used from the outermost scope");/* __halt_compiler()只能在最外层使用 */
 	}
-
+	/* __COMPILER_HALT_OFFSET__这个常量会作为特殊常量存储,前面加个空字节,别后面带文件名,使用的时候也会做这种特殊处理,这样就能实现仅被定义于使用了__halt_compiler的文件使用该常量 */
 	cfilename = zend_get_compiled_filename(TSRMLS_C);
 	clen = strlen(cfilename);
-	zend_mangle_property_name(&name, &len, haltoff, sizeof(haltoff) - 1, cfilename, clen, 0);
-	zend_register_long_constant(name, len+1, zend_get_scanned_file_offset(TSRMLS_C), CONST_CS, 0 TSRMLS_CC);
+	zend_mangle_property_name(&name, &len, haltoff, sizeof(haltoff) - 1, cfilename, clen, 0);/* name='\0'+haltoff+cfilename */
+	zend_register_long_constant(name, len+1, zend_get_scanned_file_offset(TSRMLS_C), CONST_CS, 0 TSRMLS_CC);/* 注册常量__COMPILER_HALT_OFFSET__的值为__halt_compiler();的分号(包含分号)之前的字节数 */
 	pefree(name, 0);
 
 	if (CG(in_namespace)) {
@@ -5634,9 +5633,9 @@ void zend_do_begin_new_object(znode *new_token, znode *class_type TSRMLS_DC) /* 
 	opline->opcode = ZEND_NEW;
 	opline->extended_value = CG(context).nested_calls;
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, class_type);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	zend_push_function_call_entry(NULL TSRMLS_CC);
 	if (++CG(context).nested_calls > CG(active_op_array)->nested_calls) {
@@ -5749,7 +5748,7 @@ void zend_do_fetch_constant(znode *result, znode *constant_container, znode *con
 				opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 				opline->opcode = ZEND_FETCH_CONSTANT;
 				opline->result_type = IS_TMP_VAR;
-				opline->result.var = get_temporary_variable(CG(active_op_array));
+				opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 				if (constant_container->op_type == IS_CONST) {
 					opline->op1_type = IS_CONST;
 					opline->op1.constant = zend_add_class_name_literal(CG(active_op_array), &constant_container->u.constant TSRMLS_CC);
@@ -5800,9 +5799,9 @@ void zend_do_fetch_constant(znode *result, znode *constant_container, znode *con
 			opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 			opline->opcode = ZEND_FETCH_CONSTANT;
 			opline->result_type = IS_TMP_VAR;
-			opline->result.var = get_temporary_variable(CG(active_op_array));
+			opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 			GET_NODE(result, opline->result);
-			SET_UNUSED(opline->op1);
+			SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 			opline->op2_type = IS_CONST;
 			if (compound) {
 				/* the name is unambiguous */
@@ -5839,19 +5838,19 @@ void zend_do_shell_exec(znode *result, const znode *cmd TSRMLS_DC) /* {{{ */
 	SET_NODE(opline->op1, cmd);
 	opline->op2.opline_num = 1;
 	opline->extended_value = ZEND_DO_FCALL;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	/* FIXME: exception support not added to this op2 */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_DO_FCALL;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	opline->result_type = IS_VAR;
 	LITERAL_STRINGL(opline->op1, estrndup("shell_exec", sizeof("shell_exec")-1), sizeof("shell_exec")-1, 0);
 	CALCULATE_LITERAL_HASH(opline->op1.constant);
 	opline->op1_type = IS_CONST;
 	GET_CACHE_SLOT(opline->op1.constant);
 	opline->extended_value = 1;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->op2.num = CG(context).nested_calls;
 	GET_NODE(result, opline->result);
 
@@ -5869,7 +5868,7 @@ void zend_do_init_array(znode *result, const znode *expr, const znode *offset, z
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_INIT_ARRAY;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	opline->result_type = IS_TMP_VAR;
 	GET_NODE(result, opline->result);
 	if (expr) {
@@ -5889,11 +5888,11 @@ void zend_do_init_array(znode *result, const znode *expr, const znode *offset, z
 				}
 			}
 		} else {
-			SET_UNUSED(opline->op2);
+			SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 		}
 	} else {
-		SET_UNUSED(opline->op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	}
 	opline->extended_value = is_ref;
 }
@@ -5921,7 +5920,7 @@ void zend_do_add_array_element(znode *result, const znode *expr, const znode *of
 			}
 		}
 	} else {
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	}
 	opline->extended_value = is_ref;
 }
@@ -6027,7 +6026,7 @@ void zend_do_list_end(znode *result, znode *expr TSRMLS_DC) /* {{{ */
 				opline->opcode = ZEND_FETCH_DIM_R;
 			}
 			opline->result_type = IS_VAR;
-			opline->result.var = get_temporary_variable(CG(active_op_array));
+			opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 			SET_NODE(opline->op1, &last_container);
 			opline->op2_type = IS_CONST;
 			LITERAL_LONG(opline->op2, *((int *) dimension->data));
@@ -6120,12 +6119,12 @@ void zend_do_fetch_static_variable(znode *varname, const znode *static_assignmen
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = (fetch_type == ZEND_FETCH_LEXICAL) ? ZEND_FETCH_R : ZEND_FETCH_W;		/* the default mode must be Write, since fetch_simple_variable() is used to define function arguments */
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, varname);
 	if (opline->op1_type == IS_CONST) {
 		CALCULATE_LITERAL_HASH(opline->op1.constant);
 	}
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->extended_value = ZEND_FETCH_STATIC;
 	GET_NODE(&result, opline->result);
 
@@ -6182,12 +6181,12 @@ void zend_do_fetch_global_variable(znode *varname, const znode *static_assignmen
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_FETCH_W;		/* the default mode must be Write, since fetch_simple_variable() is used to define function arguments */
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, varname);
 	if (opline->op1_type == IS_CONST) {
 		CALCULATE_LITERAL_HASH(opline->op1.constant);
 	}
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->extended_value = fetch_type;
 	GET_NODE(&result, opline->result);
 
@@ -6207,9 +6206,9 @@ void zend_do_cast(znode *result, const znode *expr, int type TSRMLS_DC) /* {{{ *
 
 	opline->opcode = ZEND_CAST;
 	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, expr);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->extended_value = type;
 	GET_NODE(result, opline->result);
 }
@@ -6223,9 +6222,9 @@ void zend_do_include_or_eval(int type, znode *result, const znode *op1 TSRMLS_DC
 
 		opline->opcode = ZEND_INCLUDE_OR_EVAL;
 		opline->result_type = IS_VAR;
-		opline->result.var = get_temporary_variable(CG(active_op_array));
+		opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		SET_NODE(opline->op1, op1);
-		SET_UNUSED(opline->op2);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 		opline->extended_value = type;
 		GET_NODE(result, opline->result);
 	}
@@ -6261,8 +6260,8 @@ void zend_do_unset(const znode *variable TSRMLS_DC) /* {{{ */
 		zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_UNSET_VAR;
 		SET_NODE(opline->op1, variable);
-		SET_UNUSED(opline->op2);
-		SET_UNUSED(opline->result);
+		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
+		SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 		opline->extended_value = ZEND_FETCH_LOCAL | ZEND_QUICK_SET;
 	} else {
 		last_op = &CG(active_op_array)->opcodes[get_next_op_number(CG(active_op_array))-1];
@@ -6286,7 +6285,7 @@ void zend_do_unset(const znode *variable TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_isset_or_isempty(int type, znode *result, znode *variable TSRMLS_DC) /* {{{ */
+void zend_do_isset_or_isempty(int type, znode *result, znode *variable TSRMLS_DC) /* {{{ *//* insset()和empty()的语法编译函数 */
 {
 	zend_op *last_op;
 
@@ -6308,7 +6307,7 @@ void zend_do_isset_or_isempty(int type, znode *result, znode *variable TSRMLS_DC
 		last_op->opcode = ZEND_ISSET_ISEMPTY_VAR;
 		SET_NODE(last_op->op1, variable);
 		SET_UNUSED(last_op->op2);
-		last_op->result.var = get_temporary_variable(CG(active_op_array));
+		last_op->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		last_op->extended_value = ZEND_FETCH_LOCAL | ZEND_QUICK_SET;
 	} else {
 		last_op = &CG(active_op_array)->opcodes[get_next_op_number(CG(active_op_array))-1];
@@ -6351,7 +6350,7 @@ void zend_do_instanceof(znode *result, const znode *expr, const znode *class_zno
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_INSTANCEOF;
 	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, expr);
 
 	SET_NODE(opline->op2, class_znode);
@@ -6380,7 +6379,7 @@ void zend_do_foreach_begin(znode *foreach_token, znode *open_brackets_token, zno
 			opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 			opline->opcode = ZEND_SEPARATE;
 			SET_NODE(opline->op1, array);
-			SET_UNUSED(opline->op2);
+			SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 			opline->result_type = IS_VAR;
 			opline->result.var = opline->op1.var;
 		}
@@ -6397,9 +6396,9 @@ void zend_do_foreach_begin(znode *foreach_token, znode *open_brackets_token, zno
 	/* Preform array reset */
 	opline->opcode = ZEND_FE_RESET;
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, array);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->extended_value = is_variable ? ZEND_FE_RESET_VARIABLE : 0;
 
 	COPY_NODE(dummy_opline.result, opline->result);
@@ -6411,16 +6410,16 @@ void zend_do_foreach_begin(znode *foreach_token, znode *open_brackets_token, zno
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_FE_FETCH;
 	opline->result_type = IS_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	COPY_NODE(opline->op1, dummy_opline.result);
 	opline->extended_value = 0;
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_OP_DATA;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
-	SET_UNUSED(opline->result);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
+	SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -6501,7 +6500,7 @@ void zend_do_foreach_cont(znode *foreach_token, const znode *open_brackets_token
 
 		opline = &CG(active_op_array)->opcodes[as_token->u.op.opline_num+1];
 		opline->result_type = IS_TMP_VAR;
-		opline->result.opline_num = get_temporary_variable(CG(active_op_array));
+		opline->result.opline_num = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 		GET_NODE(&key_node, opline->result);
 
 		zend_do_assign(&dummy, key, &key_node TSRMLS_CC);
@@ -6520,8 +6519,8 @@ void zend_do_foreach_end(const znode *foreach_token, const znode *as_token TSRML
 
 	opline->opcode = ZEND_JMP;
 	opline->op1.opline_num = as_token->u.op.opline_num;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	CG(active_op_array)->opcodes[foreach_token->u.op.opline_num].op2.opline_num = get_next_op_number(CG(active_op_array)); /* FE_RESET */
 	CG(active_op_array)->opcodes[as_token->u.op.opline_num].op2.opline_num = get_next_op_number(CG(active_op_array)); /* FE_FETCH */
@@ -6623,7 +6622,7 @@ void zend_do_exit(znode *result, const znode *message TSRMLS_DC) /* {{{ */
 
 	opline->opcode = ZEND_EXIT;
 	SET_NODE(opline->op1, message);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	result->op_type = IS_CONST;
 	Z_TYPE(result->u.constant) = IS_BOOL;
@@ -6637,9 +6636,9 @@ void zend_do_begin_silence(znode *strudel_token TSRMLS_DC) /* {{{ */
 
 	opline->opcode = ZEND_BEGIN_SILENCE;
 	opline->result_type = IS_TMP_VAR;
-	opline->result.var = get_temporary_variable(CG(active_op_array));
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	GET_NODE(strudel_token, opline->result);
 }
 /* }}} */
@@ -6650,7 +6649,7 @@ void zend_do_end_silence(const znode *strudel_token TSRMLS_DC) /* {{{ */
 
 	opline->opcode = ZEND_END_SILENCE;
 	SET_NODE(opline->op1, strudel_token);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -6666,9 +6665,9 @@ void zend_do_jmp_set(const znode *value, znode *jmp_token, znode *colon_token TS
 		opline->opcode = ZEND_JMP_SET;
 		opline->result_type = IS_TMP_VAR;
 	}
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, value);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	GET_NODE(colon_token, opline->result);
 
@@ -6697,7 +6696,7 @@ void zend_do_jmp_set_else(znode *result, const znode *false_value, const znode *
 	}
 	opline->extended_value = 0;
 	SET_NODE(opline->op1, false_value);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	GET_NODE(result, opline->result);
 
@@ -6716,7 +6715,7 @@ void zend_do_begin_qm_op(const znode *cond, znode *qm_token TSRMLS_DC) /* {{{ */
 
 	opline->opcode = ZEND_JMPZ;
 	SET_NODE(opline->op1, cond);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->op2.opline_num = jmpz_op_number;
 	GET_NODE(qm_token, opline->op2);
 
@@ -6737,17 +6736,17 @@ void zend_do_qm_true(const znode *true_value, znode *qm_token, znode *colon_toke
 		opline->opcode = ZEND_QM_ASSIGN;
 		opline->result_type = IS_TMP_VAR;
 	}
-	opline->result.var = get_temporary_variable(CG(active_op_array));
+	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, true_value);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	GET_NODE(qm_token, opline->result);
 	colon_token->u.op.opline_num = get_next_op_number(CG(active_op_array));
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_JMP;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -6769,7 +6768,7 @@ void zend_do_qm_false(znode *result, const znode *false_value, const znode *qm_t
 		opline->opcode = ZEND_QM_ASSIGN_VAR;
 	}
 	SET_NODE(opline->op1, false_value);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	CG(active_op_array)->opcodes[colon_token->u.op.opline_num].op1.opline_num = get_next_op_number(CG(active_op_array));
 
@@ -6790,8 +6789,8 @@ void zend_do_extended_info(TSRMLS_D) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_EXT_STMT;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -6806,8 +6805,8 @@ void zend_do_extended_fcall_begin(TSRMLS_D) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_EXT_FCALL_BEGIN;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -6822,8 +6821,8 @@ void zend_do_extended_fcall_end(TSRMLS_D) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_EXT_FCALL_END;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 }
 /* }}} */
 
@@ -6839,8 +6838,8 @@ void zend_do_ticks(TSRMLS_D) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_TICKS;
-	SET_UNUSED(opline->op1);
-	SET_UNUSED(opline->op2);
+	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
+	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->extended_value = Z_LVAL(CG(declarables).ticks);
 }
 /* }}} */
@@ -6936,7 +6935,7 @@ again:
 }
 /* }}} */
 
-ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify_handlers TSRMLS_DC) /* {{{ */
+ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify_handlers TSRMLS_DC) /* {{{ *//* 对类进行初始化 */
 {
 	zend_bool persistent_hashes = (ce->type == ZEND_INTERNAL_CLASS) ? 1 : 0;
 	dtor_func_t zval_ptr_dtor_func = ((persistent_hashes) ? ZVAL_INTERNAL_PTR_DTOR : ZVAL_PTR_DTOR);
@@ -7035,7 +7034,7 @@ ZEND_API const char* zend_get_compiled_variable_name(const zend_op_array *op_arr
 }
 /* }}} */
 
-void zend_do_build_namespace_name(znode *result, znode *prefix, znode *name TSRMLS_DC) /* {{{ */
+void zend_do_build_namespace_name(znode *result, znode *prefix, znode *name TSRMLS_DC) /* {{{ *//*  result='\\'+name(prefix为空);result=CG(current_namespace)+'\\'+name(prefix为空指针地址);result=prefix+'\\'+name(prefix为有值) */
 {
 	if (prefix) {
 		*result = *prefix;
@@ -7059,11 +7058,11 @@ void zend_do_build_namespace_name(znode *result, znode *prefix, znode *name TSRM
 		Z_STRLEN(result->u.constant) = 0;
 	}
 	/* prefix = result */
-	zend_do_build_full_name(NULL, result, name, 0 TSRMLS_CC);
+	zend_do_build_full_name(NULL, result, name, 0 TSRMLS_CC);/* 将result和name用'\\'连接 赋值给result 即result=result+'\\'+name */
 }
 /* }}} */
 
-void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC) /* {{{ */
+void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC) /* {{{ *//* 处理命名空间的语法编译函数 */
 {/* with_bracket表示命名空间是否为带括号形式 */
 	char *lcname;
 
@@ -7377,7 +7376,7 @@ void zend_do_declare_constant(znode *name, znode *value TSRMLS_DC) /* {{{ */
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_DECLARE_CONST;
-	SET_UNUSED(opline->result);
+	SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 	SET_NODE(opline->op1, name);
 	SET_NODE(opline->op2, value);
 
@@ -7385,15 +7384,15 @@ void zend_do_declare_constant(znode *name, znode *value TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_verify_namespace(TSRMLS_D) /* {{{ */
+void zend_verify_namespace(TSRMLS_D) /* {{{ */ /* 用来检查带括号的命名空间外是否有PHP语句的错误 例如:namespace{ echo 123;} echo 123; 这种形式会报错 有分号都不行 例如:namespace{ echo 123;};  */
 {
-	if (CG(has_bracketed_namespaces) && !CG(in_namespace)) {
+	if (CG(has_bracketed_namespaces) && !CG(in_namespace)) {/* 如果一个文件中使用了带括号的namespace 且PHP代码不在括号内 而在外面 则会报错 */
 		zend_error_noreturn(E_COMPILE_ERROR, "No code may exist outside of namespace {}");
 	}
 }
 /* }}} */
 
-void zend_do_end_namespace(TSRMLS_D) /* {{{ */
+void zend_do_end_namespace(TSRMLS_D) /* {{{ *//* 命名空间形式的结束编译处理函数  */
 {
 	CG(in_namespace) = 0;
 	if (CG(current_namespace)) {
@@ -7419,9 +7418,9 @@ void zend_do_end_namespace(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_do_end_compilation(TSRMLS_D) /* {{{ */
+void zend_do_end_compilation(TSRMLS_D) /* {{{ *//* 结束编译调用函数 */
 {
-	CG(has_bracketed_namespaces) = 0;
+	CG(has_bracketed_namespaces) = 0;/* 标记命名空间没有被括号 */
 	zend_do_end_namespace(TSRMLS_C);
 }
 /* }}} */

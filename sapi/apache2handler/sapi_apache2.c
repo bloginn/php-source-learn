@@ -708,7 +708,12 @@ void php_ap2_register_hook(apr_pool_t *p)
 	ap_hook_handler(php_handler, NULL, NULL, APR_HOOK_MIDDLE);
 	ap_hook_child_init(php_apache_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 }
-
+/* 
+以上代码声明了pre_config，post_config，handler和child_init 4个挂钩以及对应的处理函数。 其中pre_config，post_config，child_init是启动挂钩，它们在服务器启动时调用。 
+handler挂钩是请求挂钩，它在服务器处理请求时调用。其中在post_config挂钩中启动php。 它通过php_apache_server_startup函数实现。
+php_apache_server_startup函数通过调用sapi_startup启动sapi， 并通过调用php_apache2_startup来注册sapi module struct（此结构在本节开头中有说明）， 
+最后调用php_module_startup来初始化PHP， 其中又会初始化ZEND引擎，以及填充zend_module_struct中 的treat_data成员(通过php_startup_sapi_content_types)等 
+*/
 /*
  * Local variables:
  * tab-width: 4

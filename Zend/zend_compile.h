@@ -156,11 +156,11 @@ typedef struct _zend_try_catch_element {
 /* class flags (types) */
 /* ZEND_ACC_IMPLICIT_ABSTRACT_CLASS is used for abstract classes (since it is set by any abstract method even interfaces MAY have it set, too). */
 /* ZEND_ACC_EXPLICIT_ABSTRACT_CLASS denotes that a class was explicitly defined as abstract by using the keyword. */
-#define ZEND_ACC_IMPLICIT_ABSTRACT_CLASS	0x10
-#define ZEND_ACC_EXPLICIT_ABSTRACT_CLASS	0x20
-#define ZEND_ACC_FINAL_CLASS	            0x40
-#define ZEND_ACC_INTERFACE		            0x80
-#define ZEND_ACC_TRAIT						0x120
+#define ZEND_ACC_IMPLICIT_ABSTRACT_CLASS	0x10/* 内含抽象方法的类标记 如果类中含有abstract抽象方法则将类标记这个值 */
+#define ZEND_ACC_EXPLICIT_ABSTRACT_CLASS	0x20/* 明确为抽象类 如果类名前含有abstract则类会标记这个值 */
+#define ZEND_ACC_FINAL_CLASS	            0x40/* 如果类名前含有final则类会标记这个值 */
+#define ZEND_ACC_INTERFACE		            0x80/* 如果类为接口则类会标记这个值 */
+#define ZEND_ACC_TRAIT						0x120/* 如果类是trait则会标记这个值 */
 
 /* op_array flags */
 #define ZEND_ACC_INTERACTIVE				0x10
@@ -211,7 +211,7 @@ typedef struct _zend_try_catch_element {
 
 #define ZEND_ACC_VARIADIC				0x1000000
 
-#define ZEND_ACC_RETURN_REFERENCE		0x4000000
+#define ZEND_ACC_RETURN_REFERENCE		0x4000000 /* 引用函数标志 function &name(){} */
 #define ZEND_ACC_DONE_PASS_TWO			0x8000000
 
 /* function has arguments with type hinting */
@@ -232,9 +232,9 @@ typedef struct _zend_property_info {
 } zend_property_info;
 
 
-typedef struct _zend_arg_info { /* 存储函数的结构体 */
-	const char *name; /* 函数名 */
-	zend_uint name_len; /* 函数名的长度 */
+typedef struct _zend_arg_info { /* 函数参数的结构体 */
+	const char *name; /* 参数的名称 */
+	zend_uint name_len; /* 参数的名称的长度 */
 	const char *class_name; /* 类名 */
 	zend_uint class_name_len; /* 类名长度 */
 	zend_uchar type_hint;
@@ -264,11 +264,11 @@ typedef struct _zend_compiled_variable {
 	ulong hash_value;
 } zend_compiled_variable;
 
-struct _zend_op_array {
+struct _zend_op_array {/* 用户自定义的函数，以及用户定义的类的方法，都是一个zend_op_array结构 */
 	/* Common elements */
 	zend_uchar type;
-	const char *function_name;
-	zend_class_entry *scope;
+	const char *function_name;/* 如果是全局代码或是eval部分的代码，那么此字段为空 */
+	zend_class_entry *scope;/* 如果是类方法的op_array 此值为所属类 否则为NULL */
 	zend_uint fn_flags;
 	union _zend_function *prototype;
 	zend_uint num_args;
@@ -278,13 +278,13 @@ struct _zend_op_array {
 
 	zend_uint *refcount;
 
-	zend_op *opcodes;
+	zend_op *opcodes;/* 这是一个zend_op的数组，这个数组保存的就是此编译过程中生成的op */
 	zend_uint last;
 
 	zend_compiled_variable *vars;
 	int last_var;
 
-	zend_uint T;
+	zend_uint T;/* 临时变量数和临时变量的索引 这个值在zend_compile.c的get_temporary_variable()函数中获取和自增 */
 
 	zend_uint nested_calls;
 	zend_uint used_stack;
@@ -340,7 +340,7 @@ typedef struct _zend_internal_function {
 #define ZEND_FN_SCOPE_NAME(function)  ((function) && (function)->common.scope ? (function)->common.scope->name : "")
 
 typedef union _zend_function {
-	zend_uchar type;	/* MUST be the first element of this struct! */
+	zend_uchar type;	/* 函数类型 例如ZEND_USER_FUNCTION用户自定义的函数 MUST be the first element of this struct! */
 
 	struct {
 		zend_uchar type;  /* never used */
@@ -398,7 +398,7 @@ struct _zend_execute_data {
 	zend_function_state function_state;
 	zend_op_array *op_array;
 	zval *object;
-	HashTable *symbol_table;
+	HashTable *symbol_table;/* 全局符号表 保存了在顶层作用域中的变量 */
 	struct _zend_execute_data *prev_execute_data;
 	zval *old_error_reporting;
 	zend_bool nested;
@@ -782,10 +782,10 @@ int zend_add_literal(zend_op_array *op_array, const zval *zv TSRMLS_DC);
 #define BP_VAR_UNSET		6
 
 
-#define ZEND_INTERNAL_FUNCTION				1
-#define ZEND_USER_FUNCTION					2
+#define ZEND_INTERNAL_FUNCTION				1 /* 内置函数 */
+#define ZEND_USER_FUNCTION					2 /* 用户函数 全局代码，用户函数的_zend_op_array结构的type */
 #define ZEND_OVERLOADED_FUNCTION			3
-#define	ZEND_EVAL_CODE						4
+#define	ZEND_EVAL_CODE						4 /* eval函数的_zend_op_array结构的type */
 #define ZEND_OVERLOADED_FUNCTION_TEMPORARY	5
 
 #define ZEND_INTERNAL_CLASS         1

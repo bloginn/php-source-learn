@@ -309,9 +309,9 @@ typedef struct _zend_guard {
 	zend_bool dummy; /* sizeof(zend_guard) must not be equal to sizeof(void*) */
 } zend_guard;
 
-typedef struct _zend_object {
-	zend_class_entry *ce;
-	HashTable *properties;
+typedef struct _zend_object {/* 对象的原型结构 */
+	zend_class_entry *ce;/* 存储该对象的类结构 */
+	HashTable *properties;/* 用来存放对象的属性 */
 	zval **properties_table;
 	HashTable *guards; /* protects from __get/__set ... recursion */
 } zend_object;
@@ -319,7 +319,7 @@ typedef struct _zend_object {
 #include "zend_object_handlers.h"
 #include "zend_ast.h"
 
-typedef union _zvalue_value {
+typedef union _zvalue_value {/* 这里使用联合体而不是用结构体是出于空间利用率的考虑 */
 	long lval;					/* long value */
 	double dval;				/* double value */
 	struct {
@@ -333,10 +333,10 @@ typedef union _zvalue_value {
 
 struct _zval_struct { /* 也就是所谓zval类型，查看typedef struct _zval_struct zval; 文件Zend/zend_types.h */
 	/* Variable information */
-	zvalue_value value;		/* value */
-	zend_uint refcount__gc;
-	zend_uchar type;	/* active type */
-	zend_uchar is_ref__gc;
+	zvalue_value value;		/* 存储变量的值 */
+	zend_uint refcount__gc; /* 表示引用计数 默认1*/
+	zend_uchar type;	/* 变量具体的类型 */
+	zend_uchar is_ref__gc; /* 表示是否为引用 默认0 */
 };
 
 #define Z_REFCOUNT_PP(ppz)		Z_REFCOUNT_P(*(ppz))
@@ -476,7 +476,7 @@ struct _zend_trait_alias {
 typedef struct _zend_trait_alias zend_trait_alias;
 
 struct _zend_class_entry { /* 类的原型 */
-	char type; /* 用户定义的类和模块或者内置的类 ZEND_INTERNAL_CLASS或ZEND_USER_CLASS */
+	char type; /* 类的类型 用户定义的类(ZEND_USER_CLASS) 或者 模块或者内置的类(ZEND_INTERNAL_CLASS)  */
 	const char *name;	/* 类的名称 */
 	zend_uint name_length; /* 类的名称的长度 */
 	struct _zend_class_entry *parent; /* 父类 */
@@ -486,9 +486,9 @@ struct _zend_class_entry { /* 类的原型 */
 	HashTable function_table; /* 方法的HASH表 */
 	HashTable properties_info; /* 属性信息的HASH表 */
 	zval **default_properties_table; /* 默认属性 */
-	zval **default_static_members_table; /* 默认静态成员 */
-	zval **static_members_table;
-	HashTable constants_table; /* 类中常量的hash表 */
+	zval **default_static_members_table; /* 类本身所具有的静态变量 */
+	zval **static_members_table;/* type == ZEND_USER_CLASS时，取&default_static_members; type == ZEND_INTERAL_CLASS时，设为NULL */
+	HashTable constants_table; /* 常量的hash表 */
 	int default_properties_count; /* 类属性的个数 */
 	int default_static_members_count; /* 类静态成员的个数 */
 
@@ -511,15 +511,15 @@ struct _zend_class_entry { /* 类的原型 */
 	/* handlers 类句柄 */
 	zend_object_value (*create_object)(zend_class_entry *class_type TSRMLS_DC);
 	zend_object_iterator *(*get_iterator)(zend_class_entry *ce, zval *object, int by_ref TSRMLS_DC);
-	int (*interface_gets_implemented)(zend_class_entry *iface, zend_class_entry *class_type TSRMLS_DC); /* a class implements this interface */
+	int (*interface_gets_implemented)(zend_class_entry *iface, zend_class_entry *class_type TSRMLS_DC); /* 类声明的接口 */
 	union _zend_function *(*get_static_method)(zend_class_entry *ce, char* method, int method_len TSRMLS_DC);
 
 	/* 序列化回调函数指针 */
 	int (*serialize)(zval *object, unsigned char **buffer, zend_uint *buf_len, zend_serialize_data *data TSRMLS_DC);
 	int (*unserialize)(zval **object, zend_class_entry *ce, const unsigned char *buf, zend_uint buf_len, zend_unserialize_data *data TSRMLS_DC);
 
-	zend_class_entry **interfaces; /* 继承的接口 */
-	zend_uint num_interfaces; /* 继承的接口数量 */
+	zend_class_entry **interfaces; /* 类实现的接口 */
+	zend_uint num_interfaces; /* 类实现的接口数 */
 	
 	zend_class_entry **traits;
 	zend_uint num_traits;
@@ -535,8 +535,8 @@ struct _zend_class_entry { /* 类的原型 */
 			zend_uint doc_comment_len; // 类注释内容长度
 		} user;
 		struct {
-			const struct _zend_function_entry *builtin_functions;
-			struct _zend_module_entry *module;
+			const struct _zend_function_entry *builtin_functions;/* 方法定义入口 */
+			struct _zend_module_entry *module;/* 类所在的模块入口：EG(current_module) */
 		} internal;
 	} info;
 };

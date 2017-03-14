@@ -25,10 +25,10 @@
 #include <sys/types.h>
 #include "zend.h"
 
-#define HASH_KEY_IS_STRING 1
-#define HASH_KEY_IS_LONG 2
-#define HASH_KEY_NON_EXISTENT 3
-#define HASH_KEY_NON_EXISTANT HASH_KEY_NON_EXISTENT /* Keeping old define (with typo) for backward compatibility */
+#define HASH_KEY_IS_STRING 1/* HASH键为字符串 */
+#define HASH_KEY_IS_LONG 2/* HASH键为整数 */
+#define HASH_KEY_NON_EXISTENT 3/* HASH键不存在 */
+#define HASH_KEY_NON_EXISTANT HASH_KEY_NON_EXISTENT /* 兼容旧的定义 */
 
 #define HASH_UPDATE 		(1<<0)
 #define HASH_ADD			(1<<1)
@@ -53,30 +53,30 @@ typedef void (*copy_ctor_param_func_t)(void *pElement, void *pParam);
 struct _hashtable;
 
 typedef struct bucket {
-	ulong h;						/* Used for numeric indexing */
-	uint nKeyLength;
-	void *pData;
-	void *pDataPtr;
-	struct bucket *pListNext;
-	struct bucket *pListLast;
-	struct bucket *pNext;
-	struct bucket *pLast;
-	const char *arKey;
+	ulong h;/* 对char *key进行hash后的值，或者是用户指定的数字索引值 Used for numeric indexing */
+	uint nKeyLength;/* hash关键字的长度，如果数组索引为数字，此值为0 */
+	void *pData;/* 指向value，一般是用户数据的副本，如果是指针数据，则指向pDataPtr */
+	void *pDataPtr;/* 如果是指针数据，此值会指向真正的value，同时上面pData会指向此值 */
+	struct bucket *pListNext;/* 整个hash表的下一元素 */
+	struct bucket *pListLast;/* 整个哈希表该元素的上一个元素 */
+	struct bucket *pNext;/* 存放在同一个hash Bucket内的下一个元素 */
+	struct bucket *pLast;/* 同一个哈希bucket的上一个元素 */
+	const char *arKey;/* 保存当前值所对于的char *key字符串，这个字段只能定义在最后，实现变长结构体 */
 } Bucket;
 
 typedef struct _hashtable {
-	uint nTableSize;
-	uint nTableMask;
-	uint nNumOfElements;
-	ulong nNextFreeElement;
-	Bucket *pInternalPointer;	/* Used for element traversal */
-	Bucket *pListHead;
-	Bucket *pListTail;
-	Bucket **arBuckets;
-	dtor_func_t pDestructor;
-	zend_bool persistent;
-	unsigned char nApplyCount;
-	zend_bool bApplyProtection;
+	uint nTableSize;/* 标示哈希表的容量，最小为8，以2x增长 */
+	uint nTableMask;/* nTableSize-1 ， 索引取值的优化 */
+	uint nNumOfElements;/* hash Bucket中当前存在的元素个数，count()函数会直接返回此值 */
+	ulong nNextFreeElement;/* 下一个数字索引的位置 */
+	Bucket *pInternalPointer;	/* 当前遍历的指针（foreach比for快的原因之一） */
+	Bucket *pListHead;/* 存储数组头元素指针 */
+	Bucket *pListTail;/* 存储数组尾元素指针 */
+	Bucket **arBuckets;/* 存储hash数组 */
+	dtor_func_t pDestructor;/* 设置析构函数 */
+	zend_bool persistent;/* 是否持久化 */
+	unsigned char nApplyCount;/* 标记当前hash Bucket被递归访问的次数（防止多次递归） */
+	zend_bool bApplyProtection;/* 标记当前hash桶是否允许多次访问，不允许时，最多只能递归3次 */
 #if ZEND_DEBUG
 	int inconsistent;
 #endif
@@ -306,7 +306,7 @@ void zend_hash_display(const HashTable *ht);
 
 END_EXTERN_C()
 
-#define ZEND_INIT_SYMTABLE(ht)								\
+#define ZEND_INIT_SYMTABLE(ht)								\ /* 初始化HASH_TABLE的宏，等价_zend_hash_init(ht,2,ZVAL_PTR_DTOR, persistent)  */
 	ZEND_INIT_SYMTABLE_EX(ht, 2, 0)
 
 #define ZEND_INIT_SYMTABLE_EX(ht, n, persistent)			\

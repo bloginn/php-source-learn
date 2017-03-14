@@ -201,7 +201,7 @@ void apply_config(void *dummy)
 	}
 }
 
-const command_rec php_dir_cmds[] =
+const command_rec php_dir_cmds[] = /* 这是mod_php5模块定义的指令表 */
 {
 	AP_INIT_TAKE2("php_value", php_apache_value_handler, NULL, OR_OPTIONS, "PHP Value Modifier"),
 	AP_INIT_TAKE2("php_flag", php_apache_flag_handler, NULL, OR_OPTIONS, "PHP Flag Modifier"),

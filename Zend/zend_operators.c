@@ -2146,7 +2146,7 @@ ZEND_API char *zend_str_tolower_copy(char *dest, const char *source, unsigned in
 }
 /* }}} */
 
-ZEND_API char *zend_str_tolower_dup(const char *source, unsigned int length)/* 获取source前length长度段的小写字符串 */ /* {{{ */
+ZEND_API char *zend_str_tolower_dup(const char *source, unsigned int length)/* 获取source前length长度的字符串 并转化成小写 */ /* {{{ */
 {
 	return zend_str_tolower_copy((char *)emalloc(length+1), source, length);
 }

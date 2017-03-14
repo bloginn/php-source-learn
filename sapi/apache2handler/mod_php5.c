@@ -26,13 +26,13 @@
 #include "php_apache.h"
 
 AP_MODULE_DECLARE_DATA module php5_module = {
-	STANDARD20_MODULE_STUFF,
+	STANDARD20_MODULE_STUFF, /* 宏，包括版本，小版本，模块索引，模块名，下一个模块指针等信息，其中模块名以__FILE__体现 */
 	create_php_config,		/* create per-directory config structure */
 	merge_php_config,		/* merge per-directory config structures */
 	NULL,					/* create per-server config structure */
 	NULL,					/* merge per-server config structures */
-	php_dir_cmds,			/* command apr_table_t */
-	php_ap2_register_hook	/* register hooks */
+	php_dir_cmds,			/* 模块定义的所有的指令 */
+	php_ap2_register_hook	/* 注册钩子，此函数通过ap_hoo_开头的函数在一次请求处理过程中对于指定的步骤注册钩子 */
 };
 
 /*

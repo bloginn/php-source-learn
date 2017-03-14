@@ -48,9 +48,9 @@ static void op_array_alloc_ops(zend_op_array *op_array, zend_uint size)
 	op_array->opcodes = erealloc(op_array->opcodes, size * sizeof(zend_op));
 }
 
-void init_op_array(zend_op_array *op_array, zend_uchar type, int initial_ops_size TSRMLS_DC)
+void init_op_array(zend_op_array *op_array, zend_uchar type, int initial_ops_size TSRMLS_DC)/* 初始化opcode数组 */
 {
-	op_array->type = type;
+	op_array->type = type;/* 设置类型 */
 
 	if (CG(interactive)) {
 		/* We must avoid a realloc() on the op_array in interactive mode, since pointers to constants
@@ -63,7 +63,7 @@ void init_op_array(zend_op_array *op_array, zend_uchar type, int initial_ops_siz
 	*op_array->refcount = 1;
 	op_array->last = 0;
 	op_array->opcodes = NULL;
-	op_array_alloc_ops(op_array, initial_ops_size);
+	op_array_alloc_ops(op_array, initial_ops_size);/* 申请opcode数组 设置op_array的初始大小 */
 
 	op_array->last_var = 0;
 	op_array->vars = NULL;
