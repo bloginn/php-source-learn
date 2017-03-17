@@ -869,7 +869,7 @@ void zend_do_print(znode *result, const znode *arg TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_echo(const znode *arg TSRMLS_DC) /* {{{ */ /* echo语法的编译处理 我们从语法解析和vld扩展分析中可以看到 echo 12,'abc',1+2; 这样的语法会三次调用这个函数,即生成3个opcode */
+void zend_do_echo(const znode *arg TSRMLS_DC) /* {{{ */ /* echo语法或者纯HTML的编译处理 我们从语法解析和vld扩展分析中可以看到 echo 12,'abc',1+2; 这样的语法会三次调用这个函数,即生成3个opcode */
 {/* 这里并没有设置opcode的result结果字段  从这里我们也能看出print和echo的区别来，print有返回值，而echo没有 */
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -1097,7 +1097,7 @@ static inline void do_end_loop(int cont_addr, int has_loop_var TSRMLS_DC) /* {{{
 }
 /* }}} */
 
-void zend_do_while_cond(const znode *expr, znode *close_bracket_token TSRMLS_DC) /* {{{ */
+void zend_do_while_cond(const znode *expr, znode *close_bracket_token TSRMLS_DC) /* {{{ *//* while括号里面的语法编译处理函数 cond即condition */
 {
 	int while_cond_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -1112,7 +1112,7 @@ void zend_do_while_cond(const znode *expr, znode *close_bracket_token TSRMLS_DC)
 }
 /* }}} */
 
-void zend_do_while_end(const znode *while_token, const znode *close_bracket_token TSRMLS_DC) /* {{{ */
+void zend_do_while_end(const znode *while_token, const znode *close_bracket_token TSRMLS_DC) /* {{{ *//* while的{}里面的内容编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -1229,7 +1229,7 @@ void zend_do_post_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_D
 }
 /* }}} */
 
-void zend_do_if_cond(const znode *cond, znode *closing_bracket_token TSRMLS_DC) /* {{{ */
+void zend_do_if_cond(const znode *cond, znode *closing_bracket_token TSRMLS_DC) /* {{{ *//* if或elseif括号里面的语法编译处理函数 cond即condition */
 {
 	int if_cond_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -1265,7 +1265,7 @@ void zend_do_if_after_statement(const znode *closing_bracket_token, unsigned cha
 }
 /* }}} */
 
-void zend_do_if_end(TSRMLS_D) /* {{{ */
+void zend_do_if_end(TSRMLS_D) /* {{{ *//* else后面的语法编辑处理函数 */
 {
 	int next_op_number = get_next_op_number(CG(active_op_array));
 	zend_llist *jmp_list_ptr;
@@ -1281,7 +1281,7 @@ void zend_do_if_end(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_check_writable_variable(const znode *variable) /* {{{ */
+void zend_check_writable_variable(const znode *variable) /* {{{ *//* 检查变量是否可写 如果是函数或者方法调用的变量是不可写的 例如 $myClass->method() */
 {
 	zend_uint type = variable->EA;
 
@@ -1289,7 +1289,7 @@ void zend_check_writable_variable(const znode *variable) /* {{{ */
 		zend_error_noreturn(E_COMPILE_ERROR, "Can't use method return value in write context");
 	}
 	if (type == ZEND_PARSED_FUNCTION_CALL) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Can't use function return value in write context");
+		zend_error_noreturn(E_COMPILE_ERROR, "Can't use function return value in write context"); /* 例如 unset(myfunction()) 这样的语法会报该错误 */
 	}
 }
 /* }}} */
@@ -2333,7 +2333,7 @@ void zend_resolve_class_name(znode *class_name TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
+void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ *//* extends classname的语法编译处理函数 */
 {
 	long fetch_class_op_number;
 	zend_op *opline;
@@ -2374,8 +2374,8 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_label(znode *label TSRMLS_DC) /* {{{ */
-{/* 该函数在语法解析的时候遇到T_STRING ':' 的形式调用的，这种形式是PHP支持的目标位置功能，可以通过goto调整到指定lable */
+void zend_do_label(znode *label TSRMLS_DC) /* {{{ *//* 该函数在语法解析的时候遇到T_STRING ':' 的形式调用的，这种形式是PHP支持的目标位置功能，可以通过goto调整到指定lable */
+{
 	zend_label dest;
 
 	if (!CG(context).labels) {
@@ -2384,7 +2384,7 @@ void zend_do_label(znode *label TSRMLS_DC) /* {{{ */
 	}/* 可以看到label是保存在compile_globals.context.lables中的 */
 
 	dest.brk_cont = CG(context).current_brk_cont;
-	dest.opline_num = get_next_op_number(CG(active_op_array));
+	dest.opline_num = get_next_op_number(CG(active_op_array));/* 标记opline的坐标,当goto的时候会移动到该坐标执行 */
 
 	if (zend_hash_add(CG(context).labels, Z_STRVAL(label->u.constant), Z_STRLEN(label->u.constant) + 1, (void**)&dest, sizeof(zend_label), NULL) == FAILURE) {
 		zend_error_noreturn(E_COMPILE_ERROR, "Label '%s' already defined", Z_STRVAL(label->u.constant));
@@ -2455,7 +2455,7 @@ void zend_resolve_goto_label(zend_op_array *op_array, zend_op *opline, int pass2
 }
 /* }}} */
 
-void zend_do_goto(const znode *label TSRMLS_DC) /* {{{ */
+void zend_do_goto(const znode *label TSRMLS_DC) /* {{{ *//* goto label; 语法的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -2808,7 +2808,7 @@ static int generate_free_foreach_copy(const zend_op *foreach_copy TSRMLS_DC) /* 
 }
 /* }}} */
 
-void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ */
+void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ *//* return xxx;语法的编译处理函数 */
 {
 	zend_op *opline;
 	int start_op_number, end_op_number;
@@ -2818,9 +2818,9 @@ void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ */
 
 	if (do_end_vparse) {
 		if (returns_reference && !zend_is_function_or_method_call(expr)) {
-			zend_do_end_variable_parse(expr, BP_VAR_W, 0 TSRMLS_CC);/* 处理返回引用 */
+			zend_do_end_variable_parse(expr, BP_VAR_W, 0 TSRMLS_CC);/* 返回引用 处理 */
 		} else {
-			zend_do_end_variable_parse(expr, BP_VAR_R, 0 TSRMLS_CC);/* 处理常规变量返回 */
+			zend_do_end_variable_parse(expr, BP_VAR_R, 0 TSRMLS_CC);/* 返回常规变量 处理 */
 		}
 	}
 
@@ -2861,7 +2861,7 @@ void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ */
 		}
 	} else {
 		opline->op1_type = IS_CONST;
-		LITERAL_NULL(opline->op1);
+		LITERAL_NULL(opline->op1);/* 这就是为什么return;等价于return NULL;的原因 */
 	}
 
 	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
@@ -4937,14 +4937,14 @@ void zend_do_boolean_and_end(znode *result, const znode *expr1, const znode *exp
 }
 /* }}} */
 
-void zend_do_do_while_begin(TSRMLS_D) /* {{{ */
+void zend_do_do_while_begin(TSRMLS_D) /* {{{ *//* do{}while(condition)语法的开始编译处理函数 */
 {
 	do_begin_loop(TSRMLS_C);
 	INC_BPC(CG(active_op_array));
 }
 /* }}} */
 
-void zend_do_do_while_end(const znode *do_token, const znode *expr_open_bracket, const znode *expr TSRMLS_DC) /* {{{ */
+void zend_do_do_while_end(const znode *do_token, const znode *expr_open_bracket, const znode *expr TSRMLS_DC) /* {{{ *//* do{}while(condition)语法的结束编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -4959,17 +4959,17 @@ void zend_do_do_while_end(const znode *do_token, const znode *expr_open_bracket,
 }
 /* }}} */
 
-void zend_do_brk_cont(zend_uchar op, const znode *expr TSRMLS_DC) /* {{{ */
+void zend_do_brk_cont(zend_uchar op, const znode *expr TSRMLS_DC) /* {{{ *//* break expr;或continue expr;语法的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = op;
 	opline->op1.opline_num = CG(context).current_brk_cont;
 	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
-	if (expr) {
-		if (expr->op_type != IS_CONST) {
+	if (expr) {/* 例如 break 2; 表示退出两级嵌套 */
+		if (expr->op_type != IS_CONST) {/* expr不支持变量 5.4.0版本开始取消变量作为参数传递（例如 $num = 2; break $num;） */
 			zend_error_noreturn(E_COMPILE_ERROR, "'%s' operator with non-constant operand is no longer supported", op == ZEND_BRK ? "break" : "continue");
-		} else if (Z_TYPE(expr->u.constant) != IS_LONG || Z_LVAL(expr->u.constant) < 1) {
+		} else if (Z_TYPE(expr->u.constant) != IS_LONG || Z_LVAL(expr->u.constant) < 1) {/* 如果break后面的值不是整型或者小于1则会报错 例如break 1.2; 5.4.0版本开始break 0; 不再合法。这在之前的版本被解析为 break 1; */
 			zend_error_noreturn(E_COMPILE_ERROR, "'%s' operator accepts only positive numbers", op == ZEND_BRK ? "break" : "continue");
 		}
 		SET_NODE(opline->op2, expr);
@@ -5307,22 +5307,22 @@ void zend_do_end_class_declaration(const znode *class_token, const znode *parent
 }
 /* }}} */
 
-void zend_do_implements_interface(znode *interface_name TSRMLS_DC) /* {{{ */
+void zend_do_implements_interface(znode *interface_name TSRMLS_DC) /* {{{ *//* 接口继承接口或类实现接口的语法编译处理函数 */
 {
 	zend_op *opline;
 
 	/* Traits can not implement interfaces */
-	if ((CG(active_class_entry)->ce_flags & ZEND_ACC_TRAIT) == ZEND_ACC_TRAIT) {
+	if ((CG(active_class_entry)->ce_flags & ZEND_ACC_TRAIT) == ZEND_ACC_TRAIT) {/* trait不能实现接口, 例如 trait classname implements interfacename{} 会报该错误 */
 		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as interface on '%s' since it is a Trait",
 							 Z_STRVAL(interface_name->u.constant),
 							 CG(active_class_entry)->name);
 	}
 
-	switch (zend_get_class_fetch_type(Z_STRVAL(interface_name->u.constant), Z_STRLEN(interface_name->u.constant))) {
+	switch (zend_get_class_fetch_type(Z_STRVAL(interface_name->u.constant), Z_STRLEN(interface_name->u.constant))) {/* 避免interface_name为self,parent,static */
 		case ZEND_FETCH_CLASS_SELF:
 		case ZEND_FETCH_CLASS_PARENT:
 		case ZEND_FETCH_CLASS_STATIC:
-			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as interface name as it is reserved", Z_STRVAL(interface_name->u.constant));
+			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as interface name as it is reserved", Z_STRVAL(interface_name->u.constant));/* 例如 class xxx implements self{} */
 			break;
 		default:
 			break;
@@ -5983,7 +5983,7 @@ void zend_do_new_list_end(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_do_list_init(TSRMLS_D) /* {{{ */
+void zend_do_list_init(TSRMLS_D) /* {{{ *//* 初始化一个list list()语法的编译处理函数 */
 {
 	zend_stack_push(&CG(list_stack), &CG(list_llist), sizeof(zend_llist));
 	zend_stack_push(&CG(list_stack), &CG(dimension_llist), sizeof(zend_llist));
@@ -6250,18 +6250,18 @@ void zend_do_indirect_references(znode *result, const znode *num_references, zno
 }
 /* }}} */
 
-void zend_do_unset(const znode *variable TSRMLS_DC) /* {{{ */
+void zend_do_unset(const znode *variable TSRMLS_DC) /* {{{ *//* unset()语法的编译处理函数 */
 {
 	zend_op *last_op;
 
-	zend_check_writable_variable(variable);
+	zend_check_writable_variable(variable);/* 检查变量是否可写,例如unset(myfunction())或unset($obj->method())这样的语法是非法的 */
 
 	if (variable->op_type == IS_CV) {
 		zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->opcode = ZEND_UNSET_VAR;
 		SET_NODE(opline->op1, variable);
 		SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
-		SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
+		SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED 从这里可以得知unset()是没有返回值的 */
 		opline->extended_value = ZEND_FETCH_LOCAL | ZEND_QUICK_SET;
 	} else {
 		last_op = &CG(active_op_array)->opcodes[get_next_op_number(CG(active_op_array))-1];
@@ -6541,12 +6541,12 @@ void zend_do_declare_begin(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_do_declare_stmt(znode *var, znode *val TSRMLS_DC) /* {{{ */
+void zend_do_declare_stmt(znode *var, znode *val TSRMLS_DC) /* {{{ *//* declare()语法的编译处理函数 */
 {
-	if (!zend_binary_strcasecmp(Z_STRVAL(var->u.constant), Z_STRLEN(var->u.constant), "ticks", sizeof("ticks")-1)) {
+	if (!zend_binary_strcasecmp(Z_STRVAL(var->u.constant), Z_STRLEN(var->u.constant), "ticks", sizeof("ticks")-1)) {/* 如果var的值是ticks 如 declare(ticks=1) */
 		convert_to_long(&val->u.constant);
 		CG(declarables).ticks = val->u.constant;
-	} else if (!zend_binary_strcasecmp(Z_STRVAL(var->u.constant), Z_STRLEN(var->u.constant), "encoding", sizeof("encoding")-1)) {
+	} else if (!zend_binary_strcasecmp(Z_STRVAL(var->u.constant), Z_STRLEN(var->u.constant), "encoding", sizeof("encoding")-1)) {/* 如果var的值是encoding 如 declare(encoding='ISO-8859-1') */
 		if ((Z_TYPE(val->u.constant) & IS_CONSTANT_TYPE_MASK) == IS_CONSTANT) {
 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use constants as encoding");
 		}
@@ -6567,11 +6567,11 @@ void zend_do_declare_stmt(znode *var, znode *val TSRMLS_DC) /* {{{ */
 			}
 
 			if (num > 0) {
-				zend_error_noreturn(E_COMPILE_ERROR, "Encoding declaration pragma must be the very first statement in the script");
+				zend_error_noreturn(E_COMPILE_ERROR, "Encoding declaration pragma must be the very first statement in the script");/* 如果declare(encoding='ISO-8859-1')前面有其他PHP代码 */
 			}
 		}
 
-		if (CG(multibyte)) {
+		if (CG(multibyte)) {/* 对应php.ini中的 zend.multibyte = on */
 			const zend_encoding *new_encoding, *old_encoding;
 			zend_encoding_filter old_input_filter;
 
@@ -6580,7 +6580,7 @@ void zend_do_declare_stmt(znode *var, znode *val TSRMLS_DC) /* {{{ */
 			convert_to_string(&val->u.constant);
 			new_encoding = zend_multibyte_fetch_encoding(Z_STRVAL(val->u.constant) TSRMLS_CC);
 			if (!new_encoding) {
-				zend_error(E_COMPILE_WARNING, "Unsupported encoding [%s]", Z_STRVAL(val->u.constant));
+				zend_error(E_COMPILE_WARNING, "Unsupported encoding [%s]", Z_STRVAL(val->u.constant));/* 不支持的encoding */
 			} else {
 				old_input_filter = LANG_SCNG(input_filter);
 				old_encoding = LANG_SCNG(script_encoding);
@@ -6593,10 +6593,10 @@ void zend_do_declare_stmt(znode *var, znode *val TSRMLS_DC) /* {{{ */
 				}
 			}
 		} else {
-			zend_error(E_COMPILE_WARNING, "declare(encoding=...) ignored because Zend multibyte feature is turned off by settings");
+			zend_error(E_COMPILE_WARNING, "declare(encoding=...) ignored because Zend multibyte feature is turned off by settings");/* 如果zend.multibyte配置为off,则会报此错误 */
 		}
 		zval_dtor(&val->u.constant);
-	} else {
+	} else {/* 例如 declare(onther=132) 则报此错误 因为declare只支持ticks和encoding */
 		zend_error(E_COMPILE_WARNING, "Unsupported declare '%s'", Z_STRVAL(var->u.constant));
 		zval_dtor(&val->u.constant);
 	}
@@ -7008,7 +7008,7 @@ ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify
 }
 /* }}} */
 
-int zend_get_class_fetch_type(const char *class_name, uint class_name_len) /* {{{ */
+int zend_get_class_fetch_type(const char *class_name, uint class_name_len) /* {{{ *//* 标识class_name是否为self,parent,static保留字 */
 {
 	if ((class_name_len == sizeof("self")-1) &&
 		!strncasecmp(class_name, "self", sizeof("self")-1)) {
@@ -7151,7 +7151,7 @@ void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC
 }
 /* }}} */
 
-void zend_do_use(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
+void zend_do_use(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */ /* use 命名空间\类 as 别名 语法的编译处理函数 将保存在全局变量CG(current_import)中 */
 {
 	char *lcname;
 	zval *name, *ns, tmp;
@@ -7163,8 +7163,8 @@ void zend_do_use(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
 		zend_hash_init(CG(current_import), 0, NULL, ZVAL_PTR_DTOR, 0);
 	}
 
-	MAKE_STD_ZVAL(ns);
-	ZVAL_ZVAL(ns, &ns_name->u.constant, 0, 0);
+	MAKE_STD_ZVAL(ns);/* 初始化ns为标准的zval */
+	ZVAL_ZVAL(ns, &ns_name->u.constant, 0, 0);/* 将ns_name->u.constant的值复制给ns */
 	if (new_name) {
 		name = &new_name->u.constant;
 	} else {
@@ -7173,18 +7173,18 @@ void zend_do_use(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
 		/* The form "use A\B" is eqivalent to "use A\B as B".
 		   So we extract the last part of compound name to use as a new_name */
 		name = &tmp;
-		p = zend_memrchr(Z_STRVAL_P(ns), '\\', Z_STRLEN_P(ns));
+		p = zend_memrchr(Z_STRVAL_P(ns), '\\', Z_STRLEN_P(ns));/* 获取ns中最后一个'\'的位置 */
 		if (p) {
-			ZVAL_STRING(name, p+1, 1);
+			ZVAL_STRING(name, p+1, 1);/* 将ns中最后一个'\'后面的值复制到name中 例如ns为A\B\C 则name为C */
 		} else {
-			ZVAL_ZVAL(name, ns, 1, 0);
-			warn = !CG(current_namespace);
+			ZVAL_ZVAL(name, ns, 1, 0);/* 如果ns中没有'\'则直接将ns复制给name */
+			warn = !CG(current_namespace);/* 如果当前没有命名空间 则后面会处理警告 */
 		}
 	}
 
-	lcname = zend_str_tolower_dup(Z_STRVAL_P(name), Z_STRLEN_P(name));
+	lcname = zend_str_tolower_dup(Z_STRVAL_P(name), Z_STRLEN_P(name));/* 将name的值转换成小写复制给lcname */
 
-	if (((Z_STRLEN_P(name) == sizeof("self")-1) &&
+	if (((Z_STRLEN_P(name) == sizeof("self")-1) && /* 避免使用self或parent作为别名的检测 */
 				!memcmp(lcname, "self", sizeof("self")-1)) ||
 			((Z_STRLEN_P(name) == sizeof("parent")-1) &&
 	   !memcmp(lcname, "parent", sizeof("parent")-1))) {
@@ -7195,14 +7195,14 @@ void zend_do_use(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
 		/* Prefix import name with current namespace name to avoid conflicts with classes */
 		char *c_ns_name = emalloc(Z_STRLEN_P(CG(current_namespace)) + 1 + Z_STRLEN_P(name) + 1);
 
-		zend_str_tolower_copy(c_ns_name, Z_STRVAL_P(CG(current_namespace)), Z_STRLEN_P(CG(current_namespace)));
+		zend_str_tolower_copy(c_ns_name, Z_STRVAL_P(CG(current_namespace)), Z_STRLEN_P(CG(current_namespace)));/* 将CG(current_namespace)转换成小写并复制给c_ns_name */
 		c_ns_name[Z_STRLEN_P(CG(current_namespace))] = '\\';
-		memcpy(c_ns_name+Z_STRLEN_P(CG(current_namespace))+1, lcname, Z_STRLEN_P(name)+1);
+		memcpy(c_ns_name+Z_STRLEN_P(CG(current_namespace))+1, lcname, Z_STRLEN_P(name)+1);/* 最后c_ns_name的值为CG(current_namespace)+'\'+lcname */
 		if (zend_hash_exists(CG(class_table), c_ns_name, Z_STRLEN_P(CG(current_namespace)) + 1 + Z_STRLEN_P(name)+1)) {
 			char *tmp2 = zend_str_tolower_dup(Z_STRVAL_P(ns), Z_STRLEN_P(ns));
 
 			if (Z_STRLEN_P(ns) != Z_STRLEN_P(CG(current_namespace)) + 1 + Z_STRLEN_P(name) ||
-				memcmp(tmp2, c_ns_name, Z_STRLEN_P(ns))) {
+				memcmp(tmp2, c_ns_name, Z_STRLEN_P(ns))) {/* 避免重复use相同的类 */
 				zend_error_noreturn(E_COMPILE_ERROR, "Cannot use %s as %s because the name is already in use", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 			}
 			efree(tmp2);
@@ -7214,34 +7214,34 @@ void zend_do_use(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
 		char *c_tmp = zend_str_tolower_dup(Z_STRVAL_P(ns), Z_STRLEN_P(ns));
 
 		if (Z_STRLEN_P(ns) != Z_STRLEN_P(name) ||
-			memcmp(c_tmp, lcname, Z_STRLEN_P(ns))) {
+			memcmp(c_tmp, lcname, Z_STRLEN_P(ns))) {/* 避免重复use相同的类 */
 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use %s as %s because the name is already in use", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 		}
 		efree(c_tmp);
 	}
 
-	if (zend_hash_add(CG(current_import), lcname, Z_STRLEN_P(name)+1, &ns, sizeof(zval*), NULL) != SUCCESS) {
+	if (zend_hash_add(CG(current_import), lcname, Z_STRLEN_P(name)+1, &ns, sizeof(zval*), NULL) != SUCCESS) {/* 避免重复use相同的类 */
 		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use %s as %s because the name is already in use", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 	}
 	if (warn) {
 		if (!strcmp(Z_STRVAL_P(name), "strict")) {
 			zend_error_noreturn(E_COMPILE_ERROR, "You seem to be trying to use a different language...");
 		}
-		zend_error(E_WARNING, "The use statement with non-compound name '%s' has no effect", Z_STRVAL_P(name));
+		zend_error(E_WARNING, "The use statement with non-compound name '%s' has no effect", Z_STRVAL_P(name));/* 你的语句直接在use后面跟上了类或接口的名字 且当前没有命名空间 */
 	}
 	efree(lcname);
 	zval_dtor(name);
 }
 /* }}} */
 
-void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zend_bool case_sensitive, HashTable *current_import_sub, HashTable *lookup_table TSRMLS_DC) /* {{{ */
+void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zend_bool case_sensitive, HashTable *current_import_sub, HashTable *lookup_table TSRMLS_DC) /* {{{ *//* use 命名空间\函数或常量 as 别名 语法的编译处理函数 */
 {
 	char *lookup_name;
 	zval *name, *ns, tmp;
 	zend_bool warn = 0;
 
-	MAKE_STD_ZVAL(ns);
-	ZVAL_ZVAL(ns, &ns_name->u.constant, 0, 0);
+	MAKE_STD_ZVAL(ns);/* 初始化ns为标准的zval */
+	ZVAL_ZVAL(ns, &ns_name->u.constant, 0, 0);/* 将ns_name->u.constant的值复制给ns */
 	if (new_name) {
 		name = &new_name->u.constant;
 	} else {
@@ -7250,16 +7250,16 @@ void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zen
 		/* The form "use A\B" is eqivalent to "use A\B as B".
 		   So we extract the last part of compound name to use as a new_name */
 		name = &tmp;
-		p = zend_memrchr(Z_STRVAL_P(ns), '\\', Z_STRLEN_P(ns));
+		p = zend_memrchr(Z_STRVAL_P(ns), '\\', Z_STRLEN_P(ns));/* 获取ns中最后一个'\'的位置 */
 		if (p) {
-			ZVAL_STRING(name, p+1, 1);
+			ZVAL_STRING(name, p+1, 1);/* 将ns中最后一个'\'后面的值复制到name中 例如ns为A\B\C 则name为C */
 		} else {
-			ZVAL_ZVAL(name, ns, 1, 0);
-			warn = !CG(current_namespace);
+			ZVAL_ZVAL(name, ns, 1, 0);/* 如果ns中没有'\'则直接将ns复制给name */
+			warn = !CG(current_namespace);/* 如果当前没有命名空间 则后面会处理警告 */
 		}
 	}
 
-	if (case_sensitive) {
+	if (case_sensitive) {/* 是否大小写敏感 */
 		lookup_name = estrndup(Z_STRVAL_P(name), Z_STRLEN_P(name));
 	} else {
 		lookup_name = zend_str_tolower_dup(Z_STRVAL_P(name), Z_STRLEN_P(name));
@@ -7269,14 +7269,14 @@ void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zen
 		/* Prefix import name with current namespace name to avoid conflicts with functions/consts */
 		char *c_ns_name = emalloc(Z_STRLEN_P(CG(current_namespace)) + 1 + Z_STRLEN_P(name) + 1);
 
-		zend_str_tolower_copy(c_ns_name, Z_STRVAL_P(CG(current_namespace)), Z_STRLEN_P(CG(current_namespace)));
+		zend_str_tolower_copy(c_ns_name, Z_STRVAL_P(CG(current_namespace)), Z_STRLEN_P(CG(current_namespace)));/* 将CG(current_namespace)转换成小写并复制给c_ns_name */
 		c_ns_name[Z_STRLEN_P(CG(current_namespace))] = '\\';
-		memcpy(c_ns_name+Z_STRLEN_P(CG(current_namespace))+1, lookup_name, Z_STRLEN_P(name)+1);
+		memcpy(c_ns_name+Z_STRLEN_P(CG(current_namespace))+1, lookup_name, Z_STRLEN_P(name)+1);/* 最后c_ns_name的值为CG(current_namespace)+'\'+lookup_name */
 		if (zend_hash_exists(lookup_table, c_ns_name, Z_STRLEN_P(CG(current_namespace)) + 1 + Z_STRLEN_P(name)+1)) {
 			char *tmp2 = zend_str_tolower_dup(Z_STRVAL_P(ns), Z_STRLEN_P(ns));
 
 			if (Z_STRLEN_P(ns) != Z_STRLEN_P(CG(current_namespace)) + 1 + Z_STRLEN_P(name) ||
-				memcmp(tmp2, c_ns_name, Z_STRLEN_P(ns))) {
+				memcmp(tmp2, c_ns_name, Z_STRLEN_P(ns))) {/* 避免重复use相同的函数 */
 				zend_error(E_COMPILE_ERROR, "Cannot use %s %s as %s because the name is already in use", is_function ? "function" : "const", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 			}
 			efree(tmp2);
@@ -7289,7 +7289,7 @@ void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zen
 			char *c_tmp = zend_str_tolower_dup(Z_STRVAL_P(ns), Z_STRLEN_P(ns));
 
 			if (Z_STRLEN_P(ns) != Z_STRLEN_P(name) ||
-				memcmp(c_tmp, lookup_name, Z_STRLEN_P(ns))) {
+				memcmp(c_tmp, lookup_name, Z_STRLEN_P(ns))) {/* 避免重复use相同的函数 */
 				zend_error(E_COMPILE_ERROR, "Cannot use function %s as %s because the name is already in use", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 			}
 			efree(c_tmp);
@@ -7301,14 +7301,14 @@ void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zen
 			char *c_tmp = zend_str_tolower_dup(Z_STRVAL_P(ns), Z_STRLEN_P(ns));
 
 			if (Z_STRLEN_P(ns) != Z_STRLEN_P(name) ||
-				memcmp(c_tmp, lookup_name, Z_STRLEN_P(ns))) {
+				memcmp(c_tmp, lookup_name, Z_STRLEN_P(ns))) {/* 避免重复use相同的常量 */
 				zend_error(E_COMPILE_ERROR, "Cannot use const %s as %s because the name is already in use", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 			}
 			efree(c_tmp);
 		}
 	}
 
-	if (zend_hash_add(current_import_sub, lookup_name, Z_STRLEN_P(name)+1, &ns, sizeof(zval*), NULL) != SUCCESS) {
+	if (zend_hash_add(current_import_sub, lookup_name, Z_STRLEN_P(name)+1, &ns, sizeof(zval*), NULL) != SUCCESS) {/* 避免重复use相同的函数或常量 */
 		zend_error(E_COMPILE_ERROR, "Cannot use %s %s as %s because the name is already in use", is_function ? "function" : "const", Z_STRVAL_P(ns), Z_STRVAL_P(name));
 	}
 	if (warn) {
@@ -7319,7 +7319,7 @@ void zend_do_use_non_class(znode *ns_name, znode *new_name, int is_function, zen
 }
 /* }}} */
 
-void zend_do_use_function(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
+void zend_do_use_function(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ *//* use 命名空间\函数 as 别名 语法的编译处理函数 将保存在全局变量CG(current_import_function)中 */
 {
 	if (!CG(current_import_function)) {
 		CG(current_import_function) = emalloc(sizeof(HashTable));
@@ -7330,7 +7330,7 @@ void zend_do_use_function(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_use_const(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
+void zend_do_use_const(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ *//* use 命名空间\常量 as 别名 语法的编译处理函数 将保存在全局变量CG(current_import_const)中 */
 {
 	if (!CG(current_import_const)) {
 		CG(current_import_const) = emalloc(sizeof(HashTable));
@@ -7341,12 +7341,12 @@ void zend_do_use_const(znode *ns_name, znode *new_name TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_declare_constant(znode *name, znode *value TSRMLS_DC) /* {{{ */
+void zend_do_declare_constant(znode *name, znode *value TSRMLS_DC) /* {{{ *//* 用于const name = value 语法的编译处理函数 */
 {
 	zend_op *opline;
 	zval **ns_name;
 
-	if (zend_get_ct_const(&name->u.constant, 0 TSRMLS_CC)) {
+	if (zend_get_ct_const(&name->u.constant, 0 TSRMLS_CC)) {/* 避免重复声明常量 */
 		zend_error_noreturn(E_COMPILE_ERROR, "Cannot redeclare constant '%s'", Z_STRVAL(name->u.constant));
 	}
 
@@ -7375,7 +7375,7 @@ void zend_do_declare_constant(znode *name, znode *value TSRMLS_DC) /* {{{ */
 	}
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
-	opline->opcode = ZEND_DECLARE_CONST;
+	opline->opcode = ZEND_DECLARE_CONST;/* 将常量声明作为opcode存储,这就是为什么在常量声明之前是无法得到常量的值的 */
 	SET_UNUSED(opline->result);/* 等价 opline->result_type = IS_UNUSED */
 	SET_NODE(opline->op1, name);
 	SET_NODE(opline->op2, value);

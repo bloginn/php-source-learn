@@ -2164,8 +2164,8 @@ ZEND_API void zend_str_tolower(char *str, unsigned int length)/* 将字符串转
 }
 /* }}} */
 
-ZEND_API int zend_binary_strcmp(const char *s1, uint len1, const char *s2, uint len2) /* {{{ */
-{/* 大小写敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的长度差值 */
+ZEND_API int zend_binary_strcmp(const char *s1, uint len1, const char *s2, uint len2) /* {{{ *//* 大小写敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的长度差值 */
+{
 	int retval;
 
 	if (s1 == s2) {
@@ -2180,8 +2180,8 @@ ZEND_API int zend_binary_strcmp(const char *s1, uint len1, const char *s2, uint 
 }
 /* }}} */
 
-ZEND_API int zend_binary_strncmp(const char *s1, uint len1, const char *s2, uint len2, uint length) /* {{{ */
-{/* 大小写敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的长度差值 */
+ZEND_API int zend_binary_strncmp(const char *s1, uint len1, const char *s2, uint len2, uint length) /* {{{ *//* 大小写敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的长度差值 */
+{
 	int retval;
 
 	if (s1 == s2) {
@@ -2196,8 +2196,8 @@ ZEND_API int zend_binary_strncmp(const char *s1, uint len1, const char *s2, uint
 }
 /* }}} */
 
-ZEND_API int zend_binary_strcasecmp(const char *s1, uint len1, const char *s2, uint len2) /* {{{ */
-{/* 大小写不敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的字符差值 */
+ZEND_API int zend_binary_strcasecmp(const char *s1, uint len1, const char *s2, uint len2) /* {{{ *//* 大小写不敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的字符差值 */
+{
 	int len;
 	int c1, c2;
 
@@ -2218,8 +2218,8 @@ ZEND_API int zend_binary_strcasecmp(const char *s1, uint len1, const char *s2, u
 }
 /* }}} */
 
-ZEND_API int zend_binary_strncasecmp(const char *s1, uint len1, const char *s2, uint len2, uint length) /* {{{ */
-{/* 大小写不敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的字符差值 */
+ZEND_API int zend_binary_strncasecmp(const char *s1, uint len1, const char *s2, uint len2, uint length) /* {{{ *//* 大小写不敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的字符差值 */
+{
 	int len;
 	int c1, c2;
 
@@ -2239,8 +2239,8 @@ ZEND_API int zend_binary_strncasecmp(const char *s1, uint len1, const char *s2, 
 }
 /* }}} */
 
-ZEND_API int zend_binary_strcasecmp_l(const char *s1, uint len1, const char *s2, uint len2) /* {{{ */
-{/* 大小写不敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的字符差值 */
+ZEND_API int zend_binary_strcasecmp_l(const char *s1, uint len1, const char *s2, uint len2) /* {{{ *//* 大小写不敏感的比较两个字符串是否相等，相等返回0，不相等返回对应的字符差值 */
+{
 	int len;
 	int c1, c2;
 
@@ -2261,8 +2261,8 @@ ZEND_API int zend_binary_strcasecmp_l(const char *s1, uint len1, const char *s2,
 }
 /* }}} */
 
-ZEND_API int zend_binary_strncasecmp_l(const char *s1, uint len1, const char *s2, uint len2, uint length) /* {{{ */
-{/* 与上一个函数差不多，只不过多了一个length参数限制 */
+ZEND_API int zend_binary_strncasecmp_l(const char *s1, uint len1, const char *s2, uint len2, uint length) /* {{{ *//* 与上一个函数差不多，只不过多了一个length参数限制 */
+{
 	int len;
 	int c1, c2;
 

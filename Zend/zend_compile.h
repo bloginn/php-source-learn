@@ -63,7 +63,7 @@ typedef struct _zend_compiler_context {
 	int        nested_calls;
 	int        used_stack;
 	int        in_finally;
-	HashTable *labels;
+	HashTable *labels;/* 用来保存goto的标记 */
 } zend_compiler_context;
 
 typedef struct _zend_literal {
@@ -129,9 +129,9 @@ typedef struct _zend_brk_cont_element {
 	int parent;
 } zend_brk_cont_element;
 
-typedef struct _zend_label {
+typedef struct _zend_label {/* goto标签的结构 */
 	int brk_cont;
-	zend_uint opline_num;
+	zend_uint opline_num;/* 标记opline的坐标,当goto的时候会移动到该坐标执行 */
 } zend_label;
 
 typedef struct _zend_try_catch_element {

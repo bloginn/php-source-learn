@@ -574,7 +574,7 @@ END_EXTERN_C()
 		Z_TYPE_P(__z) = IS_DOUBLE;	\
 	}
 
-#define ZVAL_STRING(z, s, duplicate) do {	\
+#define ZVAL_STRING(z, s, duplicate) do {	\ /* 将s指针开始的值复制给z,duplicate为1表示复制,0表示直接用s的指针给z */
 		const char *__s=(s);				\
 		zval *__z = (z);					\
 		Z_STRLEN_P(__z) = strlen(__s);		\
