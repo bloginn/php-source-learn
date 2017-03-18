@@ -104,7 +104,7 @@ static void _zend_is_inconsistent(const HashTable *ht, const char *file, int lin
 
 static void zend_hash_do_resize(HashTable *ht);
 
-ZEND_API ulong zend_hash_func(const char *arKey, uint nKeyLength)
+ZEND_API ulong zend_hash_func(const char *arKey, uint nKeyLength)/* 使用times33算法将字符串转换成整数 */
 {
 	return zend_inline_hash_func(arKey, nKeyLength);
 }

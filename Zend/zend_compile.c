@@ -668,7 +668,7 @@ void fetch_simple_variable_ex(znode *result, znode *varname, int bp, zend_uchar 
 		ulong hash;
 
 		if (Z_TYPE(varname->u.constant) != IS_STRING) {
-			convert_to_string(&varname->u.constant);
+			convert_to_string(&varname->u.constant);/* 强制转换成字符串 */
 		}
 
 		hash = str_hash(Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant));
@@ -676,7 +676,7 @@ void fetch_simple_variable_ex(znode *result, znode *varname, int bp, zend_uchar 
 		    !(Z_STRLEN(varname->u.constant) == (sizeof("this")-1) &&
 		      !memcmp(Z_STRVAL(varname->u.constant), "this", sizeof("this") - 1)) &&
 		    (CG(active_op_array)->last == 0 ||
-		     CG(active_op_array)->opcodes[CG(active_op_array)->last-1].opcode != ZEND_BEGIN_SILENCE)) {
+		     CG(active_op_array)->opcodes[CG(active_op_array)->last-1].opcode != ZEND_BEGIN_SILENCE)) {/* 如果varname不是_POST,_GET,GLOBAL这样的,且不是this,且之前没有@屏蔽符号 */
 			result->op_type = IS_CV;
 			result->u.op.var = lookup_cv(CG(active_op_array), Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), hash TSRMLS_CC);
 			Z_STRVAL(varname->u.constant) = (char*)CG(active_op_array)->vars[result->u.op.var].name;
@@ -730,7 +730,7 @@ void zend_do_fetch_static_member(znode *result, znode *class_name TSRMLS_DC) /* 
 	zend_op opline;
 
 	if (class_name->op_type == IS_CONST &&
-	    ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {
+	    ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {/* 检查class_name的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 		zend_resolve_class_name(class_name TSRMLS_CC);
 		class_node = *class_name;
 	} else {
@@ -879,33 +879,33 @@ void zend_do_echo(const znode *arg TSRMLS_DC) /* {{{ */ /* echo语法或者纯HT
 }
 /* }}} */
 
-void zend_do_abstract_method(const znode *function_name, znode *modifiers, const znode *body TSRMLS_DC) /* {{{ */
-{
+void zend_do_abstract_method(const znode *function_name, znode *modifiers, const znode *body TSRMLS_DC) /* {{{ *//* 对抽象方法合法性进行检查的编译处理函数 */
+{/* function_name方法名称主要用于报错时显示 modifiers方法的类型标识 body方法体主要用来获取方法体类型是否为抽象类型(即';') */
 	char *method_type;
 
-	if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {
-		Z_LVAL(modifiers->u.constant) |= ZEND_ACC_ABSTRACT;
-		method_type = "Interface";
+	if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {/* 如果当前类是接口类型 */
+		Z_LVAL(modifiers->u.constant) |= ZEND_ACC_ABSTRACT;/* 将方法的修饰符添加抽象标志 */
+		method_type = "Interface";/* 将方法类型设置为Interface */
 	} else {
-		method_type = "Abstract";
+		method_type = "Abstract";/* 否则将方法类型设置为Abstract */
 	}
 
 	if (Z_LVAL(modifiers->u.constant) & ZEND_ACC_ABSTRACT) {
-		if(Z_LVAL(modifiers->u.constant) & ZEND_ACC_PRIVATE) {
+		if(Z_LVAL(modifiers->u.constant) & ZEND_ACC_PRIVATE) {/* 抽象方法不能为private 其实这种情况不会发生 因为在zend_do_begin_function_declaration()函数中就已经做了检查 */
 			zend_error_noreturn(E_COMPILE_ERROR, "%s function %s::%s() cannot be declared private", method_type, CG(active_class_entry)->name, Z_STRVAL(function_name->u.constant));
 		}
-		if (Z_LVAL(body->u.constant) == ZEND_ACC_ABSTRACT) {
+		if (Z_LVAL(body->u.constant) == ZEND_ACC_ABSTRACT) {/* 如果方法为抽象类型 这里的ZEND_ACC_ABSTRACT是在语法解析的时候遇到方法体为';'而不是'{}'方法体的时候设置的 */
 			zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 			opline->opcode = ZEND_RAISE_ABSTRACT_ERROR;
 			SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
 			SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
-		} else {
+		} else {/* 这种情况就是接口中的方法里有代码的情况 */
 			/* we had code in the function body */
 			zend_error_noreturn(E_COMPILE_ERROR, "%s function %s::%s() cannot contain body", method_type, CG(active_class_entry)->name, Z_STRVAL(function_name->u.constant));
 		}
-	} else {
-		if (Z_LVAL(body->u.constant) == ZEND_ACC_ABSTRACT) {
+	} else {/* 如果类为普通类型 */
+		if (Z_LVAL(body->u.constant) == ZEND_ACC_ABSTRACT) {/* 且里面有抽象方法就报下面的错误 例如 class myclass{ function method1(){ } } */
 			zend_error_noreturn(E_COMPILE_ERROR, "Non-abstract method %s::%s() must contain body", CG(active_class_entry)->name, Z_STRVAL(function_name->u.constant));
 		}
 	}
@@ -1507,26 +1507,26 @@ void zend_do_free(znode *op1 TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-int zend_do_verify_access_types(const znode *current_access_type, const znode *new_modifier) /* {{{ */
+int zend_do_verify_access_types(const znode *current_access_type, const znode *new_modifier) /* {{{ *//* 主要用于方法前面的修饰语的合法性检查的编译处理函数 */
 {
-	if ((Z_LVAL(current_access_type->u.constant) & ZEND_ACC_PPP_MASK)
+	if ((Z_LVAL(current_access_type->u.constant) & ZEND_ACC_PPP_MASK)/* #define ZEND_ACC_PPP_MASK  (ZEND_ACC_PUBLIC | ZEND_ACC_PROTECTED | ZEND_ACC_PRIVATE) */
 		&& (Z_LVAL(new_modifier->u.constant) & ZEND_ACC_PPP_MASK)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Multiple access type modifiers are not allowed");
+		zend_error_noreturn(E_COMPILE_ERROR, "Multiple access type modifiers are not allowed");/* 检查这种情况 class xxx{ public private function xx(){...} } */
 	}
 	if ((Z_LVAL(current_access_type->u.constant) & ZEND_ACC_ABSTRACT)
 		&& (Z_LVAL(new_modifier->u.constant) & ZEND_ACC_ABSTRACT)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Multiple abstract modifiers are not allowed");
+		zend_error_noreturn(E_COMPILE_ERROR, "Multiple abstract modifiers are not allowed");/* 检查这种情况 class xxx{ abstract abstract function xx(){...} } */
 	}
 	if ((Z_LVAL(current_access_type->u.constant) & ZEND_ACC_STATIC)
 		&& (Z_LVAL(new_modifier->u.constant) & ZEND_ACC_STATIC)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Multiple static modifiers are not allowed");
+		zend_error_noreturn(E_COMPILE_ERROR, "Multiple static modifiers are not allowed");/* 检查这种情况 class xxx{ static static function xx(){...} } */
 	}
 	if ((Z_LVAL(current_access_type->u.constant) & ZEND_ACC_FINAL)
 		&& (Z_LVAL(new_modifier->u.constant) & ZEND_ACC_FINAL)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Multiple final modifiers are not allowed");
+		zend_error_noreturn(E_COMPILE_ERROR, "Multiple final modifiers are not allowed");/* 检查这种情况 class xxx{ final final function xx(){...} } */
 	}
 	if (((Z_LVAL(current_access_type->u.constant) | Z_LVAL(new_modifier->u.constant)) & (ZEND_ACC_ABSTRACT | ZEND_ACC_FINAL)) == (ZEND_ACC_ABSTRACT | ZEND_ACC_FINAL)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use the final modifier on an abstract class member");
+		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use the final modifier on an abstract class member");/* 检查这种情况 class xxx{ final abstract function xx(){...} } */
 	}
 	return (Z_LVAL(current_access_type->u.constant) | Z_LVAL(new_modifier->u.constant));
 }
@@ -1861,14 +1861,14 @@ void zend_do_end_function_declaration(const znode *function_token TSRMLS_DC) /* 
 }
 /* }}} */
 
-void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initialization, znode *class_type, zend_uchar pass_by_reference, zend_bool is_variadic TSRMLS_DC) /* {{{ */
-{
+void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initialization, znode *class_type, zend_uchar pass_by_reference, zend_bool is_variadic TSRMLS_DC) /* {{{ *//* 用于函数和方法的参数解析处理函数 */
+{/* op的值有ZEND_RECV(不带默认值),ZEND_RECV_INIT(带设定的初值) varname参数名称 initialization设定的初值 class_type的值包含array,callable,类名 pass_by_reference表示是否引用传递 is_variadic表示是否变长参数 */
 	zend_op *opline;
 	zend_arg_info *cur_arg_info;
 	znode var;
 
-	if (zend_is_auto_global(Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant) TSRMLS_CC)) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign auto-global variable %s", Z_STRVAL(varname->u.constant));
+	if (zend_is_auto_global(Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant) TSRMLS_CC)) {/* 检查参数名称是否为auto_global 例如 _POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS */
+		zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign auto-global variable %s", Z_STRVAL(varname->u.constant));/* 例如这样的代码 function fun1($GLOBALS){} 就会报该错误 */
 	} else {
 		var.op_type = IS_CV;
 		var.u.op.var = lookup_cv(CG(active_op_array), Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), 0 TSRMLS_CC);
@@ -1878,24 +1878,24 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 			Z_STRLEN(varname->u.constant) == sizeof("this")-1 &&
 		    !memcmp(Z_STRVAL(varname->u.constant), "this", sizeof("this")-1)) {
 			if (CG(active_op_array)->scope &&
-			    (CG(active_op_array)->fn_flags & ZEND_ACC_STATIC) == 0) {
-				zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign $this");
+			    (CG(active_op_array)->fn_flags & ZEND_ACC_STATIC) == 0) {/* 如果方法不是static */
+				zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign $this");/* 例如 class cla{ function fun1($this){} } 报该错误 */
 			}
 			CG(active_op_array)->this_var = var.u.op.var;
 		}
 	}
 
-	if (CG(active_op_array)->fn_flags & ZEND_ACC_VARIADIC) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Only the last parameter can be variadic");
+	if (CG(active_op_array)->fn_flags & ZEND_ACC_VARIADIC) {/* 如果检查到该参数之前已经有了变长参数就会报此错误 */
+		zend_error_noreturn(E_COMPILE_ERROR, "Only the last parameter can be variadic");/* 例如 function fun1($a,...$b,$c){} 解析到c这个参数时就报该错误 */
 	}
 
 	if (is_variadic) {
-		if (op == ZEND_RECV_INIT) {
-			zend_error_noreturn(E_COMPILE_ERROR, "Variadic parameter cannot have a default value");
+		if (op == ZEND_RECV_INIT) {/* 变长参数不能有设定的初值 */
+			zend_error_noreturn(E_COMPILE_ERROR, "Variadic parameter cannot have a default value");/* 例如 function fun1($a,...$b='123'){} 语法解析就报该错误 */
 		}
 
-		op = ZEND_RECV_VARIADIC;
-		CG(active_op_array)->fn_flags |= ZEND_ACC_VARIADIC;
+		op = ZEND_RECV_VARIADIC;/* 这里讲opcode变成ZEND_RECV_VARIADIC变长类型 */
+		CG(active_op_array)->fn_flags |= ZEND_ACC_VARIADIC;/* 标志当前的op_array已经有了变长参数,可用于后面的参数检查,防止函数再出现参数 */
 	}
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -1923,7 +1923,7 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 	cur_arg_info->class_name = NULL;
 	cur_arg_info->class_name_len = 0;
 
-	if (class_type->op_type != IS_UNUSED) {
+	if (class_type->op_type != IS_UNUSED) {/* 如果参数前面有提示类型 */
 		cur_arg_info->allow_null = 0;
 
 		if (class_type->u.constant.type != IS_NULL) {
@@ -1931,12 +1931,12 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 				cur_arg_info->type_hint = IS_ARRAY;
 				if (op == ZEND_RECV_INIT) {
 					if (Z_TYPE(initialization->u.constant) == IS_NULL || (Z_TYPE(initialization->u.constant) == IS_CONSTANT && !strcasecmp(Z_STRVAL(initialization->u.constant), "NULL"))) {
-						cur_arg_info->allow_null = 1;
+						cur_arg_info->allow_null = 1;/*  例如 function fun1(Array $a = NULL,Array $b = 'null'){} 都表示允许为空 */
 					} else if (IS_CONSTANT_TYPE(Z_TYPE(initialization->u.constant))) {
 						/* delay constant resolution and check to run-time */
-						cur_arg_info->allow_null = 0;
+						cur_arg_info->allow_null = 0;/* why? */
 					} else if (Z_TYPE(initialization->u.constant) != IS_ARRAY) {
-						zend_error_noreturn(E_COMPILE_ERROR, "Default value for parameters with array type hint can only be an array or NULL");
+						zend_error_noreturn(E_COMPILE_ERROR, "Default value for parameters with array type hint can only be an array or NULL");/* 例如 function fun1(Array $a = 1){} 语法解析报该错误 */
 					}
 				}
 			} else if (class_type->u.constant.type == IS_CALLABLE) {
@@ -1951,9 +1951,9 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 						zend_error_noreturn(E_COMPILE_ERROR, "Default value for parameters with callable type hint can only be NULL");
 					}
 				}
-			} else {
+			} else {/* 实际上 function fun1(int $a){} 这样的代码也是会走到这里,其实PHP理解这里的int不是类型,而是类名 例如: class int{} function fun1(int $a){var_dump($a);} fun1(new int); */
 				cur_arg_info->type_hint = IS_OBJECT;
-				if (ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_type->u.constant), Z_STRLEN(class_type->u.constant))) {
+				if (ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_type->u.constant), Z_STRLEN(class_type->u.constant))) {/* 检查class_type的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 					zend_resolve_class_name(class_type TSRMLS_CC);
 				}
 				Z_STRVAL(class_type->u.constant) = (char*)zend_new_interned_string(Z_STRVAL(class_type->u.constant), Z_STRLEN(class_type->u.constant) + 1, 1 TSRMLS_CC);
@@ -2207,7 +2207,7 @@ void zend_do_resolve_class_name(znode *result, znode *class_name, int is_static 
 	znode constant_name;
 
 	lcname = zend_str_tolower_dup(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));
-	lctype = zend_get_class_fetch_type(lcname, strlen(lcname));
+	lctype = zend_get_class_fetch_type(lcname, strlen(lcname));/* 检查lcname的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 	switch (lctype) {
 		case ZEND_FETCH_CLASS_SELF:
 			if (!CG(active_class_entry)) {
@@ -2278,7 +2278,7 @@ void zend_resolve_class_name(znode *class_name TSRMLS_DC) /* {{{ */
 			Z_STRVAL(class_name->u.constant),
 			Z_STRLEN(class_name->u.constant) + 1);
 
-			if (ZEND_FETCH_CLASS_DEFAULT != zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {
+			if (ZEND_FETCH_CLASS_DEFAULT != zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {/* 检查class_name的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 				zend_error_noreturn(E_COMPILE_ERROR, "'\\%s' is an invalid class name", Z_STRVAL(class_name->u.constant));
 			}
 		} else {
@@ -2348,7 +2348,7 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ *//*
 	if (class_name->op_type == IS_CONST) {
 		int fetch_type;
 
-		fetch_type = zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));
+		fetch_type = zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant));/* 检查class_name的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 		switch (fetch_type) {
 			case ZEND_FETCH_CLASS_SELF:
 			case ZEND_FETCH_CLASS_PARENT:
@@ -2532,7 +2532,7 @@ int zend_do_begin_class_member_function_call(znode *class_name, znode *method_na
 	}
 
 	if (class_name->op_type == IS_CONST &&
-	    ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {
+	    ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {/* 检查class_name的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 		zend_resolve_class_name(class_name TSRMLS_CC);
 		class_node = *class_name;
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -2621,8 +2621,8 @@ void zend_do_end_function_call(znode *function_name, znode *result, int is_metho
 }
 /* }}} */
 
-void zend_do_pass_param(znode *param, zend_uchar op TSRMLS_DC) /* {{{ */
-{
+void zend_do_pass_param(znode *param, zend_uchar op TSRMLS_DC) /* {{{ *//* 函数或方法调用中的传递参数语法编译处理函数 */
+{/* param参数值 op参数类型(ZEND_SEND_VAL,ZEND_SEND_VAR变量,ZEND_SEND_REF引用) */
 	zend_op *opline;
 	int original_op = op;
 	zend_function_call_entry *fcall;
@@ -2639,7 +2639,7 @@ void zend_do_pass_param(znode *param, zend_uchar op TSRMLS_DC) /* {{{ */
 			"Cannot use positional argument after argument unpacking");
 	}
 
-	if (original_op == ZEND_SEND_REF) {
+	if (original_op == ZEND_SEND_REF) {/* 如果是引用传递 */
 		if (function_ptr &&
 		    function_ptr->common.function_name &&
 		    function_ptr->common.type == ZEND_USER_FUNCTION &&
@@ -2736,8 +2736,8 @@ void zend_do_pass_param(znode *param, zend_uchar op TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_unpack_params(znode *params TSRMLS_DC) /* {{{ */
-{
+void zend_do_unpack_params(znode *params TSRMLS_DC) /* {{{ *//* 函数或方法调用时传递变长参数的形式 例如 fun1(...$array) */
+{/* function fun1($a = 1,$b = 2,$c=3){echo $a,$b,$c;}$c = ['x','y','z'];fun1(1,...$c); 结果为:1xy */
 	zend_op *opline;
 	zend_function_call_entry *fcall;
 
@@ -2765,7 +2765,7 @@ void zend_do_unpack_params(znode *params TSRMLS_DC) /* {{{ */
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->opcode = ZEND_SEND_UNPACK;
-	SET_NODE(opline->op1, params);
+	SET_NODE(opline->op1, params);/* 实际上params必须为数组,否则在执行opcode的时候会报错,为什么不在编译的时候检测呢,原因是参数可以为变量,而变量的值是随着opcode的执行会发生变化的 */
 	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 	opline->op2.num = fcall->arg_num;
 }
@@ -3009,7 +3009,7 @@ void zend_do_begin_catch(znode *catch_token, znode *class_name, znode *catch_var
 	znode catch_class;
 
 	if (class_name->op_type == IS_CONST &&
-	    ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {
+	    ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {/* 检查class_name的值是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 		zend_resolve_class_name(class_name TSRMLS_CC);
 		catch_class = *class_name;
 	} else {
@@ -4646,7 +4646,7 @@ void zend_prepare_reference(znode *result, znode *class_name, znode *method_name
 }
 /* }}} */
 
-void zend_add_trait_alias(znode *method_reference, znode *modifiers, znode *alias TSRMLS_DC) /* {{{ */
+void zend_add_trait_alias(znode *method_reference, znode *modifiers, znode *alias TSRMLS_DC) /* {{{ *//* trait的别名注册 */
 {
 	zend_class_entry *ce = CG(active_class_entry);
 	zend_trait_alias *trait_alias;
@@ -5339,22 +5339,22 @@ void zend_do_implements_interface(znode *interface_name TSRMLS_DC) /* {{{ *//* �
 }
 /* }}} */
 
-void zend_do_use_trait(znode *trait_name TSRMLS_DC) /* {{{ */
-{
+void zend_do_use_trait(znode *trait_name TSRMLS_DC) /* {{{ *//* use trait类的语法编译处理函数 */
+{/* trait的完整名称 包含命名空间 */
 	zend_op *opline;
 
-	if ((CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE)) {
+	if ((CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE)) {/* 接口类中不能使用trait 因为接口类里面的方法没有实现 使用这个没意义 */
 		zend_error_noreturn(E_COMPILE_ERROR,
 				"Cannot use traits inside of interfaces. %s is used in %s",
 				Z_STRVAL(trait_name->u.constant), CG(active_class_entry)->name);
 	}
 
 
-	switch (zend_get_class_fetch_type(Z_STRVAL(trait_name->u.constant), Z_STRLEN(trait_name->u.constant))) {
+	switch (zend_get_class_fetch_type(Z_STRVAL(trait_name->u.constant), Z_STRLEN(trait_name->u.constant))) {/* 避免名称为self,parent,static */
 		case ZEND_FETCH_CLASS_SELF:
 		case ZEND_FETCH_CLASS_PARENT:
 		case ZEND_FETCH_CLASS_STATIC:
-			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as trait name as it is reserved", Z_STRVAL(trait_name->u.constant));
+			zend_error_noreturn(E_COMPILE_ERROR, "Cannot use '%s' as trait name as it is reserved", Z_STRVAL(trait_name->u.constant));/* 例如 use self; */
 			break;
 		default:
 			break;
@@ -5435,36 +5435,36 @@ ZEND_API int zend_unmangle_property_name_ex(const char *mangled_property, int le
 }
 /* }}} */
 
-void zend_do_declare_property(const znode *var_name, const znode *value, zend_uint access_type TSRMLS_DC) /* {{{ */
-{
+void zend_do_declare_property(const znode *var_name, const znode *value, zend_uint access_type TSRMLS_DC) /* {{{ *//* 类中属性定义的编译处理函数 */
+{/* var_name属性名 value属性值 access_type属性名前面的类型修饰 语法解析器扫描到之前的修饰会传递给access_type */
 	zval *property;
 	zend_property_info *existing_property_info;
 	char *comment = NULL;
 	int comment_len = 0;
 
-	if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Interfaces may not include member variables");
+	if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {/* 如果类为接口 则不能定义属性 */
+		zend_error_noreturn(E_COMPILE_ERROR, "Interfaces may not include member variables");/* 例如 interface xxx{ public $a = 1; } */
 	}
 
-	if (access_type & ZEND_ACC_ABSTRACT) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Properties cannot be declared abstract");
+	if (access_type & ZEND_ACC_ABSTRACT) {/* 属性名前面不能包含abstract */
+		zend_error_noreturn(E_COMPILE_ERROR, "Properties cannot be declared abstract");/* 例如 class xxx{ abstract public $a = 1; } */
 	}
 
-	if (access_type & ZEND_ACC_FINAL) {
+	if (access_type & ZEND_ACC_FINAL) {/* 属性名前面不能包含final */
 		zend_error_noreturn(E_COMPILE_ERROR, "Cannot declare property %s::$%s final, the final modifier is allowed only for methods and classes",
-				   CG(active_class_entry)->name, Z_STRVAL(var_name->u.constant));
+				   CG(active_class_entry)->name, Z_STRVAL(var_name->u.constant));/* 例如 class xxx{ final public $a = 1; } */
 	}
 
 	if (zend_hash_find(&CG(active_class_entry)->properties_info, Z_STRVAL(var_name->u.constant), Z_STRLEN(var_name->u.constant)+1, (void **) &existing_property_info)==SUCCESS) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Cannot redeclare %s::$%s", CG(active_class_entry)->name, Z_STRVAL(var_name->u.constant));
+		zend_error_noreturn(E_COMPILE_ERROR, "Cannot redeclare %s::$%s", CG(active_class_entry)->name, Z_STRVAL(var_name->u.constant));/* 避免重复定义属性 */
 	}
 	ALLOC_ZVAL(property);
 
 	if (value) {
-		*property = value->u.constant;
+		*property = value->u.constant;/* 保存属性的值 */
 	} else {
 		INIT_PZVAL(property);
-		Z_TYPE_P(property) = IS_NULL;
+		Z_TYPE_P(property) = IS_NULL;/* 设置属性的类型为空 */
 	}
 
 	if (CG(doc_comment)) {
@@ -5474,19 +5474,19 @@ void zend_do_declare_property(const znode *var_name, const znode *value, zend_ui
 		CG(doc_comment_len) = 0;
 	}
 
-	zend_declare_property_ex(CG(active_class_entry), zend_new_interned_string(Z_STRVAL(var_name->u.constant), Z_STRLEN(var_name->u.constant) + 1, 0 TSRMLS_CC), Z_STRLEN(var_name->u.constant), property, access_type, comment, comment_len TSRMLS_CC);
+	zend_declare_property_ex(CG(active_class_entry), zend_new_interned_string(Z_STRVAL(var_name->u.constant), Z_STRLEN(var_name->u.constant) + 1, 0 TSRMLS_CC), Z_STRLEN(var_name->u.constant), property, access_type, comment, comment_len TSRMLS_CC);/* 注册属性到类结构中 */
 	efree(Z_STRVAL(var_name->u.constant));
 }
 /* }}} */
 
-void zend_do_declare_class_constant(znode *var_name, const znode *value TSRMLS_DC) /* {{{ */
-{
+void zend_do_declare_class_constant(znode *var_name, const znode *value TSRMLS_DC) /* {{{ *//* 类常量定义的编译处理函数 */
+{/* var_name常量名称 value常量值 */
 	zval *property;
 	const char *cname = NULL;
 	zend_ulong hash;
 
-	if ((CG(active_class_entry)->ce_flags & ZEND_ACC_TRAIT) == ZEND_ACC_TRAIT) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Traits cannot have constants");
+	if ((CG(active_class_entry)->ce_flags & ZEND_ACC_TRAIT) == ZEND_ACC_TRAIT) {/* trait中不能定义常量 */
+		zend_error_noreturn(E_COMPILE_ERROR, "Traits cannot have constants");/* 例如 trait xxx{ const ELER = 1;} */
 		return;
 	}
 
@@ -5495,9 +5495,9 @@ void zend_do_declare_class_constant(znode *var_name, const znode *value TSRMLS_D
 
 	cname = zend_new_interned_string(Z_STRVAL(var_name->u.constant), Z_STRLEN(var_name->u.constant)+1, 0 TSRMLS_CC);
 	hash = str_hash(cname, Z_STRLEN(var_name->u.constant));
-	if (zend_hash_quick_add(&CG(active_class_entry)->constants_table, cname, Z_STRLEN(var_name->u.constant)+1, hash, &property, sizeof(zval *), NULL) == FAILURE) {
+	if (zend_hash_quick_add(&CG(active_class_entry)->constants_table, cname, Z_STRLEN(var_name->u.constant)+1, hash, &property, sizeof(zval *), NULL) == FAILURE) {/* 将常量注册到类的常量表中 */
 		FREE_ZVAL(property);
-		zend_error_noreturn(E_COMPILE_ERROR, "Cannot redefine class constant %s::%s", CG(active_class_entry)->name, Z_STRVAL(var_name->u.constant));
+		zend_error_noreturn(E_COMPILE_ERROR, "Cannot redefine class constant %s::%s", CG(active_class_entry)->name, Z_STRVAL(var_name->u.constant));/* 避免重复定义 */
 	}
 	FREE_PNODE(var_name);
 
@@ -5606,21 +5606,21 @@ void zend_do_halt_compiler_register(TSRMLS_D) /* {{{ *//* 编译过程中遇到_
 }
 /* }}} */
 
-void zend_do_push_object(const znode *object TSRMLS_DC) /* {{{ */
+void zend_do_push_object(const znode *object TSRMLS_DC) /* {{{ *//* 将数据推送到堆栈中 */
 {
 	zend_stack_push(&CG(object_stack), object, sizeof(znode));
 }
 /* }}} */
 
-void zend_do_pop_object(znode *object TSRMLS_DC) /* {{{ */
+void zend_do_pop_object(znode *object TSRMLS_DC) /* {{{ *//* 从栈顶推出一个元素给object地址 */
 {
 	if (object) {
 		znode *tmp;
 
-		zend_stack_top(&CG(object_stack), (void **) &tmp);
-		*object = *tmp;
+		zend_stack_top(&CG(object_stack), (void **) &tmp);/* 取出栈顶的元素给tmp */
+		*object = *tmp;/* 取出栈顶的元素给object */
 	}
-	zend_stack_del_top(&CG(object_stack));
+	zend_stack_del_top(&CG(object_stack));/* 删除栈顶的元素 */
 }
 /* }}} */
 
@@ -6087,8 +6087,8 @@ void zend_add_to_list(void *result, void *item TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_fetch_static_variable(znode *varname, const znode *static_assignment, int fetch_type TSRMLS_DC) /* {{{ */
-{
+void zend_do_fetch_static_variable(znode *varname, const znode *static_assignment, int fetch_type TSRMLS_DC) /* {{{ *//* 静态变量的编译处理函数 */
+{/* varname今天变量的名称 static_assignment今天变量的值 fetch_type语法解析调用为ZEND_FETCH_STATIC  */
 	zval *tmp;
 	zend_op *opline;
 	znode lval;
@@ -6099,20 +6099,20 @@ void zend_do_fetch_static_variable(znode *varname, const znode *static_assignmen
 	if (static_assignment) {
 		*tmp = static_assignment->u.constant;
 	} else {
-		INIT_ZVAL(*tmp);
+		INIT_ZVAL(*tmp);/* 即使没有赋值也会默认分配一个空值 */
 	}
-	if (!CG(active_op_array)->static_variables) {
+	if (!CG(active_op_array)->static_variables) {/* 如果目前还没有静态表,就申请一个并初始化 */
 		if (CG(active_op_array)->scope) {
 			CG(active_op_array)->scope->ce_flags |= ZEND_HAS_STATIC_IN_METHODS;
 		}
 		ALLOC_HASHTABLE(CG(active_op_array)->static_variables);
-		zend_hash_init(CG(active_op_array)->static_variables, 2, NULL, ZVAL_PTR_DTOR, 0);
+		zend_hash_init(CG(active_op_array)->static_variables, 2, NULL, ZVAL_PTR_DTOR, 0);/* 初始化一个用于存储静态变量的HASH_TABLE表,开始大小为2 */
 	}
-	zend_hash_update(CG(active_op_array)->static_variables, Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant)+1, &tmp, sizeof(zval *), NULL);
+	zend_hash_update(CG(active_op_array)->static_variables, Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant)+1, &tmp, sizeof(zval *), NULL);/* 将静态变量注册到hash表中 */
 
 	if (varname->op_type == IS_CONST) {
-		if (Z_TYPE(varname->u.constant) != IS_STRING) {
-			convert_to_string(&varname->u.constant);
+		if (Z_TYPE(varname->u.constant) != IS_STRING) {/* 如果静态变量名称不是字符串,则强制转换成字符串 */
+			convert_to_string(&varname->u.constant);/* 强制转换成字符串 */
 		}
 	}
 
@@ -6174,7 +6174,7 @@ void zend_do_fetch_global_variable(znode *varname, const znode *static_assignmen
 
 	if (varname->op_type == IS_CONST) {
 		if (Z_TYPE(varname->u.constant) != IS_STRING) {
-			convert_to_string(&varname->u.constant);
+			convert_to_string(&varname->u.constant);/* 强制转换成字符串 */
 		}
 	}
 
@@ -6630,11 +6630,11 @@ void zend_do_exit(znode *result, const znode *message TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_begin_silence(znode *strudel_token TSRMLS_DC) /* {{{ */
+void zend_do_begin_silence(znode *strudel_token TSRMLS_DC) /* {{{ *//* 屏蔽错误的@符号的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
-	opline->opcode = ZEND_BEGIN_SILENCE;
+	opline->opcode = ZEND_BEGIN_SILENCE;/* 保持沉默 shut up */
 	opline->result_type = IS_TMP_VAR;
 	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_UNUSED(opline->op1);/* 等价 opline->op1_type = IS_UNUSED */
@@ -6643,7 +6643,7 @@ void zend_do_begin_silence(znode *strudel_token TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_end_silence(const znode *strudel_token TSRMLS_DC) /* {{{ */
+void zend_do_end_silence(const znode *strudel_token TSRMLS_DC) /* {{{ *//* 在@表达式的结尾调用结束沉默的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -6844,7 +6844,7 @@ void zend_do_ticks(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-zend_bool zend_is_auto_global_quick(const char *name, uint name_len, ulong hash TSRMLS_DC) /* {{{ */
+zend_bool zend_is_auto_global_quick(const char *name, uint name_len, ulong hash TSRMLS_DC) /* {{{ *//* _POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS就是auto_global */
 {
 	zend_auto_global *auto_global;
 
@@ -6858,13 +6858,13 @@ zend_bool zend_is_auto_global_quick(const char *name, uint name_len, ulong hash 
 }
 /* }}} */
 
-zend_bool zend_is_auto_global(const char *name, uint name_len TSRMLS_DC) /* {{{ */
+zend_bool zend_is_auto_global(const char *name, uint name_len TSRMLS_DC) /* {{{ *//* _POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS就是auto_global */
 {
 	return zend_is_auto_global_quick(name, name_len, zend_hash_func(name, name_len+1) TSRMLS_CC);
 }
 /* }}} */
 
-int zend_register_auto_global(const char *name, uint name_len, zend_bool jit, zend_auto_global_callback auto_global_callback TSRMLS_DC) /* {{{ */
+int zend_register_auto_global(const char *name, uint name_len, zend_bool jit, zend_auto_global_callback auto_global_callback TSRMLS_DC) /* {{{ *//* 用于注册auto_global 主要是 _POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS 在main/php_variables.c中大部分调用 */
 {
 	zend_auto_global auto_global;
 
@@ -6877,7 +6877,7 @@ int zend_register_auto_global(const char *name, uint name_len, zend_bool jit, ze
 }
 /* }}} */
 
-static int zend_auto_global_init(zend_auto_global *auto_global TSRMLS_DC) /* {{{ */
+static int zend_auto_global_init(zend_auto_global *auto_global TSRMLS_DC) /* {{{ *//* 初始化auto_global，用于储存 _POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS */
 {
 	if (auto_global->jit) {
 		auto_global->armed = 1;
@@ -7008,7 +7008,7 @@ ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify
 }
 /* }}} */
 
-int zend_get_class_fetch_type(const char *class_name, uint class_name_len) /* {{{ *//* 标识class_name是否为self,parent,static保留字 */
+int zend_get_class_fetch_type(const char *class_name, uint class_name_len) /* {{{ *//* 检查class_name是否为self,parent,static 例如 如果为self 则返回ZEND_FETCH_CLASS_SELF 如果都不是返回ZEND_FETCH_CLASS_DEFAULT */
 {
 	if ((class_name_len == sizeof("self")-1) &&
 		!strncasecmp(class_name, "self", sizeof("self")-1)) {

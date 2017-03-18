@@ -232,16 +232,16 @@ typedef struct _zend_property_info {
 } zend_property_info;
 
 
-typedef struct _zend_arg_info { /* 函数参数的结构体 */
-	const char *name; /* 参数的名称 */
-	zend_uint name_len; /* 参数的名称的长度 */
-	const char *class_name; /* 类名 */
-	zend_uint class_name_len; /* 类名长度 */
-	zend_uchar type_hint;
-	zend_uchar pass_by_reference; /*　是否引用传递 */
-	zend_bool allow_null; /* 是否允许为NULL　*/
-	zend_bool is_variadic;
-} zend_arg_info;
+typedef struct _zend_arg_info { /* 函数或方法的参数名称结构体 */
+	const char *name;/* 参数名称值 */
+	zend_uint name_len;/* 参数名称值的长度 */
+	const char *class_name;/* 类名 */
+	zend_uint class_name_len;/* 类名长度 */
+	zend_uchar type_hint;/* 参数提示类型(无,IS_ARRAY,IS_CALLABLE,IS_OBJECT) */
+	zend_uchar pass_by_reference;/*　是否引用传递 */
+	zend_bool allow_null;/* 是否允许为NULL　*/
+	zend_bool is_variadic;/* 是否为变长参数 */
+} zend_arg_info;/* 函数或方法的参数名称结构体 */
 
 /* the following structure repeats the layout of zend_arg_info,
  * but its fields have different meaning. It's used as the first element of
@@ -420,11 +420,11 @@ struct _zend_execute_data {
 #define EX_CV_NUM(ex, n)       (((zval***)(((char*)(ex))+ZEND_MM_ALIGNED_SIZE(sizeof(zend_execute_data))))+(n))
 
 
-#define IS_CONST	(1<<0)
-#define IS_TMP_VAR	(1<<1)
-#define IS_VAR		(1<<2)
-#define IS_UNUSED	(1<<3)	/* Unused variable */
-#define IS_CV		(1<<4)	/* Compiled variable */
+#define IS_CONST	(1<<0) /* 0 */
+#define IS_TMP_VAR	(1<<1) /* 2 */
+#define IS_VAR		(1<<2) /* 4 */
+#define IS_UNUSED	(1<<3) /* 8*/	/* Unused variable */
+#define IS_CV		(1<<4) /* 16 */	/* Compiled variable */
 
 #define EXT_TYPE_UNUSED	(1<<5)
 
@@ -718,8 +718,8 @@ ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify
 int zend_get_class_fetch_type(const char *class_name, uint class_name_len);
 
 typedef zend_bool (*zend_auto_global_callback)(const char *name, uint name_len TSRMLS_DC);
-typedef struct _zend_auto_global {
-	const char *name;
+typedef struct _zend_auto_global {/* 用于储存 _POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS的结构 */
+	const char *name;/* 自动全局变量名称 例如 _POST */
 	uint name_len;
 	zend_auto_global_callback auto_global_callback;
 	zend_bool jit;

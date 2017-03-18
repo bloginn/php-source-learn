@@ -3422,42 +3422,42 @@ ZEND_API const char *zend_get_module_version(const char *module_name) /* {{{ */
 }
 /* }}} */
 
-ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, int name_length, zval *property, int access_type, const char *doc_comment, int doc_comment_len TSRMLS_DC) /* {{{ */
-{
+ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, int name_length, zval *property, int access_type, const char *doc_comment, int doc_comment_len TSRMLS_DC) /* {{{ *//* 注册属性到类结构中 */
+{/* ce类结构 name属性名 name_length属性名长度 property属性值 access_type属性的访问类型 doc_comment属性的注释 doc_comment_len属性的注释长度 */
 	zend_property_info property_info, *property_info_ptr;
 	const char *interned_name;
 	ulong h = zend_get_hash_value(name, name_length+1);
 
-	if (!(access_type & ZEND_ACC_PPP_MASK)) {
-		access_type |= ZEND_ACC_PUBLIC;
+	if (!(access_type & ZEND_ACC_PPP_MASK)) {/* #define ZEND_ACC_PPP_MASK  (ZEND_ACC_PUBLIC | ZEND_ACC_PROTECTED | ZEND_ACC_PRIVATE) */
+		access_type |= ZEND_ACC_PUBLIC;/* 这就是为什么属性的默认类型为public */
 	}
-	if (access_type & ZEND_ACC_STATIC) {
+	if (access_type & ZEND_ACC_STATIC) {/* 如果属性访问类型带static */
 		if (zend_hash_quick_find(&ce->properties_info, name, name_length + 1, h, (void**)&property_info_ptr) == SUCCESS &&
 		    (property_info_ptr->flags & ZEND_ACC_STATIC) != 0) {
 			property_info.offset = property_info_ptr->offset;
 			zval_ptr_dtor(&ce->default_static_members_table[property_info.offset]);
-			zend_hash_quick_del(&ce->properties_info, name, name_length + 1, h);
+			zend_hash_quick_del(&ce->properties_info, name, name_length + 1, h);/* 如果属性是静态的且属性表里存在静态属性,则将之前的删除 */
 		} else {
 			property_info.offset = ce->default_static_members_count++;
 			ce->default_static_members_table = perealloc(ce->default_static_members_table, sizeof(zval*) * ce->default_static_members_count, ce->type == ZEND_INTERNAL_CLASS);
 		}
-		ce->default_static_members_table[property_info.offset] = property;
+		ce->default_static_members_table[property_info.offset] = property;/* 在类默认静态属性成员表里面保存新的属性 */
 		if (ce->type == ZEND_USER_CLASS) {
 			ce->static_members_table = ce->default_static_members_table;
 		}
-	} else {
+	} else {/* 如果属性访问类型不是静态的 */
 		if (zend_hash_quick_find(&ce->properties_info, name, name_length + 1, h, (void**)&property_info_ptr) == SUCCESS &&
 		    (property_info_ptr->flags & ZEND_ACC_STATIC) == 0) {
 			property_info.offset = property_info_ptr->offset;
 			zval_ptr_dtor(&ce->default_properties_table[property_info.offset]);
-			zend_hash_quick_del(&ce->properties_info, name, name_length + 1, h);
+			zend_hash_quick_del(&ce->properties_info, name, name_length + 1, h);/* 如果属性表里存在属性,则将之前的删除 */
 		} else {
 			property_info.offset = ce->default_properties_count++;
 			ce->default_properties_table = perealloc(ce->default_properties_table, sizeof(zval*) * ce->default_properties_count, ce->type == ZEND_INTERNAL_CLASS);
 		}
-		ce->default_properties_table[property_info.offset] = property;
+		ce->default_properties_table[property_info.offset] = property;/* 在类默认属性成员表里面保存新的属性 */
 	}
-	if (ce->type & ZEND_INTERNAL_CLASS) {
+	if (ce->type & ZEND_INTERNAL_CLASS) {/* 如果是内部类 属性值类型不能为数组,对象和句柄 */
 		switch(Z_TYPE_P(property)) {
 			case IS_ARRAY:
 			case IS_OBJECT:
@@ -3473,8 +3473,8 @@ ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, in
 				char *priv_name;
 				int priv_name_length;
 
-				zend_mangle_property_name(&priv_name, &priv_name_length, ce->name, ce->name_length, name, name_length, ce->type & ZEND_INTERNAL_CLASS);
-				property_info.name = priv_name;
+				zend_mangle_property_name(&priv_name, &priv_name_length, ce->name, ce->name_length, name, name_length, ce->type & ZEND_INTERNAL_CLASS);/* 将类名和属性名组合最后保存起来 */
+				property_info.name = priv_name;/* 实际上保存的属性名前含有类名 */
 				property_info.name_length = priv_name_length;
 			}
 			break;
@@ -3482,13 +3482,13 @@ ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, in
 				char *prot_name;
 				int prot_name_length;
 
-				zend_mangle_property_name(&prot_name, &prot_name_length, "*", 1, name, name_length, ce->type & ZEND_INTERNAL_CLASS);
-				property_info.name = prot_name;
+				zend_mangle_property_name(&prot_name, &prot_name_length, "*", 1, name, name_length, ce->type & ZEND_INTERNAL_CLASS);/* 将类名和属性名组合最后保存起来 */
+				property_info.name = prot_name;/* 实际上保存的属性名前含有类名 */
 				property_info.name_length = prot_name_length;
 			}
 			break;
 		case ZEND_ACC_PUBLIC:
-			if (IS_INTERNED(name)) {
+			if (IS_INTERNED(name)) {/* 在线程安全中为0 非线程安全中等价 (((name) >= CG(interned_strings_start)) && ((name) < CG(interned_strings_end))) */
 				property_info.name = (char*)name;
 			} else {
 				property_info.name = ce->type & ZEND_INTERNAL_CLASS ? zend_strndup(name, name_length) : estrndup(name, name_length);
@@ -3508,14 +3508,14 @@ ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, in
 	}
 
 	property_info.flags = access_type;
-	property_info.h = (access_type & ZEND_ACC_PUBLIC) ? h : zend_get_hash_value(property_info.name, property_info.name_length+1);
+	property_info.h = (access_type & ZEND_ACC_PUBLIC) ? h : zend_get_hash_value(property_info.name, property_info.name_length+1);/* 保存属性名的hash值 */
 
 	property_info.doc_comment = doc_comment;
 	property_info.doc_comment_len = doc_comment_len;
 
 	property_info.ce = ce;
 
-	zend_hash_quick_update(&ce->properties_info, name, name_length+1, h, &property_info, sizeof(zend_property_info), NULL);
+	zend_hash_quick_update(&ce->properties_info, name, name_length+1, h, &property_info, sizeof(zend_property_info), NULL);/* 将属性更新到类的属性表中 */
 
 	return SUCCESS;
 }
