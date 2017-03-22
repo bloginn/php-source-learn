@@ -296,7 +296,7 @@ static zend_uint get_temporary_variable(zend_op_array *op_array) /* {{{ *//* 获
 }
 /* }}} */
 
-static int lookup_cv(zend_op_array *op_array, char* name, int name_len, ulong hash TSRMLS_DC) /* {{{ */
+static int lookup_cv(zend_op_array *op_array, char* name, int name_len, ulong hash TSRMLS_DC) /* {{{ *//* 在op_array查找name的所在的坐标,如果没找到就在op_array后追加 */
 {
 	int i = 0;
 	ulong hash_value = hash ? hash : zend_inline_hash_func(name, name_len+1);
@@ -672,13 +672,13 @@ void fetch_simple_variable_ex(znode *result, znode *varname, int bp, zend_uchar 
 		}
 
 		hash = str_hash(Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant));
-		if (!zend_is_auto_global_quick(Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), hash TSRMLS_CC) &&
-		    !(Z_STRLEN(varname->u.constant) == (sizeof("this")-1) &&
+		if (!zend_is_auto_global_quick(Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), hash TSRMLS_CC) && /* 如果varname不是_POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS */
+		    !(Z_STRLEN(varname->u.constant) == (sizeof("this")-1) && /* 且varname不是this */
 		      !memcmp(Z_STRVAL(varname->u.constant), "this", sizeof("this") - 1)) &&
 		    (CG(active_op_array)->last == 0 ||
 		     CG(active_op_array)->opcodes[CG(active_op_array)->last-1].opcode != ZEND_BEGIN_SILENCE)) {/* 如果varname不是_POST,_GET,GLOBAL这样的,且不是this,且之前没有@屏蔽符号 */
 			result->op_type = IS_CV;
-			result->u.op.var = lookup_cv(CG(active_op_array), Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), hash TSRMLS_CC);
+			result->u.op.var = lookup_cv(CG(active_op_array), Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), hash TSRMLS_CC);/* 在CG(active_op_array)查找varname的所在的坐标,如果没找到就在op_array后追加 */
 			Z_STRVAL(varname->u.constant) = (char*)CG(active_op_array)->vars[result->u.op.var].name;
 			result->EA = 0;
 			return;
@@ -856,7 +856,7 @@ void fetch_string_offset(znode *result, const znode *parent, const znode *offset
 }
 /* }}} */
 
-void zend_do_print(znode *result, const znode *arg TSRMLS_DC) /* {{{ */
+void zend_do_print(znode *result, const znode *arg TSRMLS_DC) /* {{{ *//* print语法编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -1338,7 +1338,7 @@ void zend_do_end_variable_parse(znode *variable, int type, int arg_offset TSRMLS
 					variable->u.op.var = CG(active_op_array)->this_var;
 				}
 			} else if (CG(active_op_array)->this_var == -1) {
-				CG(active_op_array)->this_var = lookup_cv(CG(active_op_array), estrndup("this", sizeof("this")-1), sizeof("this")-1, THIS_HASHVAL TSRMLS_CC);
+				CG(active_op_array)->this_var = lookup_cv(CG(active_op_array), estrndup("this", sizeof("this")-1), sizeof("this")-1, THIS_HASHVAL TSRMLS_CC);/* 在CG(active_op_array)查找this的所在的坐标,如果没找到就在op_array后追加 */
 			}
 		}
 
@@ -1871,7 +1871,7 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 		zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign auto-global variable %s", Z_STRVAL(varname->u.constant));/* 例如这样的代码 function fun1($GLOBALS){} 就会报该错误 */
 	} else {
 		var.op_type = IS_CV;
-		var.u.op.var = lookup_cv(CG(active_op_array), Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), 0 TSRMLS_CC);
+		var.u.op.var = lookup_cv(CG(active_op_array), Z_STRVAL(varname->u.constant), Z_STRLEN(varname->u.constant), 0 TSRMLS_CC);/* 在CG(active_op_array)查找varname的所在的坐标,如果没找到就在op_array后追加 */
 		Z_STRVAL(varname->u.constant) = (char*)CG(active_op_array)->vars[var.u.op.var].name;
 		var.EA = 0;
 		if (CG(active_op_array)->vars[var.u.op.var].hash_value == THIS_HASHVAL &&
@@ -1975,11 +1975,11 @@ void zend_do_receive_param(zend_uchar op, znode *varname, const znode *initializ
 }
 /* }}} */
 
-int zend_do_begin_function_call(znode *function_name, zend_bool check_namespace TSRMLS_DC) /* {{{ */
-{
+int zend_do_begin_function_call(znode *function_name, zend_bool check_namespace TSRMLS_DC) /* {{{ *//* 函数或静态方法调用之前的编译处理函数 */
+{/* function_name是一个全称的函数名,包含命名空间 */
 	zend_function *function;
 	char *lcname;
-	char *is_compound = memchr(Z_STRVAL(function_name->u.constant), '\\', Z_STRLEN(function_name->u.constant));
+	char *is_compound = memchr(Z_STRVAL(function_name->u.constant), '\\', Z_STRLEN(function_name->u.constant));/* 函数名是否包含'\\' */
 
 	zend_resolve_function_name(function_name, &check_namespace TSRMLS_CC);
 
@@ -1993,7 +1993,7 @@ int zend_do_begin_function_call(znode *function_name, zend_bool check_namespace 
 			return 1;
 	}
 
-	lcname = zend_str_tolower_dup(Z_STRVAL(function_name->u.constant), Z_STRLEN(function_name->u.constant));
+	lcname = zend_str_tolower_dup(Z_STRVAL(function_name->u.constant), Z_STRLEN(function_name->u.constant));/* 函数名转换成小写,函数调用不区分大小写的原因 */
 	if ((zend_hash_find(CG(function_table), lcname, Z_STRLEN(function_name->u.constant)+1, (void **) &function)==FAILURE) ||
 	 	((CG(compiler_options) & ZEND_COMPILE_IGNORE_INTERNAL_FUNCTIONS) &&
  		(function->type == ZEND_INTERNAL_FUNCTION))) {
@@ -2333,7 +2333,7 @@ void zend_resolve_class_name(znode *class_name TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ *//* extends classname的语法编译处理函数 */
+void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ *//* classname的语法编译处理函数 */
 {
 	long fetch_class_op_number;
 	zend_op *opline;
@@ -2572,7 +2572,7 @@ int zend_do_begin_class_member_function_call(znode *class_name, znode *method_na
 }
 /* }}} */
 
-void zend_do_end_function_call(znode *function_name, znode *result, int is_method, int is_dynamic_fcall TSRMLS_DC) /* {{{ */
+void zend_do_end_function_call(znode *function_name, znode *result, int is_method, int is_dynamic_fcall TSRMLS_DC) /* {{{ *//* 函数或静态方法调用的编译处理函数 */
 {
 	zend_op *opline;
 	zend_function_call_entry *fcall;
@@ -2868,7 +2868,7 @@ void zend_do_return(znode *expr, int do_end_vparse TSRMLS_DC) /* {{{ *//* return
 }
 /* }}} */
 
-void zend_do_yield(znode *result, znode *value, const znode *key, zend_bool is_variable TSRMLS_DC) /* {{{ */
+void zend_do_yield(znode *result, znode *value, const znode *key, zend_bool is_variable TSRMLS_DC) /* {{{ *//* yield 生成器相关语法编译处理函数 */
 {
 	zend_op *opline;
 
@@ -3026,7 +3026,7 @@ void zend_do_begin_catch(znode *catch_token, znode *class_name, znode *catch_var
 	opline->op1_type = IS_CONST;
 	opline->op1.constant = zend_add_class_name_literal(CG(active_op_array), &catch_class.u.constant TSRMLS_CC);
 	opline->op2_type = IS_CV;
-	opline->op2.var = lookup_cv(CG(active_op_array), Z_STRVAL(catch_var->u.constant), Z_STRLEN(catch_var->u.constant), 0 TSRMLS_CC);
+	opline->op2.var = lookup_cv(CG(active_op_array), Z_STRVAL(catch_var->u.constant), Z_STRLEN(catch_var->u.constant), 0 TSRMLS_CC);/* 在CG(active_op_array)查找catch_var的所在的坐标,如果没找到就在op_array后追加 */
 	Z_STRVAL(catch_var->u.constant) = (char*)CG(active_op_array)->vars[opline->op2.var].name;
 	opline->result.num = 0; /* 1 means it's the last catch in the block */
 
@@ -5714,8 +5714,8 @@ static int zend_constant_ct_subst(znode *result, zval *const_name, int all_inter
 }
 /* }}} */
 
-void zend_do_fetch_constant(znode *result, znode *constant_container, znode *constant_name, int mode, zend_bool check_namespace TSRMLS_DC) /* {{{ */
-{
+void zend_do_fetch_constant(znode *result, znode *constant_container, znode *constant_name, int mode, zend_bool check_namespace TSRMLS_DC) /* {{{ *//* 常量的语法编译处理函数 */
+{/* constant_container常量的容器 类常量保存在类容器中 mode包含ZEND_CT(表示类常量),ZEND_RT(普通常量) */
 	znode tmp;
 	zend_op *opline;
 	int type;
@@ -5822,7 +5822,7 @@ void zend_do_fetch_constant(znode *result, znode *constant_container, znode *con
 }
 /* }}} */
 
-void zend_do_shell_exec(znode *result, const znode *cmd TSRMLS_DC) /* {{{ */
+void zend_do_shell_exec(znode *result, const znode *cmd TSRMLS_DC) /* {{{ *//* 用于shell命令的语法编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -5863,7 +5863,7 @@ void zend_do_shell_exec(znode *result, const znode *cmd TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_init_array(znode *result, const znode *expr, const znode *offset, zend_bool is_ref TSRMLS_DC) /* {{{ */
+void zend_do_init_array(znode *result, const znode *expr, const znode *offset, zend_bool is_ref TSRMLS_DC) /* {{{ *//* 初始化一个数组的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -5898,7 +5898,7 @@ void zend_do_init_array(znode *result, const znode *expr, const znode *offset, z
 }
 /* }}} */
 
-void zend_do_add_array_element(znode *result, const znode *expr, const znode *offset, zend_bool is_ref TSRMLS_DC) /* {{{ */
+void zend_do_add_array_element(znode *result, const znode *expr, const znode *offset, zend_bool is_ref TSRMLS_DC) /* {{{ *//* 添加元素到数组中的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -6146,13 +6146,13 @@ void zend_do_fetch_static_variable(znode *varname, const znode *static_assignmen
 }
 /* }}} */
 
-void zend_do_fetch_lexical_variable(znode *varname, zend_bool is_ref TSRMLS_DC) /* {{{ */
-{
+void zend_do_fetch_lexical_variable(znode *varname, zend_bool is_ref TSRMLS_DC) /* {{{ *//* 用于闭包函数的use()里面的参数语法编译处理函数 */
+{/* is_ref表示是否引用 */
 	znode value;
 
 	if (Z_STRLEN(varname->u.constant) == sizeof("this") - 1 &&
 	    memcmp(Z_STRVAL(varname->u.constant), "this", sizeof("this") - 1) == 0) {
-		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use $this as lexical variable");
+		zend_error_noreturn(E_COMPILE_ERROR, "Cannot use $this as lexical variable");/* 例如: $myfunction = function() use ($this){ xxx }; 这样就报该错误 */
 		return;
 	}
 
@@ -6214,8 +6214,8 @@ void zend_do_cast(znode *result, const znode *expr, int type TSRMLS_DC) /* {{{ *
 }
 /* }}} */
 
-void zend_do_include_or_eval(int type, znode *result, const znode *op1 TSRMLS_DC) /* {{{ */
-{
+void zend_do_include_or_eval(int type, znode *result, const znode *op1 TSRMLS_DC) /* {{{ *//* include,include_once,require,require_once,evel() 语法的编译处理函数 */
+{/* type为ZEND_INCLUDE,ZEND_INCLUDE_ONCE,ZEND_EVAL,ZEND_REQUIRE,ZEND_REQUIRE_ONCE */
 	zend_do_extended_fcall_begin(TSRMLS_C);
 	{
 		zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -6232,12 +6232,12 @@ void zend_do_include_or_eval(int type, znode *result, const znode *op1 TSRMLS_DC
 }
 /* }}} */
 
-void zend_do_indirect_references(znode *result, const znode *num_references, znode *variable TSRMLS_DC) /* {{{ */
-{
+void zend_do_indirect_references(znode *result, const znode *num_references, znode *variable TSRMLS_DC) /* {{{ *//* 间接引用的编译处理函数 例如 $a='b';$$a=123;echo $b; 这里的$$a就是间接引用 */
+{/* result返回结果 num_references间接引用的次数,例如$$a为1次,$$$a为2次 variable间接引用的变量名 */
 	int i;
 
 	zend_do_end_variable_parse(variable, BP_VAR_R, 0 TSRMLS_CC);
-	for (i=1; i<Z_LVAL(num_references->u.constant); i++) {
+	for (i=1; i<Z_LVAL(num_references->u.constant); i++) {/* 只有num_references大于1的时候才开始循环 */
 		fetch_simple_variable_ex(result, variable, 0, ZEND_FETCH_R TSRMLS_CC);
 		*variable = *result;
 	}
@@ -6245,7 +6245,7 @@ void zend_do_indirect_references(znode *result, const znode *num_references, zno
 	fetch_simple_variable(result, variable, 1 TSRMLS_CC);
 	/* there is a chance someone is accessing $this */
 	if (CG(active_op_array)->scope && CG(active_op_array)->this_var == -1) {
-		CG(active_op_array)->this_var = lookup_cv(CG(active_op_array), estrndup("this", sizeof("this")-1), sizeof("this")-1, THIS_HASHVAL TSRMLS_CC);
+		CG(active_op_array)->this_var = lookup_cv(CG(active_op_array), estrndup("this", sizeof("this")-1), sizeof("this")-1, THIS_HASHVAL TSRMLS_CC);/* 在CG(active_op_array)查找this的所在的坐标,如果没找到就在op_array后追加 */
 	}
 }
 /* }}} */
