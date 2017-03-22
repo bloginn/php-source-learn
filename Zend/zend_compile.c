@@ -586,7 +586,7 @@ void zend_do_binary_op(zend_uchar op, znode *result, const znode *op1, const zno
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = op;
-	opline->result_type = IS_TMP_VAR;/* 设置结果的类型为临时变量 */
+	opline->result_type = IS_TMP_VAR;/* 设置结果的类型为临时变量类型 */
 	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, op1);
 	SET_NODE(opline->op2, op2);
@@ -599,7 +599,7 @@ void zend_do_unary_op(zend_uchar op, znode *result, const znode *op1 TSRMLS_DC) 
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = op;
-	opline->result_type = IS_TMP_VAR;/* 设置结果的类型为临时变量 */
+	opline->result_type = IS_TMP_VAR;/* 设置结果的类型为临时变量类型 */
 	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, op1);
 	GET_NODE(result, opline->result);/* 将获取了临时变量的地址赋值给result返回给语法解析器以做后用 */
@@ -617,7 +617,7 @@ static void zend_do_op_data(zend_op *data_op, const znode *value TSRMLS_DC) /* {
 }
 /* }}} */
 
-void zend_do_binary_assign_op(zend_uchar op, znode *result, const znode *op1, const znode *op2 TSRMLS_DC) /* {{{ */
+void zend_do_binary_assign_op(zend_uchar op, znode *result, const znode *op1, const znode *op2 TSRMLS_DC) /* {{{ *//* 主要用于二元语法操作且带赋值的编译 例如 += -= *= /= 等 */
 {
 	int last_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -927,8 +927,8 @@ static zend_bool opline_is_fetch_this(const zend_op *opline TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {{{ */
-{
+void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {{{ *//* 赋值操作语法的编译处理函数 */
+{/* result赋值的结果 variable被赋值变量名 value值 */
 	int last_op_number;
 	zend_op *opline;
 
@@ -966,12 +966,12 @@ void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {
 
 	if (variable->op_type == IS_CV) {
 		if (variable->u.op.var == CG(active_op_array)->this_var) {
-			zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign $this");
+			zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign $this");/* 不能给$this赋值 例如 $this = 12; */
 		}
-	} else if (variable->op_type == IS_VAR) {
+	} else if (variable->op_type == IS_VAR) {/* variable的类型为IS_VAR的情况 例如 $a = 'name';$$a = 'admin';这里的$$a就是IS_VAR类型 */
 		int n = 0;
 
-		while (last_op_number - n > 0) {
+		while (last_op_number - n > 0) {/* 这时候需要查询前面的opcode里面$a的值 然后把value的值赋值过去 */
 			zend_op *last_op;
 
 			last_op = &CG(active_op_array)->opcodes[last_op_number-n-1];
@@ -1030,13 +1030,13 @@ void zend_do_assign(znode *result, znode *variable, znode *value TSRMLS_DC) /* {
 }
 /* }}} */
 
-void zend_do_assign_ref(znode *result, const znode *lvar, const znode *rvar TSRMLS_DC) /* {{{ */
-{
+void zend_do_assign_ref(znode *result, const znode *lvar, const znode *rvar TSRMLS_DC) /* {{{ *//* 引用赋值操作语法的编译处理函数 例如 $a = &$b; */
+{/* result赋值的结果 lvar被赋值变量名 rvar引用的变量名 */
 	zend_op *opline;
 
 	if (lvar->op_type == IS_CV) {
 		if (lvar->u.op.var == CG(active_op_array)->this_var) {
- 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign $this");
+ 			zend_error_noreturn(E_COMPILE_ERROR, "Cannot re-assign $this");/* 不能给$this赋值 例如 $this = &$a; */
 		}
 	} else if (lvar->op_type == IS_VAR) {
 		int last_op_number = get_next_op_number(CG(active_op_array));
@@ -1175,8 +1175,8 @@ void zend_do_for_end(const znode *second_semicolon_token TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_pre_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC) /* {{{ */
-{
+void zend_do_pre_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC) /* {{{ *//* 主要用于++$i或--$这样的语法编译处理函数 */
+{/* op主要有ZEND_PRE_INC,ZEND_PRE_DEC */
 	int last_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline;
 
@@ -1202,8 +1202,8 @@ void zend_do_pre_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC
 }
 /* }}} */
 
-void zend_do_post_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC) /* {{{ */
-{
+void zend_do_post_incdec(znode *result, const znode *op1, zend_uchar op TSRMLS_DC) /* {{{ *//* 主要用于$i++或$--这样的语法编译处理函数 */
+{/* op主要有ZEND_POST_INC,ZEND_POST_DEC */
 	int last_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline;
 
@@ -2068,7 +2068,7 @@ void zend_do_begin_method_call(znode *left_bracket TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_clone(znode *result, const znode *expr TSRMLS_DC) /* {{{ */
+void zend_do_clone(znode *result, const znode *expr TSRMLS_DC) /* {{{ *//* clone 克隆语法的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -4867,7 +4867,7 @@ ZEND_API void zend_do_delayed_early_binding(const zend_op_array *op_array TSRMLS
 }
 /* }}} */
 
-void zend_do_boolean_or_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ */
+void zend_do_boolean_or_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ *//* 或"||","OR"的开始编译处理函数 */
 {
 	int next_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -4888,7 +4888,7 @@ void zend_do_boolean_or_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_boolean_or_end(znode *result, const znode *expr1, const znode *expr2, znode *op_token TSRMLS_DC) /* {{{ */
+void zend_do_boolean_or_end(znode *result, const znode *expr1, const znode *expr2, znode *op_token TSRMLS_DC) /* {{{ *//* 或"||","OR"的结束编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -4902,7 +4902,7 @@ void zend_do_boolean_or_end(znode *result, const znode *expr1, const znode *expr
 }
 /* }}} */
 
-void zend_do_boolean_and_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ */
+void zend_do_boolean_and_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ *//* 且"&&","AND"的开始编译处理函数 */
 {
 	int next_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -4923,7 +4923,7 @@ void zend_do_boolean_and_begin(znode *expr1, znode *op_token TSRMLS_DC) /* {{{ *
 }
 /* }}} */
 
-void zend_do_boolean_and_end(znode *result, const znode *expr1, const znode *expr2, const znode *op_token TSRMLS_DC) /* {{{ */
+void zend_do_boolean_and_end(znode *result, const znode *expr1, const znode *expr2, const znode *op_token TSRMLS_DC) /* {{{ *//* 且"&&","AND"的结束编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -5624,8 +5624,8 @@ void zend_do_pop_object(znode *object TSRMLS_DC) /* {{{ *//* 从栈顶推出一�
 }
 /* }}} */
 
-void zend_do_begin_new_object(znode *new_token, znode *class_type TSRMLS_DC) /* {{{ */
-{
+void zend_do_begin_new_object(znode *new_token, znode *class_type TSRMLS_DC) /* {{{ *//* new一个对象的开始编译处理函数 */
+{/* new_token用于记录opline的位置,用于zend_do_end_new_object函数中  */
 	zend_op *opline;
 
 	new_token->u.op.opline_num = get_next_op_number(CG(active_op_array));
@@ -5644,8 +5644,8 @@ void zend_do_begin_new_object(znode *new_token, znode *class_type TSRMLS_DC) /* 
 }
 /* }}} */
 
-void zend_do_end_new_object(znode *result, const znode *new_token TSRMLS_DC) /* {{{ */
-{
+void zend_do_end_new_object(znode *result, const znode *new_token TSRMLS_DC) /* {{{ *//* new一个对象的结束编译处理函数 */
+{/* new结束后的结果放在result中 new_token来自zend_do_begin_new_object中的new_token */
 	znode ctor_result;
 
 	zend_do_end_function_call(NULL, &ctor_result, 1, 0 TSRMLS_CC);
@@ -5954,12 +5954,12 @@ void zend_do_add_static_array_element(zval *result, zval *offset, const zval *ex
 }
 /* }}} */
 
-void zend_do_add_list_element(const znode *element TSRMLS_DC) /* {{{ */
-{
+void zend_do_add_list_element(const znode *element TSRMLS_DC) /* {{{ *//* 用于list($element)这样的语法编译处理函数 语法解析器在扫描到list时就已经初始化好了list  */
+{/* element list中的一个变量元素 将element加到CG(list_llist)中 */
 	list_llist_element lle;
 
 	if (element) {
-		zend_check_writable_variable(element);
+		zend_check_writable_variable(element);/* 检查变量是否可写 如果是函数或者方法调用的变量是不可写的 例如 $myClass->method() */
 
 		lle.var = *element;
 		zend_llist_copy(&lle.dimensions, &CG(dimension_llist));
@@ -5969,14 +5969,14 @@ void zend_do_add_list_element(const znode *element TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_new_list_begin(TSRMLS_D) /* {{{ */
+void zend_do_new_list_begin(TSRMLS_D) /* {{{ *//* list里面的嵌套的list的语法编译处理函数 */
 {
 	int current_dimension = 0;
 	zend_llist_add_element(&CG(dimension_llist), &current_dimension);
 }
 /* }}} */
 
-void zend_do_new_list_end(TSRMLS_D) /* {{{ */
+void zend_do_new_list_end(TSRMLS_D) /* {{{ *//* list里面的嵌套的list的语法编译处理函数 */
 {
 	zend_llist_remove_tail(&CG(dimension_llist));
 	(*((int *)CG(dimension_llist).tail->data))++;
@@ -5993,14 +5993,14 @@ void zend_do_list_init(TSRMLS_D) /* {{{ *//* 初始化一个list list()语法的
 }
 /* }}} */
 
-void zend_do_list_end(znode *result, znode *expr TSRMLS_DC) /* {{{ */
+void zend_do_list_end(znode *result, znode *expr TSRMLS_DC) /* {{{ *//* 用于list的赋值语法编译处理函数 */
 {
 	zend_llist_element *le;
 	zend_llist_element *dimension;
 	zend_op *opline;
 	znode last_container;
 
-	le = CG(list_llist).head;
+	le = CG(list_llist).head;/* CG(list_llist)就是用来保存当前list中元素的链表 */
 	while (le) {
 		zend_llist *tmp_dimension_llist = &((list_llist_element *)le->data)->dimensions;
 		dimension = tmp_dimension_llist->head;
@@ -6200,8 +6200,8 @@ void zend_do_fetch_global_variable(znode *varname, const znode *static_assignmen
 }
 /* }}} */
 
-void zend_do_cast(znode *result, const znode *expr, int type TSRMLS_DC) /* {{{ */
-{
+void zend_do_cast(znode *result, const znode *expr, int type TSRMLS_DC) /* {{{ *//* 强制类型转换的语法编译处理函数 例如 (array)$a */
+{/* type类型共7类 T_INT_CAST(int,integer),T_DOUBLE_CAST(real,double,float) T_STRING_CAST(string,binary) T_ARRAY_CAST(array) T_OBJECT_CAST(object) T_BOOL_CAST(bool,boolen) T_UNSET_CAST(unset) 注意unset是将值的类型转换成NULL,不是unset() */
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_CAST;
@@ -6209,7 +6209,7 @@ void zend_do_cast(znode *result, const znode *expr, int type TSRMLS_DC) /* {{{ *
 	opline->result.var = get_temporary_variable(CG(active_op_array));/* 获取一个临时变量 */
 	SET_NODE(opline->op1, expr);
 	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
-	opline->extended_value = type;
+	opline->extended_value = type;/* 转换的类型存储在opcode的扩展字段里,这是为了减少opcode的类型的一种方式 */
 	GET_NODE(result, opline->result);
 }
 /* }}} */
@@ -6331,8 +6331,8 @@ void zend_do_isset_or_isempty(int type, znode *result, znode *variable TSRMLS_DC
 }
 /* }}} */
 
-void zend_do_instanceof(znode *result, const znode *expr, const znode *class_znode, int type TSRMLS_DC) /* {{{ */
-{
+void zend_do_instanceof(znode *result, const znode *expr, const znode *class_znode, int type TSRMLS_DC) /* {{{ *//* 用于类型运算符instanceof语法的编译处理函数 例如 $obj instanceof ClassName; */
+{/* result改opcode的编译结果指针地址 expr变量 class_znode继承的类名 type无用,多余的参数 */
 	int last_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline;
 
@@ -6343,7 +6343,7 @@ void zend_do_instanceof(znode *result, const znode *expr, const znode *class_zno
 		}
 	}
 
-	if (expr->op_type == IS_CONST) {
+	if (expr->op_type == IS_CONST) {/* 例如 1 instanceof MyClass; */
 		zend_error_noreturn(E_COMPILE_ERROR, "instanceof expects an object instance, constant given");
 	}
 
@@ -6616,12 +6616,12 @@ void zend_do_declare_end(const znode *declare_token TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_exit(znode *result, const znode *message TSRMLS_DC) /* {{{ */
+void zend_do_exit(znode *result, const znode *message TSRMLS_DC) /* {{{ *//* 用于处理类似exit('xxx');die('xxx')语法的编译处理函数 从词法分析器中发现exit和die是完全等价的,它们的TOKEN都是T_EXIT */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_EXIT;
-	SET_NODE(opline->op1, message);
+	SET_NODE(opline->op1, message);/* message为exit结束程序是打印的内容 */
 	SET_UNUSED(opline->op2);/* 等价 opline->op2_type = IS_UNUSED */
 
 	result->op_type = IS_CONST;
@@ -6653,7 +6653,7 @@ void zend_do_end_silence(const znode *strudel_token TSRMLS_DC) /* {{{ *//* 在@�
 }
 /* }}} */
 
-void zend_do_jmp_set(const znode *value, znode *jmp_token, znode *colon_token TSRMLS_DC) /* {{{ */
+void zend_do_jmp_set(const znode *value, znode *jmp_token, znode *colon_token TSRMLS_DC) /* {{{ *//* 类似(expr1)?:(expr3)这样的三元运算符的(expr1)?:这部分的编译处理函数 */
 {
 	int op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -6677,7 +6677,7 @@ void zend_do_jmp_set(const znode *value, znode *jmp_token, znode *colon_token TS
 }
 /* }}} */
 
-void zend_do_jmp_set_else(znode *result, const znode *false_value, const znode *jmp_token, const znode *colon_token TSRMLS_DC) /* {{{ */
+void zend_do_jmp_set_else(znode *result, const znode *false_value, const znode *jmp_token, const znode *colon_token TSRMLS_DC) /* {{{ *//* 类似(expr1)?:(expr3)这样的三元运算符的false部分的编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -6706,7 +6706,7 @@ void zend_do_jmp_set_else(znode *result, const znode *false_value, const znode *
 }
 /* }}} */
 
-void zend_do_begin_qm_op(const znode *cond, znode *qm_token TSRMLS_DC) /* {{{ */
+void zend_do_begin_qm_op(const znode *cond, znode *qm_token TSRMLS_DC) /* {{{ *//* 类似(expr1)?(expr2):(expr3)这样的三元运算符条件部分的语法编译处理函数 */
 {
 	int jmpz_op_number = get_next_op_number(CG(active_op_array));
 	zend_op *opline;
@@ -6723,7 +6723,7 @@ void zend_do_begin_qm_op(const znode *cond, znode *qm_token TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-void zend_do_qm_true(const znode *true_value, znode *qm_token, znode *colon_token TSRMLS_DC) /* {{{ */
+void zend_do_qm_true(const znode *true_value, znode *qm_token, znode *colon_token TSRMLS_DC) /* {{{ *//* 类似(expr1)?(expr2):(expr3)这样的三元运算符的条件为true时的执行语法编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -6750,7 +6750,7 @@ void zend_do_qm_true(const znode *true_value, znode *qm_token, znode *colon_toke
 }
 /* }}} */
 
-void zend_do_qm_false(znode *result, const znode *false_value, const znode *qm_token, const znode *colon_token TSRMLS_DC) /* {{{ */
+void zend_do_qm_false(znode *result, const znode *false_value, const znode *qm_token, const znode *colon_token TSRMLS_DC) /* {{{ *//* 类似(expr1)?(expr2):(expr3)这样的三元运算符的条件为false时的执行语法编译处理函数 */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
@@ -6794,7 +6794,7 @@ void zend_do_extended_info(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_do_extended_fcall_begin(TSRMLS_D) /* {{{ */
+void zend_do_extended_fcall_begin(TSRMLS_D) /* {{{ *//* 扩展相关... */
 {
 	zend_op *opline;
 

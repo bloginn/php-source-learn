@@ -420,13 +420,13 @@ struct _zend_execute_data {
 #define EX_CV_NUM(ex, n)       (((zval***)(((char*)(ex))+ZEND_MM_ALIGNED_SIZE(sizeof(zend_execute_data))))+(n))
 
 
-#define IS_CONST	(1<<0) /* 0 */
-#define IS_TMP_VAR	(1<<1) /* 2 */
-#define IS_VAR		(1<<2) /* 4 */
-#define IS_UNUSED	(1<<3) /* 8*/	/* Unused variable */
-#define IS_CV		(1<<4) /* 16 */	/* Compiled variable */
+#define IS_CONST	(1<<0) /* 0  常量类型 例如 $a = 12345; 这里的12345就是常量类型 */
+#define IS_TMP_VAR	(1<<1) /* 2  临时变量 例如 $a = 1+2; 这里的1+2会产生一个临时变量然后赋值给$a */
+#define IS_VAR		(1<<2) /* 4  函数调用的中间变量 例如 $a = myfunction(); myfunction()会通过中间变量的结果传递给$a */
+#define IS_UNUSED	(1<<3) /* 8  未设置变量类型 有些opcode中op2不需要值 */
+#define IS_CV		(1<<4) /* 16 Compiled variable 编译变量类型 例如 $a = 123; $b = $a; 这里的$a,$b就是这种类型 */
 
-#define EXT_TYPE_UNUSED	(1<<5)
+#define EXT_TYPE_UNUSED	(1<<5) /* 排除IS_UNUSED类型的类型 */
 
 #include "zend_globals.h"
 

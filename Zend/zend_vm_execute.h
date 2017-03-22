@@ -31765,7 +31765,7 @@ static int ZEND_FASTCALL  ZEND_FE_RESET_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS
 	}
 }
 
-static int ZEND_FASTCALL  ZEND_EXIT_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+static int ZEND_FASTCALL  ZEND_EXIT_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)/* 执行exit(xxx)语法产生的opcode */
 {
 #if 0 || (IS_CV != IS_UNUSED)
 	USE_OPLINE
@@ -31783,7 +31783,7 @@ static int ZEND_FASTCALL  ZEND_EXIT_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 
 	}
 #endif
-	zend_bailout();
+	zend_bailout();/* 调用zend.c中的_zend_bailout()函数接受进程,不在执行以后的opcode */
 	ZEND_VM_NEXT_OPCODE(); /* Never reached */
 }
 
