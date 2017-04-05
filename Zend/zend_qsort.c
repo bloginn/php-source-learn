@@ -25,7 +25,7 @@
 
 #define QSORT_STACK_SIZE (sizeof(size_t) * CHAR_BIT) /* 等于64 size_t是标准C库中定义的，应为unsigned int，在64位系统中为 long unsigned int;CHAR_BIT表示char的位数，一般为8，该常量在limits.h中 */
 
-static void _zend_qsort_swap(void *a, void *b, size_t siz)
+static void _zend_qsort_swap(void *a, void *b, size_t siz)/* 用于快速排序算法中的数据交换 */
 {
 	register char  *tmp_a_char;
 	register char  *tmp_b_char;
@@ -54,7 +54,7 @@ static void _zend_qsort_swap(void *a, void *b, size_t siz)
 	}
 }
 
-ZEND_API void zend_qsort_r(void *base, size_t nmemb, size_t siz, compare_r_func_t compare, void *arg TSRMLS_DC) /* 对base进行快速排序,nmemb数组的元素个数,siz每个元素的大小,compare比较元素大小的函数指针 */
+ZEND_API void zend_qsort_r(void *base, size_t nmemb, size_t siz, compare_r_func_t compare, void *arg TSRMLS_DC) /* 对base进行快速排序算法,nmemb数组的元素个数,siz每个元素的大小,compare比较元素大小的函数指针 */
 {
 	void           *begin_stack[QSORT_STACK_SIZE];
 	void           *end_stack[QSORT_STACK_SIZE];
@@ -118,7 +118,7 @@ ZEND_API void zend_qsort_r(void *base, size_t nmemb, size_t siz, compare_r_func_
 	}
 }
 
-ZEND_API void zend_qsort(void *base, size_t nmemb, size_t siz, compare_func_t compare TSRMLS_DC)/* 对base进行快速排序,nmemb数组的元素个数,siz每个元素的大小,compare比较元素大小的函数指针 */
+ZEND_API void zend_qsort(void *base, size_t nmemb, size_t siz, compare_func_t compare TSRMLS_DC)/* 对base进行快速排序算法,nmemb数组的元素个数,siz每个元素的大小,compare比较元素大小的函数指针 */
 {
 	zend_qsort_r(base, nmemb, siz, (compare_r_func_t)compare, NULL TSRMLS_CC);
 }

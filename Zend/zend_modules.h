@@ -70,21 +70,21 @@ struct _zend_ini_entry;
 typedef struct _zend_module_entry zend_module_entry;
 typedef struct _zend_module_dep zend_module_dep;
 
-struct _zend_module_entry {
+struct _zend_module_entry {/* 模块的结构体 */
 	unsigned short size;
-	unsigned int zend_api;
-	unsigned char zend_debug;
-	unsigned char zts;
+	unsigned int zend_api;/* ZEND_MODULE_API_NO */
+	unsigned char zend_debug;/* 是否开启debug */
+	unsigned char zts;/* 是否线程安全 */
 	const struct _zend_ini_entry *ini_entry;
 	const struct _zend_module_dep *deps;
-	const char *name;
+	const char *name;/* 模块名称 */
 	const struct _zend_function_entry *functions;
 	int (*module_startup_func)(INIT_FUNC_ARGS);
 	int (*module_shutdown_func)(SHUTDOWN_FUNC_ARGS);
 	int (*request_startup_func)(INIT_FUNC_ARGS);
 	int (*request_shutdown_func)(SHUTDOWN_FUNC_ARGS);
 	void (*info_func)(ZEND_MODULE_INFO_FUNC_ARGS);
-	const char *version;
+	const char *version;/* 模块版本号 */
 	size_t globals_size;
 #ifdef ZTS
 	ts_rsrc_id* globals_id_ptr;
@@ -95,9 +95,9 @@ struct _zend_module_entry {
 	void (*globals_dtor)(void *global TSRMLS_DC);
 	int (*post_deactivate_func)(void);
 	int module_started;
-	unsigned char type;
+	unsigned char type;/* 模块类型 持久模块(MODULE_PERSISTENT),临时模块(MODULE_TEMPORARY)两种 */
 	void *handle;
-	int module_number;
+	int module_number;/* 模块编号 */
 	const char *build_id;
 };
 

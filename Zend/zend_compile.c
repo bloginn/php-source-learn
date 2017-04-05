@@ -222,7 +222,7 @@ ZEND_API void file_handle_dtor(zend_file_handle *fh) /* {{{ */
 }
 /* }}} */
 
-void init_compiler(TSRMLS_D) /* {{{ */
+void init_compiler(TSRMLS_D) /* {{{ *//* 初始化编译器 */
 {
 	CG(active_op_array) = NULL;
 	memset(&CG(context), 0, sizeof(CG(context)));

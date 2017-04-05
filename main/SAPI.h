@@ -78,24 +78,24 @@ END_EXTERN_C()
  */
 
 typedef struct {
-	const char *request_method;
-	char *query_string;
-	char *cookie_data;
-	long content_length;
+	const char *request_method;/* 请求方式 例如 POST,GET,PUT等 */
+	char *query_string;/* 地址"?"后面的参数 */
+	char *cookie_data;/* cookie值 */
+	long content_length;/*  */
 
 	char *path_translated;
-	char *request_uri;
+	char *request_uri;/* uri */
 
 	/* Do not use request_body directly, but the php://input stream wrapper instead */
 	struct _php_stream *request_body;
 
-	const char *content_type;
+	const char *content_type;/* text/html; charset=UTF-8 */
 
 	zend_bool headers_only;
 	zend_bool no_headers;
 	zend_bool headers_read;
 
-	sapi_post_entry *post_entry;
+	sapi_post_entry *post_entry;/* post的值 */
 
 	char *content_type_dup;
 
@@ -111,24 +111,24 @@ typedef struct {
 	int current_user_length;
 
 	/* this is necessary for CLI module */
-	int argc;
-	char **argv;
+	int argc;/* cli模式的参数个数 */
+	char **argv;/* cli模式的参数 */
 	int proto_num;
-} sapi_request_info;
+} sapi_request_info;/* http中request的基本信息 */
 
 
-typedef struct _sapi_globals_struct {
+typedef struct _sapi_globals_struct {/* http的全局信息结构 */
 	void *server_context;
-	sapi_request_info request_info;
-	sapi_headers_struct sapi_headers;
-	int64_t read_post_bytes;
-	unsigned char post_read;
+	sapi_request_info request_info;/* http中request的基本信息 */
+	sapi_headers_struct sapi_headers;/* http中header */
+	int64_t read_post_bytes;/* post字节数 */
+	unsigned char post_read;/* post的值 */
 	unsigned char headers_sent;
 	struct stat global_stat;
 	char *default_mimetype;
-	char *default_charset;
-	HashTable *rfc1867_uploaded_files;
-	long post_max_size;
+	char *default_charset;/* 默认编码 */
+	HashTable *rfc1867_uploaded_files;/* 上传的文件 */
+	long post_max_size;/* post的最大值 */
 	int options;
 	zend_bool sapi_started;
 	double global_request_time;

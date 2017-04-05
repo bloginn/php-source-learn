@@ -337,7 +337,7 @@ zend_module_entry zend_builtin_module = { /* {{{ */
 };
 /* }}} */
 
-int zend_startup_builtin_functions(TSRMLS_D) /* {{{ */
+int zend_startup_builtin_functions(TSRMLS_D) /* {{{ *//* zend_startup()函数中调用，开启PHP内部支持的函数 */
 {
 	zend_builtin_module.module_number = 0;
 	zend_builtin_module.type = MODULE_PERSISTENT;/* MODULE_PERSISTENT等于1 */

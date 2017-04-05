@@ -236,7 +236,7 @@ struct _zend_executor_globals {
 	zend_class_entry      *exception_class;
 
 	/* timeout support */
-	int timeout_seconds;
+	int timeout_seconds;/* 最大执行超时时间 */
 
 	int lambda_count;
 

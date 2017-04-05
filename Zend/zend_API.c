@@ -1895,7 +1895,7 @@ ZEND_API void zend_destroy_modules(void) /* {{{ */
 }
 /* }}} */
 
-ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TSRMLS_DC) /* {{{ */
+ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TSRMLS_DC) /* {{{ *//* 将模块注册到module_registry中,如果冲突会报错,返回NULL,如果注册成功返回模块信息 */
 {
 	int name_len;
 	char *lcname;
@@ -1910,7 +1910,7 @@ ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TS
 #endif
 
 	/* Check module dependencies */
-	if (module->deps) {
+	if (module->deps) {/* 查询模块是否已经加载或名称是否冲突 */
 		const zend_module_dep *dep = module->deps;
 
 		while (dep->name) {
@@ -1918,7 +1918,7 @@ ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TS
 				name_len = strlen(dep->name);
 				lcname = zend_str_tolower_dup(dep->name, name_len);
 
-				if (zend_hash_exists(&module_registry, lcname, name_len+1)) {
+				if (zend_hash_exists(&module_registry, lcname, name_len+1)) {/* 查询模块是否已经加载或名称是否冲突 */
 					efree(lcname);
 					/* TODO: Check version relationship */
 					zend_error(E_CORE_WARNING, "Cannot load module '%s' because conflicting module '%s' is already loaded", module->name, dep->name);
@@ -1931,9 +1931,9 @@ ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TS
 	}
 
 	name_len = strlen(module->name);
-	lcname = zend_str_tolower_dup(module->name, name_len);
+	lcname = zend_str_tolower_dup(module->name, name_len);/* 模块名不区分大小写 */
 
-	if (zend_hash_add(&module_registry, lcname, name_len+1, (void *)module, sizeof(zend_module_entry), (void**)&module_ptr)==FAILURE) {
+	if (zend_hash_add(&module_registry, lcname, name_len+1, (void *)module, sizeof(zend_module_entry), (void**)&module_ptr)==FAILURE) {/* 注册模块 */
 		zend_error(E_CORE_WARNING, "Module '%s' already loaded", module->name);
 		efree(lcname);
 		return NULL;
@@ -1942,7 +1942,7 @@ ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TS
 	module = module_ptr;
 	EG(current_module) = module;
 
-	if (module->functions && zend_register_functions(NULL, module->functions, NULL, module->type TSRMLS_CC)==FAILURE) {
+	if (module->functions && zend_register_functions(NULL, module->functions, NULL, module->type TSRMLS_CC)==FAILURE) {/* 如果模块结构的functions存在且注册成功 */
 		EG(current_module) = NULL;
 		zend_error(E_CORE_WARNING,"%s: Unable to register functions, unable to load", module->name);
 		return NULL;
@@ -2064,7 +2064,7 @@ ZEND_API int zend_register_functions(zend_class_entry *scope, const zend_functio
 		}
 	}
 
-	while (ptr->fname) {
+	while (ptr->fname) {/* ptr实际就是function模块函数结构,fname是模块的每一个函数,例如ZEND_FE(zend_version,arginfo_zend__void)里面的zend_version */
 		internal_function->handler = ptr->handler;
 		internal_function->function_name = (char*)ptr->fname;
 		internal_function->scope = scope;
