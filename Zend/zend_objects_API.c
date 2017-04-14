@@ -27,22 +27,22 @@
 
 #define ZEND_DEBUG_OBJECTS 0
 
-ZEND_API void zend_objects_store_init(zend_objects_store *objects, zend_uint init_size)
+ZEND_API void zend_objects_store_init(zend_objects_store *objects, zend_uint init_size)/* 对象存储库初始化,该函数在执行器初始化(init_executor)的时候调用 init_size为1024 */
 {
 	objects->object_buckets = (zend_object_store_bucket *) emalloc(init_size * sizeof(zend_object_store_bucket));
-	objects->top = 1; /* Skip 0 so that handles are true */
+	objects->top = 1; /* Skip 0 so that handles are true 因为对象的编号使用的是这个值,为了在条件判断中为true,所以从1开始编号 */
 	objects->size = init_size;
 	objects->free_list_head = -1;
 	memset(&objects->object_buckets[0], 0, sizeof(zend_object_store_bucket));
 }
 
-ZEND_API void zend_objects_store_destroy(zend_objects_store *objects)
+ZEND_API void zend_objects_store_destroy(zend_objects_store *objects)/* 销毁对象存储库 */
 {
 	efree(objects->object_buckets);
 	objects->object_buckets = NULL;
 }
 
-ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TSRMLS_DC)
+ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TSRMLS_DC)/* 执行对象存储库中所以对象的析构函数 */
 {
 	zend_uint i = 1;
 
@@ -50,8 +50,8 @@ ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TS
 		if (objects->object_buckets[i].valid) {
 			struct _store_object *obj = &objects->object_buckets[i].bucket.obj;
 
-			if (!objects->object_buckets[i].destructor_called) {
-				objects->object_buckets[i].destructor_called = 1;
+			if (!objects->object_buckets[i].destructor_called) {/* 如果对象的析构函数没有被调用过 */
+				objects->object_buckets[i].destructor_called = 1;/* 标记析构函数被调用过 */
 				if (obj->dtor && obj->object) {
 					obj->refcount++;
 					obj->dtor(obj->object, i TSRMLS_CC);
@@ -68,7 +68,7 @@ ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TS
 	}
 }
 
-ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC)
+ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC)/* 将对象存储库中所以对象的析构函数标记为已被调用过 */
 {
 	zend_uint i;
 
@@ -82,7 +82,7 @@ ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSR
 	}
 }
 
-ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects TSRMLS_DC)
+ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects TSRMLS_DC)/* 销毁对象存储库 */
 {
 	zend_uint i = 1;
 
@@ -104,7 +104,7 @@ ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects
 
 /* Store objects API */
 
-ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_store_dtor_t dtor, zend_objects_free_object_storage_t free_storage, zend_objects_store_clone_t clone TSRMLS_DC)
+ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_store_dtor_t dtor, zend_objects_free_object_storage_t free_storage, zend_objects_store_clone_t clone TSRMLS_DC)/* 将对象放入存储库中 并得到对象存储编号 */
 {
 	zend_object_handle handle;
 	struct _store_object *obj;
@@ -113,23 +113,23 @@ ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_st
 		handle = EG(objects_store).free_list_head;
 		EG(objects_store).free_list_head = EG(objects_store).object_buckets[handle].bucket.free_list.next;
 	} else {
-		if (EG(objects_store).top == EG(objects_store).size) {
+		if (EG(objects_store).top == EG(objects_store).size) {/* 如果对象存储器的已满,将大小扩大一倍 */
 			EG(objects_store).size <<= 1;
 			EG(objects_store).object_buckets = (zend_object_store_bucket *) erealloc(EG(objects_store).object_buckets, EG(objects_store).size * sizeof(zend_object_store_bucket));
 		}
-		handle = EG(objects_store).top++;
+		handle = EG(objects_store).top++;/* 对象存储编号实际上就是对象的数量 */
 	}
 	obj = &EG(objects_store).object_buckets[handle].bucket.obj;
 	EG(objects_store).object_buckets[handle].destructor_called = 0;
 	EG(objects_store).object_buckets[handle].valid = 1;
 	EG(objects_store).object_buckets[handle].apply_count = 0;
 
-	obj->refcount = 1;
+	obj->refcount = 1;/* 引用计数 */
 	GC_OBJ_INIT(obj);
 	obj->object = object;
-	obj->dtor = dtor?dtor:(zend_objects_store_dtor_t)zend_objects_destroy_object;
+	obj->dtor = dtor?dtor:(zend_objects_store_dtor_t)zend_objects_destroy_object;/* 保存析构函数的地址 */
 	obj->free_storage = free_storage;
-	obj->clone = clone;
+	obj->clone = clone;/* 保存克隆函数的地址 */
 	obj->handlers = NULL;
 
 #if ZEND_DEBUG_OBJECTS
@@ -138,16 +138,16 @@ ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_st
 	return handle;
 }
 
-ZEND_API zend_uint zend_objects_store_get_refcount(zval *object TSRMLS_DC)
+ZEND_API zend_uint zend_objects_store_get_refcount(zval *object TSRMLS_DC)/* 获取对象的引用计数 */
 {
 	zend_object_handle handle = Z_OBJ_HANDLE_P(object);
 
 	return EG(objects_store).object_buckets[handle].bucket.obj.refcount;
 }
 
-ZEND_API void zend_objects_store_add_ref(zval *object TSRMLS_DC)
+ZEND_API void zend_objects_store_add_ref(zval *object TSRMLS_DC)/* 通过对象增加对象的引用计数 */
 {
-	zend_object_handle handle = Z_OBJ_HANDLE_P(object);
+	zend_object_handle handle = Z_OBJ_HANDLE_P(object);/* 获取对象存储编号 */
 
 	EG(objects_store).object_buckets[handle].bucket.obj.refcount++;
 #if ZEND_DEBUG_OBJECTS
@@ -158,7 +158,7 @@ ZEND_API void zend_objects_store_add_ref(zval *object TSRMLS_DC)
 /*
  * Add a reference to an objects store entry given the object handle.
  */
-ZEND_API void zend_objects_store_add_ref_by_handle(zend_object_handle handle TSRMLS_DC)
+ZEND_API void zend_objects_store_add_ref_by_handle(zend_object_handle handle TSRMLS_DC)/* 通过对象存储编号增加对象的引用计数 */
 {
 	EG(objects_store).object_buckets[handle].bucket.obj.refcount++;
 }
@@ -168,7 +168,7 @@ ZEND_API void zend_objects_store_add_ref_by_handle(zend_object_handle handle TSR
 			EG(objects_store).free_list_head = handle;															\
 			EG(objects_store).object_buckets[handle].valid = 0;
 
-ZEND_API void zend_objects_store_del_ref(zval *zobject TSRMLS_DC)
+ZEND_API void zend_objects_store_del_ref(zval *zobject TSRMLS_DC)/* 删除一个对象引用 */
 {
 	zend_object_handle handle;
 
@@ -184,7 +184,7 @@ ZEND_API void zend_objects_store_del_ref(zval *zobject TSRMLS_DC)
 /*
  * Delete a reference to an objects store entry given the object handle.
  */
-ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle, const zend_object_handlers *handlers TSRMLS_DC) /* {{{ */
+ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle, const zend_object_handlers *handlers TSRMLS_DC) /* {{{ *//* 删除一个对象引用 */
 {
 	struct _store_object *obj;
 	int failure = 0;
@@ -209,7 +209,7 @@ ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle,
 						obj->handlers = handlers;
 					}
 					zend_try {
-						obj->dtor(obj->object, handle TSRMLS_CC);
+						obj->dtor(obj->object, handle TSRMLS_CC);/* 删除对象引用也会触发析构函数 */
 					} zend_catch {
 						failure = 1;
 					} zend_end_try();
@@ -248,7 +248,7 @@ ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle,
 }
 /* }}} */
 
-ZEND_API zend_object_value zend_objects_store_clone_obj(zval *zobject TSRMLS_DC)
+ZEND_API zend_object_value zend_objects_store_clone_obj(zval *zobject TSRMLS_DC)/* 克隆一个对象 */
 {
 	zend_object_value retval;
 	void *new_object;
@@ -271,7 +271,7 @@ ZEND_API zend_object_value zend_objects_store_clone_obj(zval *zobject TSRMLS_DC)
 	return retval;
 }
 
-ZEND_API void *zend_object_store_get_object(const zval *zobject TSRMLS_DC)
+ZEND_API void *zend_object_store_get_object(const zval *zobject TSRMLS_DC)/* 从对象存储库中获取某个对象 */
 {
 	zend_object_handle handle = Z_OBJ_HANDLE_P(zobject);
 
@@ -281,7 +281,7 @@ ZEND_API void *zend_object_store_get_object(const zval *zobject TSRMLS_DC)
 /*
  * Retrieve an entry from the objects store given the object handle.
  */
-ZEND_API void *zend_object_store_get_object_by_handle(zend_object_handle handle TSRMLS_DC)
+ZEND_API void *zend_object_store_get_object_by_handle(zend_object_handle handle TSRMLS_DC)/* 通过对象存储编号从对象存储库中获取某个对象 */
 {
 	return EG(objects_store).object_buckets[handle].bucket.obj.object;
 }
@@ -383,9 +383,9 @@ ZEND_API zval* zend_object_proxy_get(zval *property TSRMLS_DC)
 	return NULL;
 }
 
-ZEND_API zend_object_handlers *zend_get_std_object_handlers(void)
+ZEND_API zend_object_handlers *zend_get_std_object_handlers(void)/* 获取标准的对象函数结构 例如 get_class_name */
 {
-	return &std_object_handlers;
+	return &std_object_handlers;/* zend_object_handers.c中定义 */
 }
 
 static zend_object_handlers zend_object_proxy_handlers = {

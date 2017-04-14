@@ -25,20 +25,20 @@
 # include <stdarg.h>
 #endif
 
-ZEND_API void zend_ptr_stack_init_ex(zend_ptr_stack *stack, zend_bool persistent)
+ZEND_API void zend_ptr_stack_init_ex(zend_ptr_stack *stack, zend_bool persistent)/* 堆栈初始化 */
 {
 	stack->top_element = stack->elements = NULL;
 	stack->top = stack->max = 0;
 	stack->persistent = persistent;
 }
 
-ZEND_API void zend_ptr_stack_init(zend_ptr_stack *stack)
+ZEND_API void zend_ptr_stack_init(zend_ptr_stack *stack)/* 堆栈初始化 */
 {
 	zend_ptr_stack_init_ex(stack, 0);
 }
 
 
-ZEND_API void zend_ptr_stack_n_push(zend_ptr_stack *stack, int count, ...)
+ZEND_API void zend_ptr_stack_n_push(zend_ptr_stack *stack, int count, ...)/* 入栈 数量为count 保存在后面的指针变量中 */
 {
 	va_list ptr;
 	void *elem;
@@ -56,7 +56,7 @@ ZEND_API void zend_ptr_stack_n_push(zend_ptr_stack *stack, int count, ...)
 }
 
 
-ZEND_API void zend_ptr_stack_n_pop(zend_ptr_stack *stack, int count, ...)
+ZEND_API void zend_ptr_stack_n_pop(zend_ptr_stack *stack, int count, ...)/* 出栈 数量为count 保存在后面的指针变量中 */
 {
 	va_list ptr;
 	void **elem;
@@ -73,7 +73,7 @@ ZEND_API void zend_ptr_stack_n_pop(zend_ptr_stack *stack, int count, ...)
 
 
 
-ZEND_API void zend_ptr_stack_destroy(zend_ptr_stack *stack)
+ZEND_API void zend_ptr_stack_destroy(zend_ptr_stack *stack)/* 清空堆栈 */
 {
 	if (stack->elements) {
 		pefree(stack->elements, stack->persistent);
@@ -81,7 +81,7 @@ ZEND_API void zend_ptr_stack_destroy(zend_ptr_stack *stack)
 }
 
 
-ZEND_API void zend_ptr_stack_apply(zend_ptr_stack *stack, void (*func)(void *))
+ZEND_API void zend_ptr_stack_apply(zend_ptr_stack *stack, void (*func)(void *))/* 遍历堆栈元素并调用func函数操作元素 */
 {
 	int i = stack->top;
 
@@ -106,7 +106,7 @@ ZEND_API void zend_ptr_stack_clean(zend_ptr_stack *stack, void (*func)(void *), 
 }
 
 
-ZEND_API int zend_ptr_stack_num_elements(zend_ptr_stack *stack)
+ZEND_API int zend_ptr_stack_num_elements(zend_ptr_stack *stack)/* 获取堆栈的元素数量 */
 {
 	return stack->top;
 }

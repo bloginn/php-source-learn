@@ -334,7 +334,7 @@ static opcode_handler_t zend_vm_get_opcode_handler(zend_uchar opcode, zend_op* o
 
 #define ZEND_OPCODE_HANDLER_ARGS_PASSTHRU_INTERNAL execute_data TSRMLS_CC
 
-ZEND_API void execute_ex(zend_execute_data *execute_data TSRMLS_DC)
+ZEND_API void execute_ex(zend_execute_data *execute_data TSRMLS_DC)/* 执行opcode的函数 */
 {
 	DCL_OPLINE
 	zend_bool original_in_execution;
@@ -342,7 +342,7 @@ ZEND_API void execute_ex(zend_execute_data *execute_data TSRMLS_DC)
 
 
 	original_in_execution = EG(in_execution);
-	EG(in_execution) = 1;
+	EG(in_execution) = 1;/* 将操作置为执行状态 */
 
 	if (0) {
 zend_vm_enter:
@@ -355,20 +355,20 @@ zend_vm_enter:
 	while (1) {
     	int ret;
 #ifdef ZEND_WIN32
-		if (EG(timed_out)) {
+		if (EG(timed_out)) {/* Win32环境独有 在执行期间监控是否超时,如果超时就退出程序 */
 			zend_timeout(0);
 		}
 #endif
 
-		if ((ret = OPLINE->handler(execute_data TSRMLS_CC)) > 0) {
-			switch (ret) {
-				case 1:
+		if ((ret = OPLINE->handler(execute_data TSRMLS_CC)) > 0) {/* 等价*execute_data.opline.handler(execute_data) handler例如 ZEND_ECHO_SPEC_CONST_HANDLER */
+			switch (ret) {/* 这里的ret为每一个opcode执行后的返回值,具体对应上面的定义 例如  #define ZEND_VM_CONTINUE() return 0 */
+				case 1:/* #define ZEND_VM_RETURN() return 1 例如执行到return语句的opcode时候返回的值 */
 					EG(in_execution) = original_in_execution;
 					return;
-				case 2:
+				case 2:/* #define ZEND_VM_ENTER() return 2 例如进入一个函数或一个嵌套中 */
 					goto zend_vm_enter;
 					break;
-				case 3:
+				case 3:/* #define ZEND_VM_LEAVE() return 3 例如退出嵌套结构的返回值 */
 					execute_data = EG(current_execute_data);
 					break;
 				default:
@@ -380,12 +380,12 @@ zend_vm_enter:
 	zend_error_noreturn(E_ERROR, "Arrived at end of main loop which shouldn't happen");
 }
 
-ZEND_API void zend_execute(zend_op_array *op_array TSRMLS_DC)
+ZEND_API void zend_execute(zend_op_array *op_array TSRMLS_DC)/* 执行opcode的函数 */
 {
 	if (EG(exception)) {
 		return;
 	} 
-	zend_execute_ex(i_create_execute_data_from_op_array(op_array, 0 TSRMLS_CC) TSRMLS_CC);
+	zend_execute_ex(i_create_execute_data_from_op_array(op_array, 0 TSRMLS_CC) TSRMLS_CC);/* zend.c中 zend_execute_ex = execute_ex; */
 }
 
 static int ZEND_FASTCALL zend_leave_helper_SPEC(ZEND_OPCODE_HANDLER_ARGS)
@@ -31783,7 +31783,7 @@ static int ZEND_FASTCALL  ZEND_EXIT_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)/* 
 
 	}
 #endif
-	zend_bailout();/* 调用zend.c中的_zend_bailout()函数接受进程,不在执行以后的opcode */
+	zend_bailout();/* 调用zend.c中的_zend_bailout()函数结束进程,不在执行以后的opcode */
 	ZEND_VM_NEXT_OPCODE(); /* Never reached */
 }
 

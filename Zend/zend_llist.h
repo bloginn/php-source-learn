@@ -23,10 +23,10 @@
 #define ZEND_LLIST_H
 
 typedef struct _zend_llist_element {
-	struct _zend_llist_element *next;
-	struct _zend_llist_element *prev;
+	struct _zend_llist_element *next;/* 下一个元素地址 */
+	struct _zend_llist_element *prev;/* 上一个元素地址 */
 	char data[1]; /* Needs to always be last in the struct */
-} zend_llist_element;
+} zend_llist_element;/* 双向链表数据结构 */
 
 typedef void (*llist_dtor_func_t)(void *);
 typedef int (*llist_compare_func_t)(const zend_llist_element **, const zend_llist_element ** TSRMLS_DC);
@@ -35,14 +35,14 @@ typedef void (*llist_apply_with_arg_func_t)(void *data, void *arg TSRMLS_DC);
 typedef void (*llist_apply_func_t)(void * TSRMLS_DC);
 
 typedef struct _zend_llist {
-	zend_llist_element *head;
-	zend_llist_element *tail;
-	size_t count;
-	size_t size;
-	llist_dtor_func_t dtor;
-	unsigned char persistent;
-	zend_llist_element *traverse_ptr;
-} zend_llist;
+	zend_llist_element *head;/* 链表头指针 */
+	zend_llist_element *tail;/* 链表尾指针 */
+	size_t count;/* 链表元素数量 */
+	size_t size;/* 链表数据大小 */
+	llist_dtor_func_t dtor;/* 链表析构函数 */
+	unsigned char persistent;/* 是否持久化 */
+	zend_llist_element *traverse_ptr;/* 链表数据 */
+} zend_llist;/* 链表 */
 
 typedef zend_llist_element* zend_llist_position;
 

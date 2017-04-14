@@ -874,14 +874,14 @@ void zend_set_utility_values(zend_utility_values *utility_values) /* {{{ */
 /* }}} */
 
 /* this should be compatible with the standard zenderror */
-void zenderror(const char *error) /* {{{ */
+void zenderror(const char *error) /* {{{ *//* zend_error函数的封装 */
 {
 	zend_error(E_PARSE, "%s", error);
 }
 /* }}} */
 
 BEGIN_EXTERN_C()
-ZEND_API void _zend_bailout(char *filename, uint lineno) /* {{{ */
+ZEND_API void _zend_bailout(char *filename, uint lineno) /* {{{ *//* zend_bailout()函数的实现 表示结束结束进程 */
 {
 	TSRMLS_FETCH();
 
@@ -893,12 +893,12 @@ ZEND_API void _zend_bailout(char *filename, uint lineno) /* {{{ */
 	CG(active_class_entry) = NULL;
 	CG(in_compilation) = EG(in_execution) = 0;
 	EG(current_execute_data) = NULL;
-	LONGJMP(*EG(bailout), FAILURE);
+	LONGJMP(*EG(bailout), FAILURE);/* LONGJMP longjmp 在 C 语言中，我们不能使用 goto 语句来跳转到另一个函数中的某个 label 处；但提供了两个函数——setjmp 和 longjmp来完成这种类型的分支跳转 */
 }
 /* }}} */
 END_EXTERN_C()
 
-ZEND_API void zend_append_version_info(const zend_extension *extension) /* {{{ */
+ZEND_API void zend_append_version_info(const zend_extension *extension) /* {{{ *//* 追加打印扩展的版本信息 */
 {
 	char *new_info;
 	uint new_info_length;
@@ -920,25 +920,25 @@ ZEND_API void zend_append_version_info(const zend_extension *extension) /* {{{ *
 }
 /* }}} */
 
-ZEND_API char *get_zend_version(void) /* {{{ */
+ZEND_API char *get_zend_version(void) /* {{{ *//* 获取zend版本信息 */
 {
 	return zend_version_info;
 }
 /* }}} */
 
-ZEND_API void zend_activate(TSRMLS_D) /* {{{ */
+ZEND_API void zend_activate(TSRMLS_D) /* {{{ *//* 激活ZEND调用函数 */
 {
 #ifdef ZTS
 	virtual_cwd_activate(TSRMLS_C);
 #endif
 	gc_reset(TSRMLS_C);
-	init_compiler(TSRMLS_C);
-	init_executor(TSRMLS_C);
-	startup_scanner(TSRMLS_C);
+	init_compiler(TSRMLS_C);/* 初始化编译器 */
+	init_executor(TSRMLS_C);/* 初始化执行器 */
+	startup_scanner(TSRMLS_C);/* 启动扫描器 */
 }
 /* }}} */
 
-void zend_call_destructors(TSRMLS_D) /* {{{ */
+void zend_call_destructors(TSRMLS_D) /* {{{ *//* 调用各种析构函数 */
 {
 	zend_try {
 		shutdown_destructors(TSRMLS_C);
@@ -946,7 +946,7 @@ void zend_call_destructors(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_deactivate(TSRMLS_D) /* {{{ */
+ZEND_API void zend_deactivate(TSRMLS_D) /* {{{ *//* 停止执行脚本调用函数 */
 {
 	/* we're no longer executing anything */
 	EG(opline_ptr) = NULL;
@@ -1028,7 +1028,7 @@ ZEND_API int zend_get_configuration_directive(const char *name, uint name_length
 		} \
 	} while (0)
 
-ZEND_API void zend_error(int type, const char *format, ...) /* {{{ */
+ZEND_API void zend_error(int type, const char *format, ...) /* {{{ *//* PHP执行脚本中的错误输出调用函数 */
 {
 	va_list args;
 	va_list usr_copy;
@@ -1059,7 +1059,7 @@ ZEND_API void zend_error(int type, const char *format, ...) /* {{{ */
 			case E_PARSE:
 			case E_COMPILE_ERROR:
 			case E_USER_ERROR:
-				if (zend_is_executing(TSRMLS_C)) {/* 获取opcode是否在执行中 */
+				if (zend_is_executing(TSRMLS_C)) {/* 如果处于执行阶段 */
 					error_lineno = zend_get_executed_lineno(TSRMLS_C);、/* 获取当前执行的行数 */
 				}
 				zend_exception_error(EG(exception), E_WARNING TSRMLS_CC);
@@ -1093,7 +1093,7 @@ ZEND_API void zend_error(int type, const char *format, ...) /* {{{ */
 		case E_USER_NOTICE:
 		case E_USER_DEPRECATED:
 		case E_RECOVERABLE_ERROR:
-			if (zend_is_compiling(TSRMLS_C)) {
+			if (zend_is_compiling(TSRMLS_C)) {/* 如果处于编译阶段 */
 				error_filename = zend_get_compiled_filename(TSRMLS_C);
 				error_lineno = zend_get_compiled_lineno(TSRMLS_C);
 			} else if (zend_is_executing(TSRMLS_C)) {
@@ -1280,7 +1280,7 @@ ZEND_API void zend_error(int type, const char *format, ...) /* {{{ */
 void zend_error_noreturn(int type, const char *format, ...) __attribute__ ((alias("zend_error"),noreturn));
 #endif
 
-ZEND_API void zend_output_debug_string(zend_bool trigger_break, const char *format, ...) /* {{{ */
+ZEND_API void zend_output_debug_string(zend_bool trigger_break, const char *format, ...) /* {{{ *//* debug模式打印信息 */
 {
 #if ZEND_DEBUG
 	va_list args;
@@ -1293,7 +1293,7 @@ ZEND_API void zend_output_debug_string(zend_bool trigger_break, const char *form
 		vsnprintf(output_buf, 1024, format, args);
 		OutputDebugString(output_buf);
 		OutputDebugString("\n");
-		if (trigger_break && IsDebuggerPresent()) {
+		if (trigger_break && IsDebuggerPresent()) {/* IsDebuggerPresent() c语言函数 是确定调用进程是否由用户模式的调试器调试 */
 			DebugBreak();
 		}
 	}
@@ -1306,7 +1306,7 @@ ZEND_API void zend_output_debug_string(zend_bool trigger_break, const char *form
 }
 /* }}} */
 
-ZEND_API int zend_execute_scripts(int type TSRMLS_DC, zval **retval, int file_count, ...) /* {{{ */
+ZEND_API int zend_execute_scripts(int type TSRMLS_DC, zval **retval, int file_count, ...) /* {{{ *//* 批量编译执行多个文件 */
 {
 	va_list files;
 	int i;
@@ -1392,10 +1392,10 @@ ZEND_API char *zend_make_compiled_string_description(const char *name TSRMLS_DC)
 	int cur_lineno;
 	char *compiled_string_description;
 
-	if (zend_is_compiling(TSRMLS_C)) {
+	if (zend_is_compiling(TSRMLS_C)) {/* 如果处于编译阶段 */
 		cur_filename = zend_get_compiled_filename(TSRMLS_C);
 		cur_lineno = zend_get_compiled_lineno(TSRMLS_C);
-	} else if (zend_is_executing(TSRMLS_C)) {
+	} else if (zend_is_executing(TSRMLS_C)) {/* 如果处于执行阶段 */
 		cur_filename = zend_get_executed_filename(TSRMLS_C);
 		cur_lineno = zend_get_executed_lineno(TSRMLS_C);
 	} else {

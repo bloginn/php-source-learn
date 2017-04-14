@@ -32,7 +32,7 @@ ZEND_API int le_index_ptr;
 static HashTable list_destructors;
 
 
-ZEND_API int zend_list_insert(void *ptr, int type TSRMLS_DC)
+ZEND_API int zend_list_insert(void *ptr, int type TSRMLS_DC)/* 线性表中新增元素 */
 {
 	int index;
 	zend_rsrc_list_entry le;
@@ -47,7 +47,7 @@ ZEND_API int zend_list_insert(void *ptr, int type TSRMLS_DC)
 	return index;
 }
 
-ZEND_API int _zend_list_delete(int id TSRMLS_DC)
+ZEND_API int _zend_list_delete(int id TSRMLS_DC)/* 线性表中删除元素 */
 {
 	zend_rsrc_list_entry *le;
 	
@@ -64,7 +64,7 @@ ZEND_API int _zend_list_delete(int id TSRMLS_DC)
 }
 
 
-ZEND_API void *_zend_list_find(int id, int *type TSRMLS_DC)
+ZEND_API void *_zend_list_find(int id, int *type TSRMLS_DC)/* 线性表中通过id查找元素 */
 {
 	zend_rsrc_list_entry *le;
 
@@ -77,7 +77,7 @@ ZEND_API void *_zend_list_find(int id, int *type TSRMLS_DC)
 	}
 }
 
-ZEND_API int _zend_list_addref(int id TSRMLS_DC)
+ZEND_API int _zend_list_addref(int id TSRMLS_DC)/* 增加线性表表中的元素引用次数 */
 {
 	zend_rsrc_list_entry *le;
 	
@@ -91,7 +91,7 @@ ZEND_API int _zend_list_addref(int id TSRMLS_DC)
 }
 
 
-ZEND_API int zend_register_resource(zval *rsrc_result, void *rsrc_pointer, int rsrc_type TSRMLS_DC)
+ZEND_API int zend_register_resource(zval *rsrc_result, void *rsrc_pointer, int rsrc_type TSRMLS_DC)/* 注册资源结构,例如MySQL curl gd等 */
 {
 	int rsrc_id;
 

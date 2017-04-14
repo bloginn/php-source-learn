@@ -28,12 +28,12 @@
 #include "zend_list.h"
 
 
-ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC) /* PHP变量的析构函数 释放zvalue的值 */
+ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC) /* PHP变量的析构函数 释放zvalue的值 debug时 ZEND_FILE_LINE_DC等价,const char *__zend_filename, const uint __zend_lineno */
 {
 	switch (Z_TYPE_P(zvalue) & IS_CONSTANT_TYPE_MASK) {
 		case IS_STRING:
 		case IS_CONSTANT:
-			CHECK_ZVAL_STRING_REL(zvalue);
+			CHECK_ZVAL_STRING_REL(zvalue);/* 检查zvalue的值是不是以\0结尾的,否则报错 */
 			str_efree_rel(zvalue->value.str.val);
 			break;
 		case IS_ARRAY: {
@@ -42,7 +42,7 @@ ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC) /* PHP变量的析
 				if (zvalue->value.ht && (zvalue->value.ht != &EG(symbol_table))) {
 					/* break possible cycles */
 					Z_TYPE_P(zvalue) = IS_NULL;
-					zend_hash_destroy(zvalue->value.ht);
+					zend_hash_destroy(zvalue->value.ht);/* 如果是数组的话,需要销毁该值的hash表 */
 					FREE_HASHTABLE(zvalue->value.ht);
 				}
 			}

@@ -401,7 +401,7 @@ struct _zend_execute_data {
 	HashTable *symbol_table;/* 全局符号表 保存了在顶层作用域中的变量 */
 	struct _zend_execute_data *prev_execute_data;
 	zval *old_error_reporting;
-	zend_bool nested;
+	zend_bool nested;/* 是否嵌套 */
 	zval **original_return_value;
 	zend_class_entry *current_scope;
 	zend_class_entry *current_called_scope;

@@ -1198,7 +1198,7 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 
 	tmp = getenv("ZEND_MM_SEG_SIZE");/* 内存段大小 */
 	if (tmp) {
-		seg_size = zend_atoi(tmp, 0);/* 将字符串转成int整数,因为getenv()的返回结果是字符串类型 */
+		seg_size = zend_atoi(tmp, 0);/* 将类似"10M"字符串转成int整数10240,因为getenv()的返回结果是字符串类型 */
 		if (zend_mm_low_bit(seg_size) != zend_mm_high_bit(seg_size)) { /* 判断seg_size是不是2的倍数 */
 			fprintf(stderr, "ZEND_MM_SEG_SIZE must be a power of two\n");
 /* See http://support.microsoft.com/kb/190351 */

@@ -58,14 +58,14 @@ typedef struct bucket {
 	void *pData;/* 指向value，一般是用户数据的副本，如果是指针数据，则指向pDataPtr */
 	void *pDataPtr;/* 如果是指针数据，此值会指向真正的value，同时上面pData会指向此值 */
 	struct bucket *pListNext;/* 整个hash表的下一元素 */
-	struct bucket *pListLast;/* 整个哈希表该元素的上一个元素 */
+	struct bucket *pListLast;/* 整个hash表的上一元素 */
 	struct bucket *pNext;/* 存放在同一个hash Bucket内的下一个元素 */
 	struct bucket *pLast;/* 同一个哈希bucket的上一个元素 */
 	const char *arKey;/* 保存当前值所对于的char *key字符串，这个字段只能定义在最后，实现变长结构体 */
 } Bucket;
 
 typedef struct _hashtable {
-	uint nTableSize;/* 标示哈希表的容量，最小为8，以2x增长 */
+	uint nTableSize;/* 哈希表的容量，最小为8，以2x增长 */
 	uint nTableMask;/* nTableSize-1 ， 索引取值的优化 */
 	uint nNumOfElements;/* hash Bucket中当前存在的元素个数，count()函数会直接返回此值 */
 	ulong nNextFreeElement;/* 下一个数字索引的位置 */
@@ -267,7 +267,7 @@ ZEND_API void _zend_hash_splice(HashTable *ht, uint nDataSize, copy_ctor_func_t 
  */
 
 static inline ulong zend_inline_hash_func(const char *arKey, uint nKeyLength) /* 使用times33算法将字符串转换成整数 */
-{ /* PHP在哈希算法上有所优化，使用了(hash<<5)+hash，效率有所提高。至于hash的初始值为什么为一个大素数5381，要数学上来解释了，不是很理解。 */
+{ /* PHP在哈希算法上有所优化，使用了(hash<<5)+hash，效率有所提高。至于hash的初始值为什么是一个大素数5381，要数学上来解释了，不是很理解。 */
 	register ulong hash = 5381;
 
 	/* variant with the hash unrolled eight times */

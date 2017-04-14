@@ -20,12 +20,12 @@
 
 /* $Id$ */
 
-/* If you change this file, please regenerate the zend_vm_execute.h and
- * zend_vm_opcodes.h files by running:
- * php zend_vm_gen.php
+/* 这个文件是生成zend_vm_execute.h的基础文件
+ * 如果改变了这个文件需要重新执行php zend_vm_gen.php命令
+ * 来生成新的zend_vm_execute.h文件
  */
 
-ZEND_VM_HANDLER(1, ZEND_ADD, CONST|TMP|VAR|CV, CONST|TMP|VAR|CV)
+ZEND_VM_HANDLER(1, ZEND_ADD, CONST|TMP|VAR|CV, CONST|TMP|VAR|CV)/* 最后生成例如:ZEND_ADD_SPEC_CONST_CONST_HANDLER,后两个参数两两组合共16种handler,并且生成ZEND_ADD的值为1 */
 {
 	USE_OPLINE
 	zend_free_op free_op1, free_op2;

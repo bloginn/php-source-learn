@@ -23,7 +23,7 @@
 #include "zend_llist.h"
 #include "zend_qsort.h"
 
-ZEND_API void zend_llist_init(zend_llist *l, size_t size, llist_dtor_func_t dtor, unsigned char persistent)
+ZEND_API void zend_llist_init(zend_llist *l, size_t size, llist_dtor_func_t dtor, unsigned char persistent)/* 初始化链表 */
 {
 	l->head  = NULL;
 	l->tail  = NULL;
@@ -34,7 +34,7 @@ ZEND_API void zend_llist_init(zend_llist *l, size_t size, llist_dtor_func_t dtor
 }
 
 
-ZEND_API void zend_llist_add_element(zend_llist *l, void *element)
+ZEND_API void zend_llist_add_element(zend_llist *l, void *element)/* 链表尾添加元素 */
 {
 	zend_llist_element *tmp = pemalloc(sizeof(zend_llist_element)+l->size-1, l->persistent);
 
@@ -52,7 +52,7 @@ ZEND_API void zend_llist_add_element(zend_llist *l, void *element)
 }
 
 
-ZEND_API void zend_llist_prepend_element(zend_llist *l, void *element)
+ZEND_API void zend_llist_prepend_element(zend_llist *l, void *element)/* 链表头添加元素 */
 {
 	zend_llist_element *tmp = pemalloc(sizeof(zend_llist_element)+l->size-1, l->persistent);
 
@@ -70,7 +70,7 @@ ZEND_API void zend_llist_prepend_element(zend_llist *l, void *element)
 }
 
 
-#define DEL_LLIST_ELEMENT(current, l) \
+#define DEL_LLIST_ELEMENT(current, l) \ /* 从链表l中删除元素current,并且调用析构函数 */
 			if ((current)->prev) {\
 				(current)->prev->next = (current)->next;\
 			} else {\
@@ -88,7 +88,7 @@ ZEND_API void zend_llist_prepend_element(zend_llist *l, void *element)
 			--l->count;
 
 
-ZEND_API void zend_llist_del_element(zend_llist *l, void *element, int (*compare)(void *element1, void *element2))
+ZEND_API void zend_llist_del_element(zend_llist *l, void *element, int (*compare)(void *element1, void *element2))/* 从链表l中查找元素element并删除 */
 {
 	zend_llist_element *current=l->head;
 
@@ -102,7 +102,7 @@ ZEND_API void zend_llist_del_element(zend_llist *l, void *element, int (*compare
 }
 
 
-ZEND_API void zend_llist_destroy(zend_llist *l)
+ZEND_API void zend_llist_destroy(zend_llist *l)/* 删除链表中所以元素 */
 {
 	zend_llist_element *current=l->head, *next;
 	
@@ -119,14 +119,14 @@ ZEND_API void zend_llist_destroy(zend_llist *l)
 }
 
 
-ZEND_API void zend_llist_clean(zend_llist *l)
+ZEND_API void zend_llist_clean(zend_llist *l)/* 清空链表 */
 {
 	zend_llist_destroy(l);
 	l->head = l->tail = NULL;
 }
 
 
-ZEND_API void *zend_llist_remove_tail(zend_llist *l)
+ZEND_API void *zend_llist_remove_tail(zend_llist *l)/* 删除链表的最后一个元素,并返回 */
 {
 	zend_llist_element *old_tail;
 	void *data;
@@ -155,7 +155,7 @@ ZEND_API void *zend_llist_remove_tail(zend_llist *l)
 }
 
 
-ZEND_API void zend_llist_copy(zend_llist *dst, zend_llist *src)
+ZEND_API void zend_llist_copy(zend_llist *dst, zend_llist *src)/* 复制一份链表src到dst中 */
 {
 	zend_llist_element *ptr;
 
@@ -168,7 +168,7 @@ ZEND_API void zend_llist_copy(zend_llist *dst, zend_llist *src)
 }
 
 
-ZEND_API void zend_llist_apply_with_del(zend_llist *l, int (*func)(void *data))
+ZEND_API void zend_llist_apply_with_del(zend_llist *l, int (*func)(void *data))/* 删除链表中的元素,并以每个元素作为参数调用func函数 */
 {
 	zend_llist_element *element, *next;
 
@@ -183,7 +183,7 @@ ZEND_API void zend_llist_apply_with_del(zend_llist *l, int (*func)(void *data))
 }
 
 
-ZEND_API void zend_llist_apply(zend_llist *l, llist_apply_func_t func TSRMLS_DC)
+ZEND_API void zend_llist_apply(zend_llist *l, llist_apply_func_t func TSRMLS_DC)/* 遍历链表 以每个元素作为参数调用func函数 */
 {
 	zend_llist_element *element;
 
@@ -192,7 +192,7 @@ ZEND_API void zend_llist_apply(zend_llist *l, llist_apply_func_t func TSRMLS_DC)
 	}
 }
 
-ZEND_API void zend_llist_sort(zend_llist *l, llist_compare_func_t comp_func TSRMLS_DC)
+ZEND_API void zend_llist_sort(zend_llist *l, llist_compare_func_t comp_func TSRMLS_DC)/* 使用快速排序算法对链表进行排序 */
 {
 	size_t i;
 
@@ -226,7 +226,7 @@ ZEND_API void zend_llist_sort(zend_llist *l, llist_compare_func_t comp_func TSRM
 }
 
 
-ZEND_API void zend_llist_apply_with_argument(zend_llist *l, llist_apply_with_arg_func_t func, void *arg TSRMLS_DC)
+ZEND_API void zend_llist_apply_with_argument(zend_llist *l, llist_apply_with_arg_func_t func, void *arg TSRMLS_DC)/* 遍历链表 以每个元素和arg作为参数调用func函数 */
 {
 	zend_llist_element *element;
 
@@ -236,7 +236,7 @@ ZEND_API void zend_llist_apply_with_argument(zend_llist *l, llist_apply_with_arg
 }
 
 
-ZEND_API void zend_llist_apply_with_arguments(zend_llist *l, llist_apply_with_args_func_t func TSRMLS_DC, int num_args, ...)
+ZEND_API void zend_llist_apply_with_arguments(zend_llist *l, llist_apply_with_args_func_t func TSRMLS_DC, int num_args, ...)/* 遍历链表 以每个元素和多个arg作为参数调用func函数 */
 {
 	zend_llist_element *element;
 	va_list args;
@@ -249,13 +249,13 @@ ZEND_API void zend_llist_apply_with_arguments(zend_llist *l, llist_apply_with_ar
 }
 
 
-ZEND_API int zend_llist_count(zend_llist *l)
+ZEND_API int zend_llist_count(zend_llist *l)/* 获取链表元素数量 */
 {
 	return l->count;
 }
 
 
-ZEND_API void *zend_llist_get_first_ex(zend_llist *l, zend_llist_position *pos)
+ZEND_API void *zend_llist_get_first_ex(zend_llist *l, zend_llist_position *pos)/* 获取链表的第一个元素 */
 {
 	zend_llist_position *current = pos ? pos : &l->traverse_ptr;
 
@@ -268,7 +268,7 @@ ZEND_API void *zend_llist_get_first_ex(zend_llist *l, zend_llist_position *pos)
 }
 
 
-ZEND_API void *zend_llist_get_last_ex(zend_llist *l, zend_llist_position *pos)
+ZEND_API void *zend_llist_get_last_ex(zend_llist *l, zend_llist_position *pos)/* 获取链表的最后一个元素 */
 {
 	zend_llist_position *current = pos ? pos : &l->traverse_ptr;
 
@@ -281,7 +281,7 @@ ZEND_API void *zend_llist_get_last_ex(zend_llist *l, zend_llist_position *pos)
 }
 
 
-ZEND_API void *zend_llist_get_next_ex(zend_llist *l, zend_llist_position *pos)
+ZEND_API void *zend_llist_get_next_ex(zend_llist *l, zend_llist_position *pos)/* 获取链表pos的下一个元素 */
 {
 	zend_llist_position *current = pos ? pos : &l->traverse_ptr;
 
@@ -295,7 +295,7 @@ ZEND_API void *zend_llist_get_next_ex(zend_llist *l, zend_llist_position *pos)
 }
 
 
-ZEND_API void *zend_llist_get_prev_ex(zend_llist *l, zend_llist_position *pos)
+ZEND_API void *zend_llist_get_prev_ex(zend_llist *l, zend_llist_position *pos)/* 获取链表pos的上一个元素 */
 {
 	zend_llist_position *current = pos ? pos : &l->traverse_ptr;
 

@@ -29,7 +29,7 @@ typedef void (*zend_objects_free_object_storage_t)(void *object TSRMLS_DC);
 typedef void (*zend_objects_store_clone_t)(void *object, void **object_clone TSRMLS_DC);
 
 typedef struct _zend_object_store_bucket {
-	zend_bool destructor_called;
+	zend_bool destructor_called;/* 用来标记对象的析构函数是否被调用过 */
 	zend_bool valid;
 	zend_uchar apply_count;
 	union _store_bucket {

@@ -30,11 +30,11 @@ ZEND_API int zend_stack_init(zend_stack *stack)/* 初始化堆栈 */
 	return SUCCESS;
 }
 
-ZEND_API int zend_stack_push(zend_stack *stack, const void *element, int size)/* 将数据推送到堆栈中 */
+ZEND_API int zend_stack_push(zend_stack *stack, const void *element, int size)/* 入栈 */
 {
 	if (stack->top >= stack->max) {		/* we need to allocate more memory */ /* 如果堆栈空间用完 */
 		stack->elements = (void **) erealloc(stack->elements,
-				   (sizeof(void **) * (stack->max += STACK_BLOCK_SIZE))); /* 将堆栈的大小增加STACK_BLOCK_SIZE即64 */
+				   (sizeof(void **) * (stack->max += STACK_BLOCK_SIZE))); /* 重新分配堆栈大小 增加STACK_BLOCK_SIZE即64 */
 		if (!stack->elements) {
 			return FAILURE;
 		}
@@ -66,7 +66,7 @@ ZEND_API int zend_stack_del_top(zend_stack *stack)/* 删除栈顶的元素 */
 }
 
 
-ZEND_API int zend_stack_int_top(const zend_stack *stack)/* 获取栈顶的地址 */
+ZEND_API int zend_stack_int_top(const zend_stack *stack)/* 获取栈顶元素的内存地址 */
 {
 	int *e;
 
@@ -88,7 +88,7 @@ ZEND_API int zend_stack_is_empty(const zend_stack *stack)/* 判断堆栈是否�
 }
 
 
-ZEND_API int zend_stack_destroy(zend_stack *stack)/* 销毁堆栈 */
+ZEND_API int zend_stack_destroy(zend_stack *stack)/* 清空堆栈 */
 {
 	int i;
 
@@ -116,19 +116,19 @@ ZEND_API int zend_stack_count(const zend_stack *stack)/* 获取堆栈的元素�
 }
 
 /* 用于非ZTS */
-ZEND_API void zend_stack_apply(zend_stack *stack, int type, int (*apply_function)(void *element))/* 堆栈应用还是申请 */
+ZEND_API void zend_stack_apply(zend_stack *stack, int type, int (*apply_function)(void *element))/* 遍历堆栈元素并调用apply_function函数操作元素 */
 {
 	int i;
 
 	switch (type) {
-		case ZEND_STACK_APPLY_TOPDOWN:/* 从上往下 */
+		case ZEND_STACK_APPLY_TOPDOWN:/* 从栈顶到栈底遍历 */
 			for (i=stack->top-1; i>=0; i--) {
 				if (apply_function(stack->elements[i])) {
 					break;
 				}
 			}
 			break;
-		case ZEND_STACK_APPLY_BOTTOMUP:/* 从下往上 */
+		case ZEND_STACK_APPLY_BOTTOMUP:/* 从栈底到栈顶遍历 */
 			for (i=0; i<stack->top; i++) {
 				if (apply_function(stack->elements[i])) {
 					break;
@@ -139,19 +139,19 @@ ZEND_API void zend_stack_apply(zend_stack *stack, int type, int (*apply_function
 }
 
 /* 用于ZTS */
-ZEND_API void zend_stack_apply_with_argument(zend_stack *stack, int type, int (*apply_function)(void *element, void *arg), void *arg)/* 堆栈应用还是申请 用于ZTS */
+ZEND_API void zend_stack_apply_with_argument(zend_stack *stack, int type, int (*apply_function)(void *element, void *arg), void *arg)/* 遍历堆栈元素并调用apply_function函数操作元素 用于ZTS */
 {
 	int i;
 
 	switch (type) {
-		case ZEND_STACK_APPLY_TOPDOWN:/* 从上往下 */
+		case ZEND_STACK_APPLY_TOPDOWN:/* 从栈顶到栈底遍历 */
 			for (i=stack->top-1; i>=0; i--) {
 				if (apply_function(stack->elements[i], arg)) {
 					break;
 				}
 			}
 			break;
-		case ZEND_STACK_APPLY_BOTTOMUP:/* 从下往上 */
+		case ZEND_STACK_APPLY_BOTTOMUP:/* 从栈底到栈顶遍历 */
 			for (i=0; i<stack->top; i++) {
 				if (apply_function(stack->elements[i], arg)) {
 					break;

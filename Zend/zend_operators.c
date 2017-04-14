@@ -79,15 +79,15 @@ static const unsigned char tolower_map[256] = {
 		zend_binary_strncasecmp
  */
 
-ZEND_API int zend_atoi(const char *str, int str_len)/* 将字符串转换成int整数 */ /* {{{ */ 
+ZEND_API int zend_atoi(const char *str, int str_len)/* 将字符串转换成int整数,主要用于内存单位换算 例如: 1g,1M,1K最终结果都为1024  */ /* {{{ */ 
 {
 	int retval;
 
 	if (!str_len) {
 		str_len = strlen(str);
 	}
-	retval = strtol(str, NULL, 0);/* strtol() 函数用来将字符串采用十进制转换为长整型数(long) */
-	if (str_len>0) {
+	retval = strtol(str, NULL, 0);	/* strtol(const char *nptr,char **endptr,int base) 会扫描参数nptr字符串，跳过前面的空格字符 直到遇上数字或正负符号才开始做转换，当base值为0时则是采用10进制做转换 */
+	if (str_len>0) {				/* 再遇到非数字或字符串结束时('\0')结束转换 并将结果返回。若参数endptr不为NULL，则会将遇到不合条件而终止的nptr中的字符指针由endptr返回；若参数endptr为NULL，则会不返回非法字符串 */
 		switch (str[str_len-1]) {
 			case 'g':
 			case 'G':
@@ -107,14 +107,14 @@ ZEND_API int zend_atoi(const char *str, int str_len)/* 将字符串转换成int�
 }
 /* }}} */
 
-ZEND_API long zend_atol(const char *str, int str_len)/* 将字符串转换成long整数 */ /* {{{ */ 
+ZEND_API long zend_atol(const char *str, int str_len)/* 同上，只不过返回的是long类型 */ /* {{{ */ 
 {
 	long retval;
 
 	if (!str_len) {
 		str_len = strlen(str);
 	}
-	retval = strtol(str, NULL, 0);/* strtol() 函数用来将字符串采用十进制转换为长整型数(long) */
+	retval = strtol(str, NULL, 0);/* 同上 */
 	if (str_len>0) {
 		switch (str[str_len-1]) {
 			case 'g':

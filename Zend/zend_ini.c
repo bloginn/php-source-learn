@@ -86,11 +86,11 @@ static int zend_restore_ini_entry_wrapper(zend_ini_entry **ini_entry TSRMLS_DC) 
 /*
  * Startup / shutdown
  */
-ZEND_API int zend_ini_startup(TSRMLS_D) /* {{{ */
+ZEND_API int zend_ini_startup(TSRMLS_D) /* {{{ *//* PHP配置机制启动 */
 {
 	registered_zend_ini_directives = (HashTable *) malloc(sizeof(HashTable));
 
-	EG(ini_directives) = registered_zend_ini_directives;
+	EG(ini_directives) = registered_zend_ini_directives;/* 配置指定 */
 	EG(modified_ini_directives) = NULL;
 	EG(error_reporting_ini_entry) = NULL;
 	if (zend_hash_init_ex(registered_zend_ini_directives, 100, NULL, NULL, 1, 0) == FAILURE) {
@@ -100,7 +100,7 @@ ZEND_API int zend_ini_startup(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API int zend_ini_shutdown(TSRMLS_D) /* {{{ */
+ZEND_API int zend_ini_shutdown(TSRMLS_D) /* {{{ *//* PHP配置机制关闭 */
 {
 	zend_hash_destroy(EG(ini_directives));
 	free(EG(ini_directives));
@@ -108,7 +108,7 @@ ZEND_API int zend_ini_shutdown(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API int zend_ini_global_shutdown(TSRMLS_D) /* {{{ */
+ZEND_API int zend_ini_global_shutdown(TSRMLS_D) /* {{{ *//* PHP全局配置关闭 */
 {
 	zend_hash_destroy(registered_zend_ini_directives);
 	free(registered_zend_ini_directives);
@@ -165,7 +165,7 @@ static int ini_key_compare(const void *a, const void *b TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_ini_sort_entries(TSRMLS_D) /* {{{ */
+ZEND_API void zend_ini_sort_entries(TSRMLS_D) /* {{{ *//* 使用快速排序算法对配置指令进行排序 */
 {
 	zend_hash_sort(EG(ini_directives), zend_qsort, ini_key_compare, 0 TSRMLS_CC);
 }

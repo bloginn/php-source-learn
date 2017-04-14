@@ -21,7 +21,7 @@
 #include "zend.h"
 #include "zend_ts_hash.h"
 
-/* ts management functions */
+/* 该文件用于线程安全的管理函数 */
 static void begin_read(TsHashTable *ht)
 {
 #ifdef ZTS

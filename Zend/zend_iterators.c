@@ -48,14 +48,14 @@ static zend_object_handlers iterator_object_handlers = {
 	NULL  /* count */
 };
 
-ZEND_API void zend_register_iterator_wrapper(TSRMLS_D)
+ZEND_API void zend_register_iterator_wrapper(TSRMLS_D)/* 迭代器注册函数 */
 {
 	INIT_CLASS_ENTRY(zend_iterator_class_entry, "__iterator_wrapper", NULL);
 	str_free(zend_iterator_class_entry.name);
 	zend_iterator_class_entry.name = "__iterator_wrapper";
 }
 
-static void iter_wrapper_dtor(void *object, zend_object_handle handle TSRMLS_DC)
+static void iter_wrapper_dtor(void *object, zend_object_handle handle TSRMLS_DC)/* 迭代器析构函数 */
 {
 	zend_object_iterator *iter = (zend_object_iterator*)object;
 	iter->funcs->dtor(iter TSRMLS_CC);

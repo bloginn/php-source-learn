@@ -254,7 +254,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 
 	CHECK_INIT(ht);
 
-	h = zend_inline_hash_func(arKey, nKeyLength);/* 将arKey的值通过times33转换成整数，用于索引 */
+	h = zend_inline_hash_func(arKey, nKeyLength);/* 将arKey的值通过times33算法转换成整数，用于索引 */
 	nIndex = h & ht->nTableMask;/* 与nTableMask按位与避免索引大于nTableMask  这里使用&操作而不是使用取模,因为按位与比取模快 */
 
 	p = ht->arBuckets[nIndex];
@@ -456,7 +456,7 @@ static void zend_hash_do_resize(HashTable *ht)/* 扩大HashTable的大小,2倍�
 		ht->arBuckets = t;/* 扩大bucket的内存大小 */
 		ht->nTableSize = (ht->nTableSize << 1);/* 扩大nTableSize的大小 */
 		ht->nTableMask = ht->nTableSize - 1;/* 扩大nTableMask的大小 */
-		zend_hash_rehash(ht);/* 重新整理索引 */
+		zend_hash_rehash(ht);/* 重建索引 */
 		HANDLE_UNBLOCK_INTERRUPTIONS();
 	}
 }

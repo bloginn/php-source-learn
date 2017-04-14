@@ -284,7 +284,7 @@ ZEND_API int zend_get_compiled_lineno(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API zend_bool zend_is_compiling(TSRMLS_D) /* {{{ */
+ZEND_API zend_bool zend_is_compiling(TSRMLS_D) /* {{{ *//* 是否处于编译阶段 */
 {
 	return CG(in_compilation);
 }

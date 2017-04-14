@@ -88,7 +88,7 @@ static const char *zend_new_interned_string_int(const char *arKey, int nKeyLengt
 	uint nIndex;
 	Bucket *p;
 
-	if (IS_INTERNED(arKey)) { /* IS_INTERNED在zend_string.h中38行定义，表示arKey是非在interned_strings_start和interned_strings_end之间 */
+	if (IS_INTERNED(arKey)) { /* IS_INTERNED在zend_string.h中38行定义，表示arKey是否在interned_strings_start和interned_strings_end之间 */
 		return arKey;
 	}
 

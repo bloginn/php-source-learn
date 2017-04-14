@@ -82,7 +82,7 @@ ZEND_API void zend_html_puts(const char *s, uint len TSRMLS_DC) /* 将字符串�
 }
 
 
-ZEND_API void zend_highlight(zend_syntax_highlighter_ini *syntax_highlighter_ini TSRMLS_DC)
+ZEND_API void zend_highlight(zend_syntax_highlighter_ini *syntax_highlighter_ini TSRMLS_DC)/* PHP代码高亮输出 */
 {
 	zval token;
 	int token_type;

@@ -21,11 +21,11 @@
 #ifndef ZEND_VM_OPCODES_H
 #define ZEND_VM_OPCODES_H
 
-BEGIN_EXTERN_C()
+BEGIN_EXTERN_C() /* c++编译器 #define BEGIN_EXTERN_C() extern "C" { */
 
 ZEND_API const char *zend_get_opcode_name(zend_uchar opcode); /* 通过opcode码获取opcode名称 */
 
-END_EXTERN_C()
+END_EXTERN_C() /* c++编译器 #define END_EXTERN_C() } */
 
 #define ZEND_NOP                               0
 #define ZEND_ADD                               1

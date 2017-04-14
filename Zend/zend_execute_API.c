@@ -412,7 +412,7 @@ ZEND_API uint zend_get_executed_lineno(TSRMLS_D)/* 获取当前被执行的文�
 }
 /* }}} */
 
-ZEND_API zend_bool zend_is_executing(TSRMLS_D)/* 获取opcode是否正在执行中 */ /* {{{ */
+ZEND_API zend_bool zend_is_executing(TSRMLS_D)/* 是否处于执行阶段 */ /* {{{ */
 {
 	return EG(in_execution);
 }
@@ -1209,7 +1209,7 @@ void execute_new_code(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_timeout(int dummy) /* {{{ */
+ZEND_API void zend_timeout(int dummy) /* {{{ *//* 脚本执行超时的报错输出 */
 {
 	TSRMLS_FETCH();
 

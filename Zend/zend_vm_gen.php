@@ -44,8 +44,8 @@ $header_text = <<< DATA
 DATA;
 
 /*
-	This script creates zend_vm_execute.h and zend_vm_opcodes.h
-	from existing zend_vm_def.h and zend_vm_execute.skl
+	这个文件作用是:执行php zend_vm_gen.php命令通过zend_vm_def.h zend_vm_execute.skl两个文件
+	生成zend_vm_execute.h zend_vm_opcodes.h zend_vm_opcodes.h
 */
 
 error_reporting(E_ALL);
