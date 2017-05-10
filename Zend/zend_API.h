@@ -32,13 +32,13 @@
 
 BEGIN_EXTERN_C()
 
-typedef struct _zend_function_entry {
-	const char *fname;
+typedef struct _zend_function_entry {/* 保存函数的结构体 */
+	const char *fname;/* 函数的名称 */
 	void (*handler)(INTERNAL_FUNCTION_PARAMETERS);
-	const struct _zend_arg_info *arg_info;
-	zend_uint num_args;
+	const struct _zend_arg_info *arg_info;/* 函数中参数 */
+	zend_uint num_args;/* 参数个数 */
 	zend_uint flags;
-} zend_function_entry;
+} zend_function_entry;/* 保存函数的结构体 */
 
 typedef struct _zend_fcall_info {
 	size_t size;

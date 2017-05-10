@@ -234,7 +234,7 @@ static zend_mm_segment* zend_mm_mem_mmap_zero_alloc(zend_mm_storage *storage, si
 
 static zend_mm_storage* zend_mm_mem_win32_init(void *params)/* wind32系统分配内存段的堆栈 */
 {
-	HANDLE heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);/* HeapCreate，指的是进程中创建辅助堆栈, HEAP_NO_SERIALIZE：对堆的访问是非独占的，如果一个线程没有完成对堆的操作，其它线程也可以进程堆操作，这个开关是非常危险的，应尽量避免使用 */
+	HANDLE heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);/* HeapCreate，指的是进程中创建辅助堆栈, HEAP_NO_SERIALIZE:对堆的访问是非独占的，如果一个线程没有完成对堆的操作，其它线程也可以进程堆操作，这个开关是非常危险的，应尽量避免使用 */
 	zend_mm_storage* storage;
 
 	if (heap == NULL) {
@@ -400,7 +400,7 @@ typedef struct _zend_mm_free_block {
 	struct _zend_mm_free_block *next_free_block;
 
 	struct _zend_mm_free_block **parent;
-	struct _zend_mm_free_block *child[2];/* 树结构 */
+	struct _zend_mm_free_block *child[2];/* 二叉树结构 */
 } zend_mm_free_block;
 
 #define ZEND_MM_NUM_BUCKETS (sizeof(size_t) << 3)
@@ -1598,7 +1598,7 @@ static int zend_mm_check_heap(zend_mm_heap *heap, int silent ZEND_FILE_LINE_DC Z
 }
 #endif
 f
-ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, int full_shutdown, int silent TSRMLS_DC)/* 内存关闭函数，full_shutdown是否整个内存堆关闭 */
+ZEND_API void zend_mm_shutdown(zend_mm_heap *heap, int full_shutdown, int silent TSRMLS_DC)/* 内存关闭函数，full_shutdown 是否整个内存堆关闭 */
 {
 	zend_mm_storage *storage;
 	zend_mm_segment *segment;
@@ -2419,7 +2419,7 @@ ZEND_API int is_zend_mm(TSRMLS_D)/* 是否使用的ZEND内存管理功能 */
 	return AG(mm_heap)->use_zend_alloc;
 }
 
-ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存申请调用入口，真正的emalloc(size)实际就是掉的这里，#define emalloc(size)	_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC) */
+ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)/* 内存申请调用入口，真正的emalloc(size)实际就是调用这里，#define emalloc(size)	_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC) */
 {
 	TSRMLS_FETCH();
 

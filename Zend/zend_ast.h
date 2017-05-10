@@ -32,7 +32,7 @@ typedef enum _zend_ast_kind {
 	ZEND_BOOL_AND,
 	ZEND_BOOL_OR,
 	ZEND_SELECT,
-	ZEND_UNARY_PLUS,
+	ZEND_UNARY_PLUS,/* unary 一元的 */
 	ZEND_UNARY_MINUS,
 } zend_ast_kind;
 

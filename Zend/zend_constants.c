@@ -36,7 +36,7 @@ void free_zend_constant(zend_constant *c)/* 常量的销毁函数 */
 }
 
 
-void copy_zend_constant(zend_constant *c)
+void copy_zend_constant(zend_constant *c)/* 复制常量 */
 {
 	c->name = str_strndup(c->name, c->name_len - 1);
 	if (!(c->flags & CONST_PERSISTENT)) {

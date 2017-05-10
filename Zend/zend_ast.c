@@ -65,7 +65,7 @@ ZEND_API zend_ast* zend_ast_create_ternary(uint kind, zend_ast *op0, zend_ast *o
 
 ZEND_API zend_ast* zend_ast_create_dynamic(uint kind) /* 语法解析器调用，主要用于数组双箭头=>的调用 */
 {
-	zend_ast *ast = emalloc(sizeof(zend_ast) + sizeof(zend_ast*) * 3); /* use 4 children as deafult */
+	zend_ast *ast = emalloc(sizeof(zend_ast) + sizeof(zend_ast*) * 3); /* 主要用于数组赋值中,刚开始使用4个 */
 	ast->kind = kind;
 	ast->children = 0;
 	return ast;

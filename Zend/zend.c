@@ -41,7 +41,7 @@
 # define GLOBAL_FUNCTION_TABLE		CG(function_table) /* 等价compiler_globals.function_table */
 # define GLOBAL_CLASS_TABLE			CG(class_table) /* 等价compiler_globals.class_table */
 # define GLOBAL_AUTO_GLOBALS_TABLE	CG(auto_globals) /* 等价compiler_globals.auto_globals */
-# define GLOBAL_CONSTANTS_TABLE		EG(zend_constants) /* 等价compiler_globals.zend_constants */
+# define GLOBAL_CONSTANTS_TABLE		EG(zend_constants) /* 等价executer_globals.zend_constants */
 #endif
 
 /* true multithread-shared globals */
@@ -65,7 +65,7 @@ static int (*zend_get_configuration_directive_p)(const char *name, uint name_len
 
 static ZEND_INI_MH(OnUpdateErrorReporting) /* {{{ */
 { /* ZEND_INI_MH(OnUpdateErrorReporting)等价int OnUpdateErrorReporting(zend_ini_entry *entry, char *new_value, uint new_value_length, void *mh_arg1, void *mh_arg2, void *mh_arg3, int stage TSRMLS_DC) */
-	if (!new_value) { /* E_ALL是所以错误级别的和二进制为111111111111111,请看Zend/zend_errors.h文件,E_ALL & ~E_NOTICE表示排除E_NOTICE */
+	if (!new_value) { /* E_ALL是所有错误级别的和二进制为111111111111111,请看Zend/zend_errors.h文件,E_ALL & ~E_NOTICE表示排除E_NOTICE */
 		EG(error_reporting) = E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED;
 	} else { /* EG(error_reporting)等价于executor_globals.error_reporting */
 		EG(error_reporting) = atoi(new_value);
@@ -128,10 +128,10 @@ ZEND_API zval zval_used_for_init; /* True global variable */
 /* version information */
 static char *zend_version_info;
 static uint zend_version_info_length;
-#define ZEND_CORE_VERSION_INFO	"Zend Engine v" ZEND_VERSION ", Copyright (c) 1998-2016 Zend Technologies\n"
-#define PRINT_ZVAL_INDENT 4
+#define ZEND_CORE_VERSION_INFO	"Zend Engine v" ZEND_VERSION ", Copyright (c) 1998-2016 Zend Technologies\n" /* zend内核版本信息*/
+#define PRINT_ZVAL_INDENT 4 /* 每个缩进等价的空格数 */
 
-static void print_hash(zend_write_func_t write_func, HashTable *ht, int indent, zend_bool is_object TSRMLS_DC) /* {{{ */
+static void print_hash(zend_write_func_t write_func, HashTable *ht, int indent, zend_bool is_object TSRMLS_DC) /* {{{ *//* 打印hash值 */
 {
 	zval **tmp;
 	char *string_key;
@@ -204,7 +204,7 @@ static void print_flat_hash(HashTable *ht TSRMLS_DC) /* {{{ */
 
 	zend_hash_internal_pointer_reset_ex(ht, &iterator);
 	while (zend_hash_get_current_data_ex(ht, (void **) &tmp, &iterator) == SUCCESS) {
-		if (i++ > 0) {
+		if (i++ > 0) {/* 这是常见的在数据之间加逗号的做法 在非首元素前输出 */
 			ZEND_PUTS(",");
 		}
 		ZEND_PUTS("[");
@@ -223,7 +223,7 @@ static void print_flat_hash(HashTable *ht TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_make_printable_zval(zval *expr, zval *expr_copy, int *use_copy) /* {{{ */
+ZEND_API void zend_make_printable_zval(zval *expr, zval *expr_copy, int *use_copy) /* {{{ *//* 生成可打印的变量 */
 {
 	if (Z_TYPE_P(expr)==IS_STRING) {
 		*use_copy = 0;
@@ -308,13 +308,13 @@ ZEND_API void zend_make_printable_zval(zval *expr, zval *expr_copy, int *use_cop
 }
 /* }}} */
 
-ZEND_API int zend_print_zval(zval *expr, int indent) /* {{{ */
+ZEND_API int zend_print_zval(zval *expr, int indent) /* {{{ *//* 打印变量 */
 {
 	return zend_print_zval_ex(zend_write, expr, indent);
 }
 /* }}} */
 
-ZEND_API int zend_print_zval_ex(zend_write_func_t write_func, zval *expr, int indent) /* {{{ */
+ZEND_API int zend_print_zval_ex(zend_write_func_t write_func, zval *expr, int indent) /* {{{ *//* 打印变量 */
 {
 	zval expr_copy;
 	int use_copy;
@@ -337,7 +337,7 @@ ZEND_API int zend_print_zval_ex(zend_write_func_t write_func, zval *expr, int in
 }
 /* }}} */
 
-ZEND_API void zend_print_flat_zval_r(zval *expr TSRMLS_DC) /* {{{ */
+ZEND_API void zend_print_flat_zval_r(zval *expr TSRMLS_DC) /* {{{ *//* 打印变量 */
 {
 	switch (Z_TYPE_P(expr)) {
 		case IS_ARRAY:
@@ -390,13 +390,13 @@ ZEND_API void zend_print_flat_zval_r(zval *expr TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-ZEND_API void zend_print_zval_r(zval *expr, int indent TSRMLS_DC) /* {{{ */
+ZEND_API void zend_print_zval_r(zval *expr, int indent TSRMLS_DC) /* {{{ *//* 打印关于变量的易于理解的信息 例如用于print_r函数的打印信息 */
 {
 	zend_print_zval_r_ex(zend_write, expr, indent TSRMLS_CC);
 }
 /* }}} */
 
-ZEND_API void zend_print_zval_r_ex(zend_write_func_t write_func, zval *expr, int indent TSRMLS_DC) /* {{{ */
+ZEND_API void zend_print_zval_r_ex(zend_write_func_t write_func, zval *expr, int indent TSRMLS_DC) /* {{{ *//* 打印变量 */
 {
 	switch (Z_TYPE_P(expr)) {
 		case IS_ARRAY:
@@ -451,7 +451,7 @@ ZEND_API void zend_print_zval_r_ex(zend_write_func_t write_func, zval *expr, int
 }
 /* }}} */
 
-static FILE *zend_fopen_wrapper(const char *filename, char **opened_path TSRMLS_DC) /* {{{ */
+static FILE *zend_fopen_wrapper(const char *filename, char **opened_path TSRMLS_DC) /* {{{ *//* 打开文件并返回句柄的函数 */
 {
 	if (opened_path) {
 		*opened_path = estrdup(filename);
@@ -467,7 +467,7 @@ static zend_uint compiler_options_default = ZEND_COMPILE_DEFAULT;
 #else
 # define asp_tags_default			0
 # define short_tags_default			1
-# define compiler_options_default	ZEND_COMPILE_DEFAULT
+# define compiler_options_default	ZEND_COMPILE_DEFAULT /* 等价 (1<<1) */
 #endif
 
 static void zend_set_default_compile_time_values(TSRMLS_D) /* {{{ */
@@ -534,7 +534,7 @@ static void compiler_globals_ctor(zend_compiler_globals *compiler_globals TSRMLS
 }
 /* }}} */
 
-static void compiler_globals_dtor(zend_compiler_globals *compiler_globals TSRMLS_DC) /* {{{ */
+static void compiler_globals_dtor(zend_compiler_globals *compiler_globals TSRMLS_DC) /* {{{ *//* 编译结束后的析构函数 */
 {
 	if (compiler_globals->function_table != GLOBAL_FUNCTION_TABLE) {
 		zend_hash_destroy(compiler_globals->function_table);
@@ -558,7 +558,7 @@ static void compiler_globals_dtor(zend_compiler_globals *compiler_globals TSRMLS
 }
 /* }}} */
 
-static void executor_globals_ctor(zend_executor_globals *executor_globals TSRMLS_DC) /* {{{ */
+static void executor_globals_ctor(zend_executor_globals *executor_globals TSRMLS_DC) /* {{{ *//* 执行开始前的构造函数 */
 {
 	zend_startup_constants(TSRMLS_C);
 	zend_copy_constants(EG(zend_constants), GLOBAL_CONSTANTS_TABLE);
@@ -580,7 +580,7 @@ static void executor_globals_ctor(zend_executor_globals *executor_globals TSRMLS
 }
 /* }}} */
 
-static void executor_globals_dtor(zend_executor_globals *executor_globals TSRMLS_DC) /* {{{ */
+static void executor_globals_dtor(zend_executor_globals *executor_globals TSRMLS_DC) /* {{{ *//* 执行结束后的析构函数 */
 {
 	zend_ini_shutdown(TSRMLS_C);
 	if (&executor_globals->persistent_list != global_persistent_list) {
@@ -635,7 +635,7 @@ static zend_bool php_auto_globals_create_globals(const char *name, uint name_len
 }
 /* }}} */
 
-int zend_startup(zend_utility_functions *utility_functions, char **extensions TSRMLS_DC) /* {{{ */
+int zend_startup(zend_utility_functions *utility_functions, char **extensions TSRMLS_DC) /* {{{ *//* 启动zend引擎操作 */
 {
 #ifdef ZTS
 	zend_compiler_globals *compiler_globals;
@@ -647,7 +647,7 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 	extern zend_php_scanner_globals language_scanner_globals;
 #endif
 
-	start_memory_manager(TSRMLS_C);
+	start_memory_manager(TSRMLS_C);/* 启动内存管理机制 */
 
 	virtual_cwd_startup(); /* Could use shutdown to free the main cwd but it would just slow it down for CGI */
 
@@ -656,10 +656,10 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 	fpsetmask(0);
 #endif
 
-	zend_startup_strtod();
-	zend_startup_extensions_mechanism();
+	zend_startup_strtod();/* 非线程安全不做任何操作 */
+	zend_startup_extensions_mechanism();/* 启动扩展机制 */
 
-	/* Set up utility functions and values */
+	/* Set up utility functions and values 设置实用函数和值 */
 	zend_error_cb = utility_functions->error_function;
 	zend_printf = utility_functions->printf_function;
 	zend_write = (zend_write_func_t) utility_functions->write_function;
@@ -686,7 +686,7 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 	zend_execute_ex = dtrace_execute_ex;
 	zend_execute_internal = dtrace_execute_internal;
 #else
-	zend_compile_file = compile_file;
+	zend_compile_file = compile_file;/* 用zend_compile_file函数调用实际就是调用zend_language_scanner.l中的compile_file函数  */
 	zend_execute_ex = execute_ex;
 	zend_execute_internal = NULL;
 #endif /* HAVE_SYS_SDT_H */
@@ -704,10 +704,10 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 	GLOBAL_AUTO_GLOBALS_TABLE = (HashTable *) malloc(sizeof(HashTable));
 	GLOBAL_CONSTANTS_TABLE = (HashTable *) malloc(sizeof(HashTable));
 
-	zend_hash_init_ex(GLOBAL_FUNCTION_TABLE, 100, NULL, ZEND_FUNCTION_DTOR, 1, 0);
-	zend_hash_init_ex(GLOBAL_CLASS_TABLE, 10, NULL, ZEND_CLASS_DTOR, 1, 0);
-	zend_hash_init_ex(GLOBAL_AUTO_GLOBALS_TABLE, 8, NULL, NULL, 1, 0);
-	zend_hash_init_ex(GLOBAL_CONSTANTS_TABLE, 20, NULL, ZEND_CONSTANT_DTOR, 1, 0);
+	zend_hash_init_ex(GLOBAL_FUNCTION_TABLE, 100, NULL, ZEND_FUNCTION_DTOR, 1, 0);/* 申请和初始化用于保存全局函数的HASH表 */
+	zend_hash_init_ex(GLOBAL_CLASS_TABLE, 10, NULL, ZEND_CLASS_DTOR, 1, 0);/* 申请和初始化用于保存全局类的HASH表 */
+	zend_hash_init_ex(GLOBAL_AUTO_GLOBALS_TABLE, 8, NULL, NULL, 1, 0);/* 申请和初始化用于保存_POST,_GET,_COOKIE,_SERVER,_ENV,_REQUEST,_FILES,GLOBALS的结构的HASH表 */
+	zend_hash_init_ex(GLOBAL_CONSTANTS_TABLE, 20, NULL, ZEND_CONSTANT_DTOR, 1, 0);/* 申请和初始化用于保存全局常量的HASH表 */
 
 	zend_hash_init_ex(&module_registry, 50, NULL, ZEND_MODULE_DTOR, 1, 0);
 	zend_init_rsrc_list_dtors();
@@ -745,16 +745,16 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 #endif
 
 	zend_interned_strings_init(TSRMLS_C);
-	zend_startup_builtin_functions(TSRMLS_C);
-	zend_register_standard_constants(TSRMLS_C);
-	zend_register_auto_global("GLOBALS", sizeof("GLOBALS") - 1, 1, php_auto_globals_create_globals TSRMLS_CC);
+	zend_startup_builtin_functions(TSRMLS_C);/* 开启PHP内部支持的函数 */
+	zend_register_standard_constants(TSRMLS_C);/* 注册标准常量 */
+	zend_register_auto_global("GLOBALS", sizeof("GLOBALS") - 1, 1, php_auto_globals_create_globals TSRMLS_CC);/* 注册全局变量 */
 
 #ifndef ZTS
 	zend_init_rsrc_plist(TSRMLS_C);
 	zend_init_exception_op(TSRMLS_C);
 #endif
 
-	zend_ini_startup(TSRMLS_C);
+	zend_ini_startup(TSRMLS_C);/* 启动PHP配置机制 */
 
 #ifdef ZTS
 	tsrm_set_new_thread_end_handler(zend_new_thread_end_handler);
@@ -764,11 +764,11 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 }
 /* }}} */
 
-void zend_register_standard_ini_entries(TSRMLS_D) /* {{{ */
+void zend_register_standard_ini_entries(TSRMLS_D) /* {{{ *//* 注册标准的PHP配置信息结构 */
 {
 	int module_number = 0;
 
-	REGISTER_INI_ENTRIES();
+	REGISTER_INI_ENTRIES();/* 等价 zend_register_ini_entries(ini_entries, module_number TSRMLS_CC) */
 }
 /* }}} */
 
@@ -813,7 +813,7 @@ void zend_post_startup(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-void zend_shutdown(TSRMLS_D) /* {{{ */
+void zend_shutdown(TSRMLS_D) /* {{{ *//* 脚本执行结束关闭zend引擎操作 */
 {
 #ifdef ZEND_SIGNALS
 	zend_signal_shutdown(TSRMLS_C);
@@ -833,24 +833,24 @@ void zend_shutdown(TSRMLS_D) /* {{{ */
 		zend_hash_reverse_apply(GLOBAL_CLASS_TABLE, (apply_func_t) clean_non_persistent_class_full TSRMLS_CC);
 	}
 
-	zend_destroy_modules();
+	zend_destroy_modules();/* 销毁模块信息 */
 
  	virtual_cwd_deactivate(TSRMLS_C);
  	virtual_cwd_shutdown();
 
-	zend_hash_destroy(GLOBAL_FUNCTION_TABLE);
-	zend_hash_destroy(GLOBAL_CLASS_TABLE);
+	zend_hash_destroy(GLOBAL_FUNCTION_TABLE);/* 销毁全局函数表 */
+	zend_hash_destroy(GLOBAL_CLASS_TABLE);/* 销毁全局类表 */
 
 	zend_hash_destroy(GLOBAL_AUTO_GLOBALS_TABLE);
 	free(GLOBAL_AUTO_GLOBALS_TABLE);
 
-	zend_shutdown_extensions(TSRMLS_C);
+	zend_shutdown_extensions(TSRMLS_C);/* 销毁扩展信息 */
 	free(zend_version_info);
 
 	free(GLOBAL_FUNCTION_TABLE);
 	free(GLOBAL_CLASS_TABLE);
 
-	zend_hash_destroy(GLOBAL_CONSTANTS_TABLE);
+	zend_hash_destroy(GLOBAL_CONSTANTS_TABLE);/* 销毁全局常量表 */
 	free(GLOBAL_CONSTANTS_TABLE);
 	zend_shutdown_strtod();
 
@@ -881,7 +881,7 @@ void zenderror(const char *error) /* {{{ *//* zend_error函数的封装 */
 /* }}} */
 
 BEGIN_EXTERN_C()
-ZEND_API void _zend_bailout(char *filename, uint lineno) /* {{{ *//* zend_bailout()函数的实现 表示结束结束进程 */
+ZEND_API void _zend_bailout(char *filename, uint lineno) /* {{{ *//* zend_bailout()函数的实现 表示结束进程 */
 {
 	TSRMLS_FETCH();
 

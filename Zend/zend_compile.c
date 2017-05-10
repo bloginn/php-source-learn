@@ -250,7 +250,7 @@ void shutdown_compiler(TSRMLS_D) /* {{{ */
 }
 /* }}} */
 
-ZEND_API char *zend_set_compiled_filename(const char *new_compiled_filename TSRMLS_DC) /* {{{ */
+ZEND_API char *zend_set_compiled_filename(const char *new_compiled_filename TSRMLS_DC) /* {{{ *//* 设置被编译的脚步文件名称到CG(filenames_table)中 */
 {
 	char **pp, *p;
 	int length = strlen(new_compiled_filename);
@@ -272,13 +272,13 @@ ZEND_API void zend_restore_compiled_filename(char *original_compiled_filename TS
 }
 /* }}} */
 
-ZEND_API char *zend_get_compiled_filename(TSRMLS_D) /* {{{ */
+ZEND_API char *zend_get_compiled_filename(TSRMLS_D) /* {{{ *//* 获取被编译的文件名称 */
 {
 	return CG(compiled_filename);
 }
 /* }}} */
 
-ZEND_API int zend_get_compiled_lineno(TSRMLS_D) /* {{{ */
+ZEND_API int zend_get_compiled_lineno(TSRMLS_D) /* {{{ *//* 获取被编译的行号 */
 {
 	return CG(zend_lineno);
 }
@@ -296,7 +296,7 @@ static zend_uint get_temporary_variable(zend_op_array *op_array) /* {{{ *//* 获
 }
 /* }}} */
 
-static int lookup_cv(zend_op_array *op_array, char* name, int name_len, ulong hash TSRMLS_DC) /* {{{ *//* 在op_array查找name的所在的坐标,如果没找到就在op_array后追加 */
+static int lookup_cv(zend_op_array *op_array, char* name, int name_len, ulong hash TSRMLS_DC) /* {{{ *//* 在op_array查找name所在的坐标,如果没找到就在op_array后追加 */
 {
 	int i = 0;
 	ulong hash_value = hash ? hash : zend_inline_hash_func(name, name_len+1);
@@ -891,7 +891,7 @@ void zend_do_abstract_method(const znode *function_name, znode *modifiers, const
 	}
 
 	if (Z_LVAL(modifiers->u.constant) & ZEND_ACC_ABSTRACT) {
-		if(Z_LVAL(modifiers->u.constant) & ZEND_ACC_PRIVATE) {/* 抽象方法不能为private 其实这种情况不会发生 因为在zend_do_begin_function_declaration()函数中就已经做了检查 */
+		if(Z_LVAL(modifiers->u.constant) & ZEND_ACC_PRIVATE) {/* 抽象方法不能为private 其实这里不会发生 因为在zend_do_begin_function_declaration()函数中就已经做了检查 */
 			zend_error_noreturn(E_COMPILE_ERROR, "%s function %s::%s() cannot be declared private", method_type, CG(active_class_entry)->name, Z_STRVAL(function_name->u.constant));
 		}
 		if (Z_LVAL(body->u.constant) == ZEND_ACC_ABSTRACT) {/* 如果方法为抽象类型 这里的ZEND_ACC_ABSTRACT是在语法解析的时候遇到方法体为';'而不是'{}'方法体的时候设置的 */

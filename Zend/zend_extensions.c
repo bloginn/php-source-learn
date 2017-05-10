@@ -169,9 +169,9 @@ static int zend_extension_startup(zend_extension *extension)/* 启动扩展 */
 }
 
 
-int zend_startup_extensions_mechanism()
+int zend_startup_extensions_mechanism()/* 启动扩展机制 */
 {
-	/* Startup extensions mechanism */ /* 启动扩展机制 */
+	/* Startup extensions mechanism */ 
 	zend_llist_init(&zend_extensions, sizeof(zend_extension), (void (*)(void *)) zend_extension_dtor, 1);
 	last_resource_number = 0;
 	return SUCCESS;

@@ -30,7 +30,7 @@
 
 ZEND_API void zend_register_default_classes(TSRMLS_D)
 {
-	zend_register_interfaces(TSRMLS_C);/* 注册预定义接口, 如:遍历接口,聚合式迭代器,聚合式迭代器,迭代器接口,迭代器接口,数组式访问,序列化接口 */
+	zend_register_interfaces(TSRMLS_C);/* 注册预定义接口, 如:遍历接口,聚合式迭代器,迭代器接口,数组式访问,序列化接口 */
 	zend_register_default_exception(TSRMLS_C);/* 注册Exception和ErrorException异常内部类 */
 	zend_register_iterator_wrapper(TSRMLS_C);
 	zend_register_closure_ce(TSRMLS_C);/* 注册闭包类Closure */

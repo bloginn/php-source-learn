@@ -174,7 +174,7 @@ ZEND_API void zend_ini_sort_entries(TSRMLS_D) /* {{{ *//* 使用快速排序算�
 /*
  * Registration / unregistration
  */
-ZEND_API int zend_register_ini_entries(const zend_ini_entry *ini_entry, int module_number TSRMLS_DC) /* {{{ */
+ZEND_API int zend_register_ini_entries(const zend_ini_entry *ini_entry, int module_number TSRMLS_DC) /* {{{ *//* 注册PHP配置信息 */
 {
 	const zend_ini_entry *p = ini_entry;
 	zend_ini_entry *hashed_ini_entry;

@@ -102,7 +102,7 @@ ZEND_API void zend_llist_del_element(zend_llist *l, void *element, int (*compare
 }
 
 
-ZEND_API void zend_llist_destroy(zend_llist *l)/* 删除链表中所以元素 */
+ZEND_API void zend_llist_destroy(zend_llist *l)/* 删除链表中所有元素 */
 {
 	zend_llist_element *current=l->head, *next;
 	

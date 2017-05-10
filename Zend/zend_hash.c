@@ -250,7 +250,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 
 	IS_CONSISTENT(ht);
 
-	ZEND_ASSERT(nKeyLength != 0);/* assert的作用是现计算表达式 expression ，如果其值为假（即为0），那么它先向stderr打印一条出错信息，然后通过调用 abort 来终止程序运行 */
+	ZEND_ASSERT(nKeyLength != 0);/* assert的作用实现计算表达式 expression ，如果其值为假（即为0），那么它先向stderr打印一条出错信息，然后通过调用 abort 来终止程序运行 */
 
 	CHECK_INIT(ht);
 
@@ -290,7 +290,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 	p->nKeyLength = nKeyLength;
 	INIT_DATA(ht, p, pData, nDataSize);/* 插入数据 */
 	p->h = h;
-	CONNECT_TO_BUCKET_DLLIST(p, ht->arBuckets[nIndex]);/* 将新添加的数据p添加到bucket中,如果该bucket中有数据(即hash冲突),则插入到其前面,然后将其后移 */
+	CONNECT_TO_BUCKET_DLLIST(p, ht->arBuckets[nIndex]);/* 将新添加的数据p添加到bucket中,如果该bucket中有数据(即hash冲突),则插入到其前面,然后将其后移,即头插法 */
 	if (pDest) {
 		*pDest = p->pData;
 	}
@@ -305,7 +305,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 	return SUCCESS;
 }
 
-ZEND_API int _zend_hash_quick_add_or_update(HashTable *ht, const char *arKey, uint nKeyLength, ulong h, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC)/* 和上面的函数差不多,只不过提供了hash值,很快吗？ */
+ZEND_API int _zend_hash_quick_add_or_update(HashTable *ht, const char *arKey, uint nKeyLength, ulong h, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC)/* 和上面的函数差不多,只不过提供了hash值 */
 {
 	uint nIndex;
 	Bucket *p;
@@ -638,7 +638,7 @@ ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)/
 	HASH_PROTECT_RECURSION(ht);
 	p = ht->pListHead;
 	while (p != NULL) {
-		int result = apply_func(p->pData TSRMLS_CC);
+		int result = apply_func(p->pData TSRMLS_CC);/* 如果回调函数返回的值 包含ZEND_HASH_APPLY_REMOVE 则删除元素 */
 
 		Bucket *p_next = p->pListNext;
 		if (result & ZEND_HASH_APPLY_REMOVE) {/* ZEND_HASH_APPLY_REMOVE等于1 */

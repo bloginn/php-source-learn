@@ -59,7 +59,7 @@ typedef struct bucket {
 	void *pDataPtr;/* 如果是指针数据，此值会指向真正的value，同时上面pData会指向此值 */
 	struct bucket *pListNext;/* 整个hash表的下一元素 */
 	struct bucket *pListLast;/* 整个hash表的上一元素 */
-	struct bucket *pNext;/* 存放在同一个hash Bucket内的下一个元素 */
+	struct bucket *pNext;/* 存放在同一个hash Bucket内的下一个元素 解决hash冲突 */
 	struct bucket *pLast;/* 同一个哈希bucket的上一个元素 */
 	const char *arKey;/* 保存当前值所对于的char *key字符串，这个字段只能定义在最后，实现变长结构体 */
 } Bucket;

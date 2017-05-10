@@ -220,19 +220,19 @@ typedef struct _zend_try_catch_element {
 char *zend_visibility_string(zend_uint fn_flags);
 
 
-typedef struct _zend_property_info {
-	zend_uint flags;
-	const char *name;
-	int name_length;
-	ulong h;
+typedef struct _zend_property_info {/* 属性信息结构体 */
+	zend_uint flags;/* 属性类型或者可见性标志 */
+	const char *name;/* 属性名 */
+	int name_length;/* 属性名长度 */
+	ulong h;/* 属性名的hash值 */
 	int offset;
-	const char *doc_comment;
+	const char *doc_comment;/* 属性的注释 */
 	int doc_comment_len;
-	zend_class_entry *ce;
-} zend_property_info;
+	zend_class_entry *ce;/* 所属类的指针地址 */
+} zend_property_info;/* 属性信息结构体 */
 
 
-typedef struct _zend_arg_info { /* 函数或方法的参数名称结构体 */
+typedef struct _zend_arg_info { /* 函数或方法的参数结构体 */
 	const char *name;/* 参数名称值 */
 	zend_uint name_len;/* 参数名称值的长度 */
 	const char *class_name;/* 类名 */
@@ -241,7 +241,7 @@ typedef struct _zend_arg_info { /* 函数或方法的参数名称结构体 */
 	zend_uchar pass_by_reference;/*　是否引用传递 */
 	zend_bool allow_null;/* 是否允许为NULL　*/
 	zend_bool is_variadic;/* 是否为变长参数 */
-} zend_arg_info;/* 函数或方法的参数名称结构体 */
+} zend_arg_info;/* 函数或方法的参数结构体 */
 
 /* the following structure repeats the layout of zend_arg_info,
  * but its fields have different meaning. It's used as the first element of

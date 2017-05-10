@@ -28,7 +28,7 @@
 #define CONST_PERSISTENT		(1<<1)				/* Persistent 持久的 */
 #define CONST_CT_SUBST			(1<<2)				/* Allow compile-time substitution 允许编译时替换 */
 
-#define	PHP_USER_CONSTANT INT_MAX	/* a constant defined in user space */
+#define	PHP_USER_CONSTANT INT_MAX	/* int类型的最大值2147483647 a constant defined in user space */
 
 typedef struct _zend_constant {
 	zval value; /* 常量的值 zval结构，PHP内部变量的存储结构 */

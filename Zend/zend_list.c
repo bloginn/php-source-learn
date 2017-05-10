@@ -32,7 +32,7 @@ ZEND_API int le_index_ptr;
 static HashTable list_destructors;
 
 
-ZEND_API int zend_list_insert(void *ptr, int type TSRMLS_DC)/* 线性表中新增元素 */
+ZEND_API int zend_list_insert(void *ptr, int type TSRMLS_DC)/* 线性表中新增元素 可以看出线性表用的hash表结构 */
 {
 	int index;
 	zend_rsrc_list_entry le;

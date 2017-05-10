@@ -42,7 +42,7 @@ ZEND_API void zend_objects_store_destroy(zend_objects_store *objects)/* 销毁�
 	objects->object_buckets = NULL;
 }
 
-ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TSRMLS_DC)/* 执行对象存储库中所以对象的析构函数 */
+ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TSRMLS_DC)/* 执行对象存储库中所有对象的析构函数 */
 {
 	zend_uint i = 1;
 
@@ -68,7 +68,7 @@ ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TS
 	}
 }
 
-ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC)/* 将对象存储库中所以对象的析构函数标记为已被调用过 */
+ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC)/* 将对象存储库中所有对象的析构函数标记为已被调用过 */
 {
 	zend_uint i;
 
